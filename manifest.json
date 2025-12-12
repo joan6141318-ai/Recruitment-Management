@@ -1,21 +1,23 @@
 {
-  "name": "Agencia Moon",
+  "name": "Agencia Moon Manager",
   "short_name": "Agencia Moon",
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#7e22ce",
+  "theme_color": "#ffffff",
   "orientation": "portrait",
   "icons": [
     {
       "src": "https://via.placeholder.com/192/7e22ce/ffffff?text=Moon",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "https://via.placeholder.com/512/7e22ce/ffffff?text=Moon",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

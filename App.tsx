@@ -10,25 +10,21 @@ import { Moon } from 'lucide-react';
 
 const SplashScreen = () => (
   <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
-    <div className="relative mb-6">
-       {/* Animated Moon effect */}
-       <div className="absolute inset-0 bg-purple-100 rounded-full animate-ping opacity-50"></div>
-       <div className="relative bg-white p-6 rounded-full border-4 border-purple-50 shadow-xl z-10 flex items-center justify-center">
-          <Moon size={48} className="text-primary fill-current" />
+    <div className="relative mb-8 animate-fade-in-up">
+       <div className="relative bg-black p-6 rounded-2xl shadow-2xl flex items-center justify-center transform transition-transform hover:scale-105">
+          <Moon size={40} className="text-white fill-current" />
        </div>
     </div>
     
-    <div className="text-center space-y-2">
-      <h1 className="text-3xl font-bold text-gray-900 tracking-tight animate-pulse">
-        Agencia <span className="text-secondary">Moon</span>
+    <div className="text-center space-y-3">
+      <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+        Agencia <span className="text-primary">Moon</span>
       </h1>
-      <p className="text-gray-400 text-sm font-medium tracking-widest uppercase">Cargando Plataforma</p>
-    </div>
-
-    <div className="mt-12 flex gap-2">
-       <div className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
-       <div className="w-2.5 h-2.5 bg-secondary rounded-full animate-bounce" style={{animationDelay: '0.15s'}}></div>
-       <div className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.3s'}}></div>
+      <div className="flex justify-center gap-1.5 pt-2">
+         <div className="w-1.5 h-1.5 bg-gray-200 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+         <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.15s'}}></div>
+         <div className="w-1.5 h-1.5 bg-black rounded-full animate-bounce" style={{animationDelay: '0.3s'}}></div>
+      </div>
     </div>
   </div>
 );
@@ -41,7 +37,7 @@ const App: React.FC = () => {
     // Check local storage and simulate initial load time for splash screen
     const initApp = async () => {
       const storedUser = localStorage.getItem('agencia_user');
-      // Force a minimum splash screen time of 2 seconds for branding
+      // Force a minimum splash screen time for branding experience
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       if (storedUser) {
@@ -54,15 +50,13 @@ const App: React.FC = () => {
   }, []);
 
   const handleLogin = (newUser: User) => {
-    // Show splash screen briefly during login transition
     setLoading(true);
     setUser(newUser);
     localStorage.setItem('agencia_user', JSON.stringify(newUser));
     
-    // Transition delay
     setTimeout(() => {
       setLoading(false);
-    }, 2000);
+    }, 1500);
   };
 
   const handleLogout = () => {

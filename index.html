@@ -2,28 +2,42 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Agencia Moon</title>
+    
+    <!-- PWA / Mobile Capable -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#ffffff" />
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#7e22ce" />
+    
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
-              primary: '#7e22ce', // Purple 700 (Tu color principal)
-              secondary: '#111827', // Gray 900 (Negro elegante - Reemplaza al naranja)
-              dark: '#000000', // Pure Black
-              light: '#f3f4f6', // Gris muy suave para fondos
-              success: '#10b981', // Verde para indicadores positivos
-              warning: '#f59e0b', // Amarillo/Dorado para alertas (en vez de naranja)
+              primary: '#7e22ce', // Purple 700 (Principal)
+              secondary: '#111827', // Gray 900 (Negro Intenso)
+              dark: '#000000', // Negro Puro
+              light: '#f9fafb', // Blanco Humo
+              success: '#10b981', // Verde Esmeralda (Éxito)
+              danger: '#ef4444', // Rojo (Error/Crítico)
+            },
+            fontFamily: {
+              sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
             }
           }
         }
       }
     </script>
     <style>
+      body {
+        -webkit-tap-highlight-color: transparent;
+        background-color: #f9fafb;
+      }
       /* Hide scrollbar for Chrome, Safari and Opera */
       .no-scrollbar::-webkit-scrollbar {
         display: none;
@@ -32,6 +46,10 @@
       .no-scrollbar {
         -ms-overflow-style: none;  /* IE and Edge */
         scrollbar-width: none;  /* Firefox */
+      }
+      /* Safe area for iPhone X+ */
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom);
       }
     </style>
   <script type="importmap">
@@ -49,7 +67,7 @@
 }
 </script>
 </head>
-  <body class="bg-gray-50 text-gray-900">
+  <body class="bg-gray-50 text-gray-900 antialiased selection:bg-primary/20 selection:text-primary">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
