@@ -100,9 +100,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     const expectedHours = TARGET_HOURS * monthProgress;
     
     // If they are more than 20% behind schedule
-    if (hours < expectedHours * 0.8) return { label: 'En Riesgo', color: 'bg-orange-50 text-orange-600', icon: TrendingUp };
+    if (hours < expectedHours * 0.8) return { label: 'En Riesgo', color: 'bg-gray-100 text-gray-600', icon: TrendingUp };
     
-    return { label: 'En Proceso', color: 'bg-gray-100 text-gray-600', icon: Activity };
+    return { label: 'En Proceso', color: 'bg-gray-50 text-gray-500', icon: Activity };
   };
 
   if (loading) return <div className="flex justify-center p-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
@@ -170,7 +170,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
               {/* Progress Bar */}
               <div className="w-full bg-gray-100 rounded-full h-4 mb-2">
                   <div 
-                    className="bg-gradient-to-r from-primary to-purple-500 h-4 rounded-full transition-all duration-1000" 
+                    className="bg-gradient-to-r from-primary to-purple-900 h-4 rounded-full transition-all duration-1000" 
                     style={{ width: `${recruitmentProgress}%` }}
                   ></div>
               </div>
@@ -188,13 +188,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                       </div>
                       <span className="text-2xl font-bold text-purple-800">{newRecruitsCount}</span>
                   </div>
-                  <div className="bg-green-50 p-4 rounded-lg border border-green-100 flex items-center justify-between">
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex items-center justify-between">
                       <div>
-                           <p className="text-xs font-bold text-green-700 uppercase">Productivos ({RECRUITMENT_BASE_HOURS}h+)</p>
-                           <p className="text-xs text-green-600">Emisores válidos para meta</p>
+                           <p className="text-xs font-bold text-gray-700 uppercase">Productivos ({RECRUITMENT_BASE_HOURS}h+)</p>
+                           <p className="text-xs text-gray-600">Emisores válidos para meta</p>
                       </div>
                       <div className="text-right">
-                          <span className="text-2xl font-bold text-green-600">{validRecruitsCount}</span>
+                          <span className="text-2xl font-bold text-gray-800">{validRecruitsCount}</span>
                           <span className="text-xs text-gray-400 block">/ {newRecruitsCount}</span>
                       </div>
                   </div>
@@ -259,7 +259,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           title="Emisores Activos" 
           value={activeEmisores} 
           icon={Activity} 
-          color="bg-green-500" 
+          color="bg-gray-800" 
         />
         <StatCard 
           title="Horas Totales (Mes)" 
@@ -272,14 +272,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
            title="Total Reclutadores" 
            value={recruiterCount} 
            icon={Briefcase} 
-           color="bg-blue-600" 
+           color="bg-gray-700" 
          />
         ) : (
             <StatCard 
             title="Meta Promedio" 
             value={`${Math.round(totalHours / (totalEmisores || 1))}h`} 
             icon={Target} 
-            color="bg-blue-600" 
+            color="bg-gray-700" 
           />
         )}
       </div>
@@ -370,7 +370,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
               />
               <Bar dataKey="hours" radius={[4, 4, 0, 0]}>
                 {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#7e22ce' : '#f97316'} />
+                    <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#7e22ce' : '#111827'} />
                   ))}
               </Bar>
             </BarChart>

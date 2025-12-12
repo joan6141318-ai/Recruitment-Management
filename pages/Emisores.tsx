@@ -283,7 +283,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Horas Totales del Mes</label>
                 <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-400" size={18} />
+                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                   <input 
                     type="number" 
                     step="0.1"
@@ -297,7 +297,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
               <div className="flex gap-3 pt-4">
                 <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 py-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">Cancelar</button>
-                <button type="submit" className="flex-1 py-2 bg-secondary text-white rounded-lg hover:bg-orange-600 transition-colors shadow-md">Actualizar</button>
+                <button type="submit" className="flex-1 py-2 bg-secondary text-white rounded-lg hover:bg-gray-800 transition-colors shadow-md">Actualizar</button>
               </div>
             </form>
           </div>
