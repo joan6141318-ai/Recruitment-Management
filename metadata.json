@@ -1,0 +1,5 @@
+{
+  "name": "Agencia Manager PWA",
+  "description": "Professional management platform for broadcaster agencies with role-based access control.",
+  "requestFramePermissions": []
+}
