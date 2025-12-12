@@ -1,8 +1,9 @@
-const CACHE_NAME = 'agencia-app-v1';
+const CACHE_NAME = 'agencia-moon-v2';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  'https://cdn.tailwindcss.com'
 ];
 
 self.addEventListener('install', (event) => {
