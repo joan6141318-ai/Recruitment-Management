@@ -12,10 +12,12 @@
         theme: {
           extend: {
             colors: {
-              primary: '#7e22ce', // Purple 700
-              secondary: '#f97316', // Orange 500
-              dark: '#111827',
-              light: '#f3f4f6',
+              primary: '#7e22ce', // Purple 700 (Tu color principal)
+              secondary: '#111827', // Gray 900 (Negro elegante - Reemplaza al naranja)
+              dark: '#000000', // Pure Black
+              light: '#f3f4f6', // Gris muy suave para fondos
+              success: '#10b981', // Verde para indicadores positivos
+              warning: '#f59e0b', // Amarillo/Dorado para alertas (en vez de naranja)
             }
           }
         }
@@ -35,12 +37,12 @@
   <script type="importmap">
 {
   "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
     "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
-    "recharts": "https://esm.sh/recharts@^3.5.1",
     "react-router-dom": "https://esm.sh/react-router-dom@^7.10.1",
+    "recharts": "https://esm.sh/recharts@^3.5.1",
     "vite": "https://esm.sh/vite@^7.2.7",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
