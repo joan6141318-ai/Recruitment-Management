@@ -37,12 +37,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [editingDate, setEditingDate] = useState<string>('');
   const [isSavingDate, setIsSavingDate] = useState(false);
 
-  // Time metrics for calculations
+  // Time metrics for calculations (Local Time Fix)
   const now = new Date();
   const currentDay = now.getDate();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const monthProgress = currentDay / daysInMonth; // 0 to 1
-  const currentMonthISO = now.toISOString().slice(0, 7); // YYYY-MM
+  
+  // CORRECCIÓN: Usar tiempo local para obtener el formato YYYY-MM
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const currentMonthISO = `${year}-${month}`; // Format: YYYY-MM local
 
   useEffect(() => {
     const fetchData = async () => {
