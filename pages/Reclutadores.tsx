@@ -112,68 +112,72 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
         </button>
       </div>
 
-      {/* Leaderboard Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {recruiters.map((rec, index) => {
-          const isTopPerformer = index === 0 && rec.monthlyEmisores > 0;
+      {loading && recruiters.length === 0 ? (
+         <div className="text-center py-20 text-gray-400">Cargando métricas...</div>
+      ) : (
+        /* Leaderboard Grid */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {recruiters.map((rec, index) => {
+            const isTopPerformer = index === 0 && rec.monthlyEmisores > 0;
 
-          return (
-            <div key={rec.id} className="relative bg-white rounded-2xl shadow-card border border-gray-100 p-6 transition-all hover:shadow-lg hover:-translate-y-1 group overflow-hidden">
-              
-              {/* Top Performer Badge */}
-              {isTopPerformer && (
-                 <div className="absolute top-0 right-0 bg-accent text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1 z-10">
-                    <Award size={12} /> TOP MES
-                 </div>
-              )}
+            return (
+                <div key={rec.id} className="relative bg-white rounded-2xl shadow-card border border-gray-100 p-6 transition-all hover:shadow-lg hover:-translate-y-1 group overflow-hidden">
+                
+                {/* Top Performer Badge */}
+                {isTopPerformer && (
+                    <div className="absolute top-0 right-0 bg-accent text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1 z-10">
+                        <Award size={12} /> TOP MES
+                    </div>
+                )}
 
-              {/* Header Profile */}
-              <div className="flex items-center space-x-4 mb-6 relative z-10">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold shadow-sm transition-colors ${isTopPerformer ? 'bg-gradient-to-br from-primary to-purple-600 text-white' : 'bg-gray-50 text-gray-500 group-hover:bg-primary group-hover:text-white'}`}>
-                  {rec.nombre.charAt(0).toUpperCase()}
+                {/* Header Profile */}
+                <div className="flex items-center space-x-4 mb-6 relative z-10">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold shadow-sm transition-colors ${isTopPerformer ? 'bg-gradient-to-br from-primary to-purple-600 text-white' : 'bg-gray-50 text-gray-500 group-hover:bg-primary group-hover:text-white'}`}>
+                    {rec.nombre.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="overflow-hidden">
+                    <h4 className="font-bold text-gray-900 truncate text-lg">{rec.nombre}</h4>
+                    <div className="flex items-center text-gray-400 text-xs truncate">
+                        <Mail size={12} className="mr-1.5" />
+                        <span className="truncate">{rec.correo}</span>
+                    </div>
+                    </div>
                 </div>
-                <div className="overflow-hidden">
-                  <h4 className="font-bold text-gray-900 truncate text-lg">{rec.nombre}</h4>
-                  <div className="flex items-center text-gray-400 text-xs truncate">
-                    <Mail size={12} className="mr-1.5" />
-                    <span className="truncate">{rec.correo}</span>
-                  </div>
+
+                {/* Stats Row */}
+                <div className="grid grid-cols-2 gap-3">
+                    {/* Monthly Metric (Highlighted) */}
+                    <div className="bg-orange-50/50 rounded-xl p-3 border border-orange-100 flex flex-col justify-between h-24 relative overflow-hidden">
+                        <div className="absolute -right-2 -top-2 text-accent/10 transform rotate-12">
+                            <TrendingUp size={60} />
+                        </div>
+                        <span className="text-[10px] font-bold text-accent uppercase tracking-wider relative z-10">Nuevo ({monthName})</span>
+                        <div className="flex items-end gap-1 relative z-10">
+                            <span className="text-4xl font-bold text-gray-900">{rec.monthlyEmisores}</span>
+                            <span className="text-xs font-medium text-gray-400 mb-1.5">emisores</span>
+                        </div>
+                    </div>
+
+                    {/* Total Metric */}
+                    <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 flex flex-col justify-between h-24">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Histórico</span>
+                        <div className="flex items-end gap-1">
+                            <span className="text-2xl font-bold text-gray-900">{rec.totalEmisores}</span>
+                            <span className="text-xs font-medium text-gray-400 mb-1">total</span>
+                        </div>
+                    </div>
                 </div>
-              </div>
 
-              {/* Stats Row */}
-              <div className="grid grid-cols-2 gap-3">
-                 {/* Monthly Metric (Highlighted) */}
-                 <div className="bg-orange-50/50 rounded-xl p-3 border border-orange-100 flex flex-col justify-between h-24 relative overflow-hidden">
-                     <div className="absolute -right-2 -top-2 text-accent/10 transform rotate-12">
-                        <TrendingUp size={60} />
-                     </div>
-                     <span className="text-[10px] font-bold text-accent uppercase tracking-wider relative z-10">Nuevo ({monthName})</span>
-                     <div className="flex items-end gap-1 relative z-10">
-                        <span className="text-4xl font-bold text-gray-900">{rec.monthlyEmisores}</span>
-                        <span className="text-xs font-medium text-gray-400 mb-1.5">emisores</span>
-                     </div>
-                 </div>
-
-                 {/* Total Metric */}
-                 <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 flex flex-col justify-between h-24">
-                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Histórico</span>
-                     <div className="flex items-end gap-1">
-                        <span className="text-2xl font-bold text-gray-900">{rec.totalEmisores}</span>
-                        <span className="text-xs font-medium text-gray-400 mb-1">total</span>
-                     </div>
-                 </div>
-              </div>
-
-              {/* Footer */}
-              <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center">
-                  <span className="text-[10px] text-gray-400 font-medium">Último registro</span>
-                  <span className="text-xs font-bold text-gray-600">{rec.lastActivity}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                {/* Footer */}
+                <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center">
+                    <span className="text-[10px] text-gray-400 font-medium">Último registro</span>
+                    <span className="text-xs font-bold text-gray-600">{rec.lastActivity}</span>
+                </div>
+                </div>
+            );
+            })}
+        </div>
+      )}
 
        {/* Modal de Invitación */}
        {isModalOpen && (

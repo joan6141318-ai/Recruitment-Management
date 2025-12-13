@@ -9,7 +9,6 @@ import { User } from './types';
 import { authService } from './services/auth'; 
 import { auth } from './services/firebase';
 import { Moon } from 'lucide-react';
-import { onAuthStateChanged } from 'firebase/auth';
 
 const SplashScreen = () => (
   <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">

@@ -3,6 +3,7 @@ import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Activity, Users, Clock, TrendingUp, Briefcase, AlertTriangle, CheckCircle, Target, Calendar, Save, Award, UserPlus, Zap, Crown } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface DashboardProps {
   user: User;
@@ -16,7 +17,7 @@ const RECRUITMENT_TARGET_COUNT = 15;
 const RECRUITMENT_BASE_HOURS = 20;
 
 const StatCard = ({ title, value, icon: Icon, colorClass, iconColor }: { title: string, value: string | number, icon: any, colorClass: string, iconColor: string }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-card border border-gray-100 flex items-center space-x-5 hover:translate-y-[-2px] transition-transform duration-300">
+  <div className="bg-white p-6 rounded-2xl shadow-card border border-gray-100 flex items-center space-x-5 hover:translate-y-[-2px] transition-transform duration-300 h-full">
     <div className={`p-4 rounded-xl ${colorClass}`}>
       <Icon size={24} className={iconColor} strokeWidth={2.5} />
     </div>
@@ -199,13 +200,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           iconColor="text-black"
         />
         {user.rol === 'admin' ? (
-           <StatCard 
-           title="Equipo" 
-           value={recruiterCount} 
-           icon={Briefcase} 
-           colorClass="bg-gray-50" 
-           iconColor="text-gray-600"
-         />
+           <Link to="/reclutadores" className="block hover:no-underline cursor-pointer">
+             <StatCard 
+               title="Equipo" 
+               value={recruiterCount} 
+               icon={Briefcase} 
+               colorClass="bg-gray-50" 
+               iconColor="text-gray-600"
+             />
+           </Link>
         ) : (
             <StatCard 
             title="Promedio / Emisor" 
