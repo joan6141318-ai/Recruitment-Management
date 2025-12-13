@@ -51,6 +51,7 @@
       body {
         -webkit-tap-highlight-color: transparent;
         background-color: #f3f4f6;
+        overscroll-behavior-y: none; /* Previene el efecto de rebote en pull-to-refresh no deseado */
       }
       .no-scrollbar::-webkit-scrollbar {
         display: none;
@@ -61,6 +62,15 @@
       }
       .pb-safe {
         padding-bottom: env(safe-area-inset-bottom);
+      }
+      .mb-safe {
+        margin-bottom: env(safe-area-inset-bottom);
+      }
+      /* FIX iOS ZOOM: Evita que el iPhone haga zoom al tocar inputs */
+      @media screen and (max-width: 768px) {
+        input, select, textarea {
+          font-size: 16px !important;
+        }
       }
     </style>
 <script type="importmap">
