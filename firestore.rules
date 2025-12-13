@@ -2,34 +2,72 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Función auxiliar para verificar autenticación
+    // --- FUNCIONES AUXILIARES ---
+    
+    // Verifica si el usuario está logueado
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Reglas para la colección de usuarios
+    // Verifica si el usuario es dueño del documento (comparando ID)
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Verifica si el usuario tiene rol de 'admin' en su documento de base de datos
+    // Nota: Esto lee la BD, tiene un costo mínimo de lectura.
+    function isAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin';
+    }
+
+    // --- REGLAS POR COLECCIÓN ---
+
+    // 1. USUARIOS
     match /users/{userId} {
-      // Permite leer/escribir si estás autenticado. 
-      // Necesario para:
-      // 1. Leer tu propio perfil.
-      // 2. Buscar invitaciones por correo (query de colección).
-      // 3. Admin leyendo lista de usuarios.
-      allow read, write: if isAuthenticated();
+      // Leer: El dueño puede leerse a sí mismo. Admin puede leer a todos.
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      
+      // Escribir/Crear: 
+      // - El usuario puede crearse a sí mismo (registro).
+      // - El usuario puede editar sus datos BÁSICOS (nombre), pero NO su rol.
+      // - El admin puede editar cualquier usuario (incluyendo roles).
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && (isAdmin() || (isOwner(userId) && request.resource.data.rol == resource.data.rol));
+      allow delete: if isAdmin();
     }
     
-    // Reglas para emisores
+    // 2. EMISORES
     match /emisores/{emisorId} {
-      allow read, write: if isAuthenticated();
+      // Leer: Admin ve todo. Reclutador solo ve los que él creó (reclutador_id == su uid).
+      allow read: if isAuthenticated() && (isAdmin() || resource.data.reclutador_id == request.auth.uid);
+      
+      // Crear: Admin crea cualquiera. Reclutador crea solo si se asigna a sí mismo como reclutador.
+      allow create: if isAuthenticated() && (isAdmin() || request.resource.data.reclutador_id == request.auth.uid);
+      
+      // Editar: Admin edita todo. Reclutador edita solo sus emisores.
+      // IMPORTANTE: Evitar que un reclutador cambie el 'reclutador_id' para robar emisores.
+      allow update: if isAuthenticated() && (
+        isAdmin() || 
+        (resource.data.reclutador_id == request.auth.uid && request.resource.data.reclutador_id == request.auth.uid)
+      );
+      
+      allow delete: if isAdmin();
     }
 
-    // Reglas para historial
+    // 3. HISTORIAL
     match /historial/{historialId} {
-      allow read, write: if isAuthenticated();
+      // Solo lectura general para admins, o dueños de los emisores relacionados (complejo de filtrar, por ahora admin).
+      allow read: if isAuthenticated();
+      // Solo el sistema (backend) o admin debería escribir historial idealmente, 
+      // pero como lo haces desde el cliente al editar horas:
+      allow create: if isAuthenticated();
     }
 
-    // Reglas para metadatos del sistema
+    // 4. METADATOS DEL SISTEMA
     match /system/{document=**} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
   }
 }

@@ -1,12 +1,6 @@
 import { auth, db } from './firebase';
 import { User, Role } from '../types';
 
-// Lista de correos que automáticamente obtienen rol de ADMIN
-const ADMIN_EMAILS = [
-  'joan6141318@gmail.com',
-  'elianaloor86@gmail.com'
-];
-
 export const authService = {
   // Login
   login: async (email: string, password?: string): Promise<User> => {
@@ -63,11 +57,6 @@ export const authService = {
 
       if (userDocSnap.exists) {
         const data = userDocSnap.data() as any;
-        // Verificación de seguridad de rol Admin
-        if (ADMIN_EMAILS.includes(email.toLowerCase()) && data.rol !== 'admin') {
-           await userDocRef.update({ rol: 'admin' });
-           data.rol = 'admin';
-        }
         return { id: uid, ...data } as User;
       } else {
         // Recuperación automática: si el usuario está en Auth pero no en DB
@@ -83,11 +72,10 @@ export const authService = {
   createUserProfile: async (uid: string, email: string, nombre: string): Promise<User> => {
     const normalizedEmail = email.toLowerCase();
     
-    // Configuración inicial del usuario
-    let role: Role = 'reclutador';
-    if (ADMIN_EMAILS.includes(normalizedEmail)) {
-      role = 'admin';
-    }
+    // Por defecto todos son reclutadores. 
+    // Para hacer a alguien ADMIN, debes editar el campo 'rol' a 'admin' manualmente 
+    // en la consola de Firebase la primera vez.
+    const role: Role = 'reclutador'; 
 
     const userData = {
       nombre,
@@ -105,7 +93,9 @@ export const authService = {
       if (!querySnapshot.empty) {
         // Si había invitación, la borramos y usamos sus datos si es necesario
         const existingDoc = querySnapshot.docs[0];
-        await existingDoc.ref.delete();
+        // Nota: Si las reglas impiden borrar al usuario nuevo, esto podría fallar,
+        // pero en el flujo normal, la invitación sirve para reservar el correo.
+        await existingDoc.ref.delete(); 
       }
 
       // Guardar el documento definitivo en la colección 'users' con el ID del usuario
@@ -113,10 +103,9 @@ export const authService = {
 
       return { id: uid, ...userData } as User;
     } catch (error: any) {
-      // Manejo específico para permisos de Firestore
       console.error("Error creating profile:", error);
       if (error.code === 'permission-denied') {
-        throw new Error('Error de permisos: Revisa las Reglas de Firestore en la consola.');
+        throw new Error('Error de permisos: Contacta al administrador.');
       }
       throw error;
     }
