@@ -30,21 +30,22 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Escucha real de Firebase Auth
+    // Escucha de estado de autenticación robusta
     const unsubscribe = firebaseAuth.onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          // Si hay usuario en Auth, traemos sus datos de negocio de Firestore
           const profile = await authService.getUserProfile(firebaseUser.uid, firebaseUser.email || '');
           setUser(profile);
         } catch (error) {
-          console.error("Error fetching profile", error);
+          console.error("Error crítico obteniendo perfil:", error);
+          // No desloguear inmediatamente para permitir depuración visual si falla Firestore
           setUser(null);
         }
       } else {
         setUser(null);
       }
-      // Pequeño delay artificial para que la Splash Screen no parpadee demasiado rápido
+      
+      // Delay mínimo para suavizar la transición visual
       setTimeout(() => setLoading(false), 800);
     });
 
@@ -52,14 +53,12 @@ const App: React.FC = () => {
   }, []);
 
   const handleLoginSuccess = (newUser: User) => {
-    // El estado se actualizará automáticamente gracias a onAuthStateChanged,
-    // pero podemos forzar el estado aquí para feedback inmediato si es necesario.
     setUser(newUser);
   };
 
   const handleLogout = async () => {
     await authService.logout();
-    // setUser(null) lo maneja el onAuthStateChanged
+    setUser(null);
   };
 
   if (loading) return <SplashScreen />;
