@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -67,7 +67,7 @@ const App: React.FC = () => {
   if (loading) return <SplashScreen />;
 
   return (
-    <HashRouter>
+    <BrowserRouter>
       {!user ? (
         <Login onLogin={handleLogin} />
       ) : (
@@ -87,7 +87,7 @@ const App: React.FC = () => {
           </Routes>
         </Layout>
       )}
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 

@@ -98,8 +98,8 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
         />
       )}
 
-      {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto h-[calc(100vh-64px)] md:h-screen">
+      {/* Main Content with Fade In Animation */}
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto h-[calc(100vh-64px)] md:h-screen animate-fade-in">
         <div className="max-w-5xl mx-auto pb-20 md:pb-0">
           {children}
         </div>
