@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Activity, Users, Clock, TrendingUp, Briefcase, AlertTriangle, CheckCircle, Target, Calendar, Save, Award, UserPlus, Zap, Crown } from 'lucide-react';
+import { Activity, Users, Clock, Briefcase, Zap, Calendar, Save, Crown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface DashboardProps {
@@ -10,23 +10,23 @@ interface DashboardProps {
 }
 
 const TARGET_HOURS = 44;
-const MIN_HOURS = 20;
 
-// Recruitment Targets
-const RECRUITMENT_TARGET_COUNT = 15;
-const RECRUITMENT_BASE_HOURS = 20;
-
-const StatCard = ({ title, value, icon: Icon, colorClass, iconColor, delay }: { title: string, value: string | number, icon: any, colorClass: string, iconColor: string, delay: string }) => (
+const StatCard = ({ title, value, icon: Icon, delay }: { title: string, value: string | number, icon: any, delay: string }) => (
   <div 
-    className="bg-white p-6 rounded-[1.25rem] shadow-card border border-gray-100 flex items-center space-x-5 hover:translate-y-[-4px] hover:shadow-soft transition-all duration-300 h-full animate-slide-up"
+    className="bg-white p-8 rounded-[2rem] shadow-card hover:shadow-glow hover:-translate-y-2 transition-all duration-500 animate-fade-up group border border-transparent hover:border-black/5"
     style={{ animationDelay: delay }}
   >
-    <div className={`p-4 rounded-2xl ${colorClass} transition-colors duration-300`}>
-      <Icon size={24} className={iconColor} strokeWidth={2.5} />
+    <div className="flex justify-between items-start mb-4">
+        <div className="p-3 bg-background rounded-2xl text-black group-hover:bg-black group-hover:text-white transition-colors duration-500">
+            <Icon size={24} strokeWidth={2} />
+        </div>
+        {typeof value === 'number' && (
+            <span className="text-xs font-bold bg-primary/10 text-primary px-2 py-1 rounded-full">+12%</span>
+        )}
     </div>
     <div>
-      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{title}</p>
-      <h3 className="text-3xl font-bold text-secondary tracking-tight">{value}</h3>
+      <h3 className="text-4xl font-black text-black tracking-tighter mb-1">{value}</h3>
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{title}</p>
     </div>
   </div>
 );
@@ -37,19 +37,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>('');
   
-  // Admin Editing State
   const [editingDate, setEditingDate] = useState<string>('');
   const [isSavingDate, setIsSavingDate] = useState(false);
-
-  // Time metrics
-  const now = new Date();
-  const currentDay = now.getDate();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const monthProgress = currentDay / daysInMonth; 
-  
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const currentMonthISO = `${year}-${month}`;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -79,206 +68,94 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const activeEmisores = emisores.filter(e => e.estado === 'activo').length;
   const totalHours = emisores.reduce((acc, curr) => acc + curr.horas_mes, 0);
   
-  const newRecruits = emisores.filter(e => e.mes_entrada === currentMonthISO);
-  const newRecruitsCount = newRecruits.length;
-  const recruitmentProgress = Math.min((newRecruitsCount / RECRUITMENT_TARGET_COUNT) * 100, 100);
-  const validRecruitsCount = newRecruits.filter(e => e.horas_mes >= RECRUITMENT_BASE_HOURS).length;
-
   const chartData = [...emisores]
     .sort((a, b) => b.horas_mes - a.horas_mes)
     .slice(0, 5)
     .map(e => ({ name: e.nombre, hours: e.horas_mes }));
 
-  const getEmisorStatus = (hours: number) => {
-    if (hours >= TARGET_HOURS) return { label: 'Meta', color: 'bg-purple-100 text-primary', icon: Crown };
-    if (hours >= MIN_HOURS) return { label: 'Productivo', color: 'bg-green-100 text-green-700', icon: Zap };
-    if (monthProgress > 0.8) return { label: 'Crítico', color: 'bg-red-50 text-red-600', icon: AlertTriangle };
-    
-    const expectedHours = TARGET_HOURS * monthProgress;
-    if (hours < expectedHours * 0.8) return { label: 'Riesgo', color: 'bg-orange-50 text-accent', icon: TrendingUp };
-    
-    return { label: 'Proceso', color: 'bg-gray-50 text-gray-500', icon: Activity };
-  };
-
-  if (loading) return <div className="flex justify-center p-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
+  if (loading) return <div className="flex justify-center p-20"><div className="w-10 h-10 bg-black animate-pulse rounded-full"></div></div>;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       
       {/* Top Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-100 pb-6 animate-fade-in">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-up">
         <div>
-          <h2 className="text-3xl font-bold text-secondary tracking-tight">Hola, {user.nombre}</h2>
-          <div className="flex items-center space-x-2 mt-1 text-gray-400 text-sm font-medium">
+          <h1 className="text-5xl font-black text-black tracking-tighter mb-2">Hola, {user.nombre.split(' ')[0]}</h1>
+          <div className="flex items-center space-x-2 text-gray-400 text-sm font-bold uppercase tracking-widest">
             <Calendar size={14} />
-            <span>Actualizado: {lastUpdated}</span>
+            <span>{lastUpdated || 'Hoy'}</span>
           </div>
         </div>
 
-        {/* Admin Date Control */}
         {user.rol === 'admin' && (
-           <div className="bg-white p-1 rounded-xl shadow-sm border border-gray-100 flex gap-2">
+           <div className="bg-white p-2 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-2">
                  <input 
                    type="date" 
-                   className="bg-transparent text-secondary rounded-lg px-3 py-1.5 text-sm outline-none font-medium"
+                   className="bg-transparent text-black font-bold text-sm outline-none px-2"
                    value={editingDate}
                    onChange={(e) => setEditingDate(e.target.value)}
                  />
                  <button 
                   onClick={handleUpdateDate}
                   disabled={isSavingDate}
-                  className="bg-secondary hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm flex items-center transition-colors shadow-lg shadow-black/10"
+                  className="bg-black hover:bg-primary text-white p-2 rounded-xl transition-colors"
                  >
-                   {isSavingDate ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <Save size={16} />}
+                   <Save size={16} />
                  </button>
            </div>
         )}
       </div>
 
-      {/* Recruitment Targets Module (Reclutadores) */}
-      {user.rol === 'reclutador' && (
-        <div className="bg-gradient-to-br from-secondary via-gray-900 to-black rounded-[2rem] shadow-2xl shadow-black/10 p-6 md:p-8 relative overflow-hidden text-white animate-scale-in">
-           <div className="absolute top-0 right-0 p-8 opacity-[0.08] pointer-events-none">
-               <Target size={200} />
-           </div>
-           
-           <div className="relative z-10">
-              <div className="flex justify-between items-center mb-6">
-                  <div>
-                      <h3 className="text-xl font-bold flex items-center gap-2">
-                          <UserPlus className="text-accent" size={24} />
-                          Reclutamiento Mensual
-                      </h3>
-                      <p className="text-gray-400 text-sm mt-1">Objetivo: <span className="text-white font-bold">{RECRUITMENT_TARGET_COUNT} Emisores</span></p>
-                  </div>
-                  <div className="text-right">
-                       <span className="text-5xl font-bold text-accent tracking-tighter">{newRecruitsCount}</span>
-                       <span className="text-gray-600 text-xl font-medium">/{RECRUITMENT_TARGET_COUNT}</span>
-                  </div>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="w-full bg-white/5 rounded-full h-4 mb-8 backdrop-blur-sm border border-white/5 overflow-hidden">
-                  <div 
-                    className="bg-gradient-to-r from-accent to-orange-400 h-full rounded-full transition-all duration-1000 shadow-[0_0_20px_rgba(249,115,22,0.4)] relative" 
-                    style={{ width: `${recruitmentProgress}%` }}
-                  >
-                      <div className="absolute top-0 left-0 bottom-0 right-0 bg-white/20 animate-pulse"></div>
-                  </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
-                      <p className="text-xs font-bold text-gray-500 uppercase mb-1 tracking-widest">Total Ingresos</p>
-                      <span className="text-2xl font-bold text-white">{newRecruitsCount}</span>
-                  </div>
-                  <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
-                      <p className="text-xs font-bold text-gray-500 uppercase mb-1 tracking-widest">Productivos ({RECRUITMENT_BASE_HOURS}h+)</p>
-                      <span className="text-2xl font-bold text-accent">{validRecruitsCount}</span>
-                  </div>
-              </div>
-           </div>
-        </div>
-      )}
-
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          title="Total Emisores" 
-          value={totalEmisores} 
-          icon={Users} 
-          colorClass="bg-purple-50 group-hover:bg-primary/10"
-          iconColor="text-primary"
-          delay="100ms"
-        />
-        <StatCard 
-          title="Emisores Activos" 
-          value={activeEmisores} 
-          icon={Activity} 
-          colorClass="bg-orange-50 group-hover:bg-accent/10"
-          iconColor="text-accent"
-          delay="200ms"
-        />
-        <StatCard 
-          title="Horas del Mes" 
-          value={totalHours} 
-          icon={Clock} 
-          colorClass="bg-gray-100 group-hover:bg-gray-200"
-          iconColor="text-secondary"
-          delay="300ms"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard title="Emisores" value={totalEmisores} icon={Users} delay="100ms" />
+        <StatCard title="Activos" value={activeEmisores} icon={Activity} delay="200ms" />
+        <StatCard title="Horas Totales" value={totalHours} icon={Clock} delay="300ms" />
         {user.rol === 'admin' ? (
-           <Link to="/reclutadores" className="block hover:no-underline cursor-pointer group">
-             <StatCard 
-               title="Equipo" 
-               value={recruiterCount} 
-               icon={Briefcase} 
-               colorClass="bg-gray-50 group-hover:bg-gray-200" 
-               iconColor="text-gray-600"
-               delay="400ms"
-             />
+           <Link to="/reclutadores" className="block hover:scale-[1.02] transition-transform duration-300">
+             <StatCard title="Reclutadores" value={recruiterCount} icon={Briefcase} delay="400ms" />
            </Link>
         ) : (
-            <StatCard 
-            title="Promedio / Emisor" 
-            value={`${Math.round(totalHours / (totalEmisores || 1))}h`} 
-            icon={Target} 
-            colorClass="bg-gray-50" 
-            iconColor="text-gray-600"
-            delay="400ms"
-          />
+            <StatCard title="Promedio" value={`${Math.round(totalHours / (totalEmisores || 1))}h`} icon={Zap} delay="400ms" />
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Table */}
-        <div className="lg:col-span-2 bg-white rounded-[1.5rem] shadow-card border border-gray-100 overflow-hidden flex flex-col animate-slide-up" style={{animationDelay: '500ms'}}>
-            <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-white/50 backdrop-blur-sm sticky top-0 z-10">
-                <h3 className="font-bold text-secondary flex items-center gap-2">
-                    <Activity size={18} className="text-secondary"/> 
-                    Rendimiento
-                </h3>
+        <div className="lg:col-span-2 bg-white rounded-[2.5rem] shadow-card p-8 animate-fade-up" style={{animationDelay: '500ms'}}>
+            <div className="flex justify-between items-center mb-8">
+                <h3 className="text-2xl font-black text-black tracking-tight">Rendimiento</h3>
+                <button className="text-xs font-bold text-gray-400 hover:text-black uppercase tracking-widest transition-colors">Ver Todo</button>
             </div>
             
-            <div className="overflow-x-auto flex-1">
+            <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
-                    <thead className="bg-gray-50/50 text-gray-400 text-xs uppercase font-semibold tracking-wider">
+                    <thead className="text-gray-400 text-[10px] font-bold uppercase tracking-widest border-b border-gray-100">
                         <tr>
-                            <th className="px-6 py-4">Emisor</th>
-                            <th className="px-6 py-4 text-center">Horas</th>
-                            <th className="px-6 py-4 w-1/3">Progreso</th>
-                            <th className="px-6 py-4 text-center">Estado</th>
+                            <th className="pb-4 pl-4">Emisor</th>
+                            <th className="pb-4 text-center">Horas</th>
+                            <th className="pb-4 w-1/3 text-center">Meta ({TARGET_HOURS}h)</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                        {emisores.sort((a,b) => b.horas_mes - a.horas_mes).slice(0, 10).map((emisor, index) => {
+                        {emisores.sort((a,b) => b.horas_mes - a.horas_mes).slice(0, 8).map((emisor) => {
                             const percent = Math.min((emisor.horas_mes / TARGET_HOURS) * 100, 100);
-                            const status = getEmisorStatus(emisor.horas_mes);
-                            const StatusIcon = status.icon;
-
                             return (
-                                <tr key={emisor.id} className="hover:bg-gray-50/80 transition-colors animate-fade-in" style={{animationDelay: `${index * 50}ms`}}>
-                                    <td className="px-6 py-4">
-                                        <div className="flex flex-col">
-                                            <span className="font-bold text-sm text-secondary">{emisor.nombre}</span>
-                                            <span className="text-[10px] text-gray-400 font-mono tracking-wide">{emisor.bigo_id}</span>
-                                        </div>
+                                <tr key={emisor.id} className="group hover:bg-background transition-colors">
+                                    <td className="py-4 pl-4 rounded-l-xl">
+                                        <div className="font-bold text-sm text-black group-hover:text-primary transition-colors">{emisor.nombre}</div>
+                                        <div className="text-[10px] text-gray-400 font-mono">{emisor.bigo_id}</div>
                                     </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className="font-bold text-secondary">{emisor.horas_mes}</span>
+                                    <td className="py-4 text-center font-black text-black">
+                                        {emisor.horas_mes}
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                    <td className="py-4 pr-4 rounded-r-xl">
+                                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden w-full max-w-[150px] mx-auto">
                                             <div 
-                                                className={`h-full rounded-full ${percent >= 100 ? 'bg-primary shadow-glow' : emisor.horas_mes >= MIN_HOURS ? 'bg-accent' : 'bg-secondary'}`} 
+                                                className={`h-full rounded-full transition-all duration-1000 ${percent >= 100 ? 'bg-primary' : 'bg-black'}`} 
                                                 style={{ width: `${percent}%` }}
                                             ></div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${status.color}`}>
-                                            <StatusIcon size={10} />
-                                            {status.label}
                                         </div>
                                     </td>
                                 </tr>
@@ -287,31 +164,27 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                     </tbody>
                 </table>
             </div>
-            {emisores.length > 10 && (
-                <div className="p-4 text-center border-t border-gray-50">
-                    <button className="text-xs font-bold text-gray-400 hover:text-secondary transition-colors uppercase tracking-widest">Ver todos</button>
-                </div>
-            )}
         </div>
 
         {/* Chart */}
-        <div className="bg-white p-6 rounded-[1.5rem] shadow-card border border-gray-100 flex flex-col h-80 lg:h-auto animate-slide-up" style={{animationDelay: '600ms'}}>
-            <h3 className="font-bold text-secondary mb-6 flex items-center gap-2">
-                <Crown size={18} className="text-accent"/> 
-                Top 5
-            </h3>
-            <div className="flex-1">
+        <div className="bg-black text-white p-8 rounded-[2.5rem] shadow-2xl flex flex-col animate-fade-up relative overflow-hidden" style={{animationDelay: '600ms'}}>
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+                <Crown size={120} />
+            </div>
+            <h3 className="text-2xl font-black mb-8 relative z-10">Top 5</h3>
+            <div className="flex-1 min-h-[300px] relative z-10">
                 <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                    <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
                     <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 11, fill: '#9CA3AF', fontWeight: 500}} tickLine={false} axisLine={false} />
+                    <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 10, fill: '#6B7280', fontWeight: 700}} tickLine={false} axisLine={false} />
                     <Tooltip 
-                        cursor={{fill: '#F8FAFC', radius: 8}}
-                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px -5px rgba(0, 0, 0, 0.1)' }}
+                        cursor={{fill: 'rgba(255,255,255,0.1)', radius: 8}}
+                        contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: 'none', color: '#000' }}
+                        itemStyle={{ color: '#000', fontWeight: 'bold' }}
                     />
-                    <Bar dataKey="hours" barSize={16} radius={[0, 6, 6, 0]}>
+                    <Bar dataKey="hours" barSize={12} radius={[0, 4, 4, 0]}>
                         {chartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={index === 0 ? '#F97316' : index === 1 ? '#7C3AED' : '#09090B'} />
+                            <Cell key={`cell-${index}`} fill={index === 0 ? '#7C3AED' : '#FFFFFF'} />
                         ))}
                     </Bar>
                     </BarChart>
