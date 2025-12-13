@@ -9,7 +9,7 @@ import { User } from './types';
 import { authService } from './services/auth'; 
 import { auth } from './services/firebase';
 import { Moon } from 'lucide-react';
-import * as firebaseAuth from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const SplashScreen = () => (
   <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
@@ -31,7 +31,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // Escucha de estado de autenticación robusta
-    const unsubscribe = firebaseAuth.onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
           const profile = await authService.getUserProfile(firebaseUser.uid, firebaseUser.email || '');

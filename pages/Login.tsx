@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { authService } from '../services/auth';
 import { User } from '../types';
-import { ArrowRight, Moon, Lock, Mail, User as UserIcon } from 'lucide-react';
+import { ArrowRight, Moon, Lock, Mail, User as UserIcon, AlertTriangle } from 'lucide-react';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -13,12 +13,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<{message: string, code?: string} | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError(null);
 
     try {
       let user: User;
@@ -32,16 +32,41 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         onLogin(user);
       }
     } catch (err: any) {
-      console.error(err);
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        setError('Correo o contraseña incorrectos.');
-      } else if (err.code === 'auth/email-already-in-use') {
-        setError('Este correo ya está registrado.');
-      } else if (err.code === 'auth/weak-password') {
-        setError('La contraseña debe tener al menos 6 caracteres.');
-      } else {
-        setError('Error de conexión o datos inválidos.');
+      console.error("Firebase Auth Error:", err);
+      
+      // Diagnóstico preciso de errores de configuración
+      let errorMsg = 'Error desconocido.';
+      const errorCode = err.code || 'unknown';
+
+      switch (errorCode) {
+        case 'auth/invalid-api-key':
+          errorMsg = 'CRÍTICO: La API Key en services/firebase.ts es inválida o no existe.';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMsg = 'CONFIGURACIÓN: Debes habilitar "Correo/Contraseña" en la consola de Firebase > Authentication.';
+          break;
+        case 'auth/email-already-in-use':
+          errorMsg = 'Este correo ya está registrado. Intenta iniciar sesión.';
+          break;
+        case 'auth/invalid-credential':
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+          errorMsg = 'Correo o contraseña incorrectos.';
+          break;
+        case 'auth/weak-password':
+          errorMsg = 'La contraseña es muy débil (mínimo 6 caracteres).';
+          break;
+        case 'permission-denied':
+          errorMsg = 'PERMISOS: Las reglas de Firestore bloquean la escritura. Revisa las reglas de seguridad.';
+          break;
+        case 'auth/network-request-failed':
+          errorMsg = 'Error de conexión. Verifica tu internet o la configuración de CORS.';
+          break;
+        default:
+          errorMsg = err.message || 'Error de conexión o datos inválidos.';
       }
+
+      setError({ message: errorMsg, code: errorCode });
       setLoading(false);
     }
   };
@@ -88,7 +113,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                  onChange={(e) => { setEmail(e.target.value); setError(null); }}
                   className="w-full pl-8 pb-3 bg-transparent border-b-2 border-gray-100 text-lg font-medium text-black focus:border-black focus:outline-none transition-all placeholder-gray-200"
                   placeholder="usuario@moon.com"
                   required
@@ -103,7 +128,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                  <input
                     type="password"
                     value={password}
-                    onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                    onChange={(e) => { setPassword(e.target.value); setError(null); }}
                     className="w-full pl-8 pb-3 bg-transparent border-b-2 border-gray-100 text-lg font-medium text-black focus:border-black focus:outline-none transition-all placeholder-gray-200"
                     placeholder="••••••••"
                     required
@@ -113,10 +138,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
 
           {error && (
-            <p className="text-danger text-sm font-medium animate-slide-up flex items-center bg-red-50 p-3 rounded-lg border border-red-100">
-              <span className="w-1.5 h-1.5 bg-danger rounded-full mr-2"></span>
-              {error}
-            </p>
+            <div className="animate-slide-up bg-red-50 p-4 rounded-xl border border-red-100">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="text-danger shrink-0 mt-0.5" size={18} />
+                <div>
+                   <p className="text-danger text-sm font-bold">{error.message}</p>
+                   <p className="text-red-400 text-xs mt-1 font-mono">{error.code}</p>
+                </div>
+              </div>
+            </div>
           )}
 
           <button
@@ -139,7 +169,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <p className="text-gray-500 text-sm">
             {isRegistering ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}
             <button 
-              onClick={() => { setIsRegistering(!isRegistering); setError(''); }}
+              onClick={() => { setIsRegistering(!isRegistering); setError(null); }}
               className="ml-2 font-bold text-black hover:underline focus:outline-none"
             >
               {isRegistering ? 'Inicia Sesión' : 'Regístrate'}

@@ -1,4 +1,4 @@
-import * as firebaseAuth from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { 
   doc, 
   getDoc, 
@@ -26,7 +26,7 @@ export const authService = {
     if (!password) throw new Error("Contraseña requerida");
     
     try {
-      const userCredential = await firebaseAuth.signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const fbUser = userCredential.user;
       
       return await authService.getUserProfile(fbUser.uid, fbUser.email || email);
@@ -41,7 +41,7 @@ export const authService = {
     if (!password) throw new Error("Contraseña requerida");
     
     try {
-      const userCredential = await firebaseAuth.createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const fbUser = userCredential.user;
 
       return await authService.createUserProfile(fbUser.uid, email, nombre || email.split('@')[0]);
@@ -52,7 +52,7 @@ export const authService = {
   },
 
   logout: async () => {
-    await firebaseAuth.signOut(auth);
+    await signOut(auth);
   },
 
   // Obtener Perfil
