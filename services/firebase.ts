@@ -18,7 +18,7 @@ const firebaseConfig = {
 // Inicialización (Firebase v9+ Modular)
 const app = initializeApp(firebaseConfig);
 
-// Exportación de servicios usando las funciones modulares
+// Exportación de instancias modulares
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 

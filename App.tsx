@@ -8,6 +8,7 @@ import Reclutadores from './pages/Reclutadores';
 import { User } from './types';
 import { authService } from './services/auth'; 
 import { auth } from './services/firebase';
+import { onAuthStateChanged } from 'firebase/auth'; // Import modular
 import { Moon } from 'lucide-react';
 
 const SplashScreen = () => (
@@ -32,8 +33,8 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Listener de sesión de Firebase (v8 / Compat)
-    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+    // Listener de sesión de Firebase Modular (v9+)
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
           const profile = await authService.getUserProfile(firebaseUser.uid, firebaseUser.email || '');
