@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
-import { Search, Plus, Filter, Edit2, Eye, X } from 'lucide-react';
+import { Search, Plus, Filter, Edit2, Eye, X, CheckCircle2 } from 'lucide-react';
 
 interface EmisoresProps {
   user: User;
 }
+
+const TARGET_HOURS = 44;
 
 const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   const [emisores, setEmisores] = useState<Emisor[]>([]);
@@ -109,12 +111,13 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-black tracking-tight">Emisores</h2>
+          <h2 className="text-2xl font-black text-black tracking-tight uppercase">Mis Emisores</h2>
+          <p className="text-gray-400 text-sm font-medium">Gestión y seguimiento de metas</p>
         </div>
         
         <button 
           onClick={() => setIsAddModalOpen(true)}
-          className="bg-black hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transition-all active:scale-95"
+          className="bg-black hover:bg-gray-800 text-white px-5 py-3 rounded-xl flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transition-all active:scale-95"
         >
           <Plus size={18} />
           <span className="font-bold text-xs uppercase tracking-wide">Nuevo Emisor</span>
@@ -147,7 +150,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
         </div>
       </div>
 
-      {/* List - Compact Grid */}
+      {/* List - Enhanced Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {loading ? (
            <div className="col-span-full flex justify-center py-10"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div></div>
@@ -156,56 +159,98 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
              <p className="text-gray-400 font-medium text-sm">No se encontraron emisores</p>
            </div>
         ) : (
-          filtered.map((emisor) => (
-            <div 
-                key={emisor.id} 
-                className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/30 transition-all duration-200 group relative"
-            >
-                <div className={`absolute top-5 right-5 w-2 h-2 rounded-full ${emisor.estado === 'activo' ? 'bg-green-500' : 'bg-red-400'}`}></div>
+          filtered.map((emisor) => {
+            const progress = Math.min((emisor.horas_mes / TARGET_HOURS) * 100, 100);
+            const isCompleted = progress >= 100;
 
-               <div className="mb-4 pr-4">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">ID: {emisor.bigo_id}</div>
-                  <h3 className="font-bold text-black text-lg leading-tight capitalize truncate">
-                    {emisor.nombre.toLowerCase()}
-                  </h3>
-               </div>
-                
-                <div className="flex items-end justify-between">
-                    <div>
-                        <p className="text-[10px] text-gray-400 font-semibold uppercase">Horas</p>
-                        <p className="text-2xl font-black text-black">{emisor.horas_mes}</p>
-                    </div>
-                    
-                    <button 
-                        onClick={() => openDetails(emisor)}
-                        className="p-2 rounded-full bg-gray-50 text-gray-600 hover:bg-black hover:text-white transition-colors"
-                    >
-                        <Eye size={18} />
-                    </button>
-                </div>
-
-                {user.rol === 'admin' && (
-                  <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-gray-50">
-                    <button 
-                      onClick={() => openEdit(emisor)}
-                      className="py-2 rounded-lg text-[10px] font-bold uppercase bg-gray-50 text-black hover:bg-gray-100 transition-colors flex justify-center items-center gap-1"
-                    >
-                      <Edit2 size={12} /> Editar
-                    </button>
-                    <button 
-                      onClick={() => toggleStatus(emisor)}
-                      className={`py-2 rounded-lg text-[10px] font-bold uppercase transition-colors ${
-                        emisor.estado === 'activo' 
-                          ? 'bg-red-50 text-red-600 hover:bg-red-100' 
-                          : 'bg-green-50 text-green-600 hover:bg-green-100'
-                      }`}
-                    >
-                      {emisor.estado === 'activo' ? 'Pausar' : 'Activar'}
-                    </button>
+            return (
+              <div 
+                  key={emisor.id} 
+                  className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-black/10 transition-all duration-200 group relative flex flex-col justify-between"
+              >
+                  {/* Badge Estado */}
+                  <div className={`absolute top-4 right-4 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                      emisor.estado === 'activo' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'
+                  }`}>
+                      {emisor.estado}
                   </div>
-                )}
-            </div>
-          ))
+
+                  {/* Header */}
+                 <div className="mb-6">
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                        ID: {emisor.bigo_id}
+                        {isCompleted && <CheckCircle2 size={12} className="text-green-500" />}
+                    </div>
+                    <h3 className="font-bold text-black text-lg leading-tight capitalize truncate pr-14">
+                      {emisor.nombre.toLowerCase()}
+                    </h3>
+                 </div>
+                  
+                  {/* Progress Section */}
+                  <div className="space-y-3">
+                      <div className="flex items-end justify-between">
+                          <div>
+                              <p className="text-[10px] text-gray-400 font-bold uppercase">Progreso</p>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-2xl font-black text-black">{emisor.horas_mes}</span>
+                                <span className="text-xs font-semibold text-gray-400">/ {TARGET_HOURS}h</span>
+                              </div>
+                          </div>
+                          <span className={`text-sm font-bold ${isCompleted ? 'text-green-600' : 'text-primary'}`}>
+                            {Math.round(progress)}%
+                          </span>
+                      </div>
+
+                      {/* Bar */}
+                      <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                          <div 
+                             className={`h-full rounded-full transition-all duration-500 ${
+                                 isCompleted ? 'bg-green-500' : 
+                                 emisor.estado === 'pausado' ? 'bg-gray-300' : 'bg-primary'
+                             }`} 
+                             style={{ width: `${progress}%` }}
+                          ></div>
+                      </div>
+                  </div>
+
+                  {/* Footer Actions */}
+                  <div className="mt-6 pt-4 border-t border-gray-50 flex items-center justify-between gap-2">
+                       <button 
+                          onClick={() => openDetails(emisor)}
+                          className="p-2 text-gray-400 hover:text-black transition-colors rounded-lg hover:bg-gray-50"
+                          title="Ver detalles"
+                      >
+                          <Eye size={18} />
+                      </button>
+
+                      {user.rol === 'admin' ? (
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => toggleStatus(emisor)}
+                              className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase bg-gray-50 text-gray-600 hover:bg-gray-100"
+                            >
+                              {emisor.estado === 'activo' ? 'Pausar' : 'Activar'}
+                            </button>
+                            <button 
+                              onClick={() => openEdit(emisor)}
+                              className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase bg-black text-white hover:bg-gray-800 flex items-center gap-1"
+                            >
+                              <Edit2 size={10} /> Editar
+                            </button>
+                          </div>
+                      ) : (
+                          // Quick Edit for Recruiter (Assuming they can edit hours) or just Status
+                          <button 
+                              onClick={() => openEdit(emisor)} // Assuming recruiters can edit hours in this version
+                              className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase bg-gray-50 text-black hover:bg-gray-100 flex items-center gap-1 ml-auto"
+                          >
+                            Editar Horas
+                          </button>
+                      )}
+                  </div>
+              </div>
+            );
+          })
         )}
       </div>
 
@@ -267,7 +312,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
           <div className="bg-white rounded-2xl w-full max-w-xs p-6 shadow-2xl relative animate-pop-in">
              <button onClick={() => setIsEditModalOpen(false)} className="absolute top-4 right-4 p-1.5 bg-gray-50 rounded-full hover:bg-black hover:text-white transition-colors"><X size={16}/></button>
 
-            <h3 className="text-lg font-bold mb-1">Horas</h3>
+            <h3 className="text-lg font-bold mb-1">Horas Mensuales</h3>
             <p className="text-xs text-gray-400 mb-6 font-medium capitalize">{selectedEmisor.nombre.toLowerCase()}</p>
             
             <form onSubmit={handleEditHours} className="space-y-6">
@@ -282,6 +327,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                     autoFocus
                     placeholder="0"
                   />
+                 <p className="text-center text-xs font-bold text-gray-400 mt-2 uppercase tracking-wide">Meta: {TARGET_HOURS} hrs</p>
               </div>
 
               <div className="pt-2">
@@ -299,23 +345,35 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                 <button onClick={() => setIsDetailsModalOpen(false)} className="absolute top-4 right-4 p-1.5 bg-white/10 text-white rounded-full hover:bg-white hover:text-black transition-colors z-10"><X size={16}/></button>
 
                 <div className="bg-black p-6 relative overflow-hidden">
-                    <h3 className="text-xl font-bold text-white mb-1 capitalize relative z-10">{selectedEmisor.nombre.toLowerCase()}</h3>
-                    <p className="text-gray-400 font-medium text-xs tracking-wider uppercase relative z-10">ID: {selectedEmisor.bigo_id}</p>
+                    <div className="flex justify-between items-start relative z-10">
+                        <div>
+                            <h3 className="text-xl font-bold text-white mb-1 capitalize">{selectedEmisor.nombre.toLowerCase()}</h3>
+                            <p className="text-gray-400 font-medium text-xs tracking-wider uppercase">ID: {selectedEmisor.bigo_id}</p>
+                        </div>
+                        <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
+                            selectedEmisor.estado === 'activo' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                        }`}>
+                            {selectedEmisor.estado}
+                        </div>
+                    </div>
                 </div>
                 
                 <div className="p-6 space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                         <div className="bg-gray-50 p-4 rounded-xl text-center border border-gray-100">
-                             <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Total Horas</p>
-                             <p className="text-2xl font-black text-black">{selectedEmisor.horas_mes}</p>
+                    <div className="text-center">
+                         <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Progreso Mensual</p>
+                         <div className="flex justify-center items-end gap-1 mb-2">
+                            <span className="text-4xl font-black text-black">{selectedEmisor.horas_mes}</span>
+                            <span className="text-sm font-bold text-gray-400 mb-1">/ {TARGET_HOURS}h</span>
                          </div>
-                         <div className="bg-gray-50 p-4 rounded-xl text-center flex flex-col items-center justify-center border border-gray-100">
-                             <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Estado</p>
-                             <div className={`w-3 h-3 rounded-full ${selectedEmisor.estado === 'activo' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                         <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                            <div 
+                                className="bg-primary h-full rounded-full" 
+                                style={{ width: `${Math.min((selectedEmisor.horas_mes / TARGET_HOURS) * 100, 100)}%` }}
+                            ></div>
                          </div>
                     </div>
 
-                    <div className="space-y-0 text-sm">
+                    <div className="space-y-0 text-sm border-t border-gray-100 pt-2">
                         <div className="flex items-center justify-between py-3 border-b border-gray-50">
                             <span className="font-medium text-gray-500">País</span>
                             <span className="font-bold text-black">{selectedEmisor.pais}</span>
