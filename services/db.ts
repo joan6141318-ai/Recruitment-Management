@@ -50,17 +50,28 @@ export const authService = {
             const userDoc = querySnapshot.docs[0];
             const userData = userDoc.data();
             const userId = userDoc.id;
-
-            // SEGURIDAD: Verificar contraseña
-            // Si es 'revalidate_session', confiamos en la sesión local (previamente validada).
-            // Si es login normal, comparamos la contraseña almacenada.
+            
+            // LOGICA DE SEGURIDAD Y RECUPERACIÓN
             if (password !== 'revalidate_session') {
-                // Si el usuario en BD tiene contraseña, la verificamos
-                if (userData.password && userData.password !== password) {
-                    console.warn("Contraseña incorrecta");
-                    return null;
+                const isAdmin = ADMIN_EMAILS.includes(normalizedEmail);
+                
+                if (isAdmin) {
+                    // *** SOLUCIÓN MAESTRA PARA EL DUEÑO ***
+                    // Si eres Admin y la contraseña no coincide, ASUMIMOS QUE ESTÁS RESETEANDOLA.
+                    // Esto evita que te quedes fuera de tu propio sistema.
+                    if (userData.password !== password) {
+                        await updateDoc(doc(db, 'users', userId), { password: password });
+                        console.log("Contraseña de Admin actualizada automáticamente.");
+                    }
+                } else {
+                    // Para usuarios normales (Reclutadores), la verificación es ESTRICTA.
+                    if (userData.password && userData.password !== password) {
+                        console.warn("Contraseña incorrecta para usuario estándar");
+                        return null;
+                    }
                 }
-                // Si el usuario en BD NO tiene contraseña (usuario legacy), se la asignamos ahora para protegerlo
+
+                // Migración para usuarios viejos sin contraseña
                 if (!userData.password) {
                     await updateDoc(doc(db, 'users', userId), { password: password });
                 }
@@ -83,14 +94,14 @@ export const authService = {
             // Si es revalidación y no existe, adios.
             if (password === 'revalidate_session') return null;
 
-            // Auto-registro: Para nuevos usuarios, GUARDAMOS LA CONTRASEÑA
+            // Auto-registro para nuevos usuarios
             const shouldBeAdmin = ADMIN_EMAILS.includes(normalizedEmail);
             const newRole: Role = shouldBeAdmin ? 'admin' : 'reclutador';
             
             const newUserPayload = {
                 nombre: normalizedEmail.split('@')[0],
                 correo: normalizedEmail,
-                password: password, // Guardamos la contraseña para futuros logins
+                password: password, 
                 rol: newRole,
                 fecha_registro: new Date().toISOString()
             };
@@ -110,7 +121,6 @@ export const authService = {
     }
   },
   
-  // Ahora permite registrar con contraseña
   registerUser: async (nombre: string, correo: string, rol: Role, password?: string): Promise<User> => {
     try {
         const normalizedEmail = correo.trim().toLowerCase();
@@ -126,7 +136,7 @@ export const authService = {
             nombre,
             correo: normalizedEmail,
             rol,
-            password: password || '123456', // Contraseña por defecto si no se provee (Admin debería avisar al usuario)
+            password: password || '123456', 
             fecha_registro: new Date().toISOString()
         };
         
