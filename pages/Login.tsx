@@ -35,101 +35,96 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
       if (user) onLogin(user);
     } catch (err: any) {
-      setError({ message: 'Error de acceso.', code: err.code });
+      setError({ message: 'Credenciales incorrectas.', code: err.code });
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-6">
-      <div className="w-full max-w-[400px] animate-pop-in">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-[360px] animate-pop-in">
         
-        {/* LOGO SECTION */}
-        <div className="flex flex-col items-center mb-10">
-            <div className="w-24 h-24 bg-black rounded-3xl flex items-center justify-center shadow-2xl shadow-black/20 mb-6 -rotate-6">
-                <Moon className="text-white fill-white" size={48} />
+        <div className="flex flex-col items-center mb-6">
+            <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center shadow-lg mb-4">
+                <Moon className="text-white fill-white" size={20} />
             </div>
-            <h1 className="text-center leading-none">
-                <span className="block text-sm font-bold text-gray-500 tracking-[0.4em] mb-2 uppercase">Plataforma</span>
-                <span className="block text-5xl font-black text-black tracking-tight">Agencia Moon</span>
-            </h1>
+            <h1 className="text-xl font-black text-black tracking-tight">Agencia Moon</h1>
         </div>
 
-        <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-card border border-white relative overflow-hidden">
-            <h2 className="text-2xl font-black text-black mb-8 tracking-tight">
-                {isRegistering ? 'Crear Cuenta' : 'Bienvenido'}
+        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-card border border-gray-100">
+            <h2 className="text-lg font-bold text-black mb-6">
+                {isRegistering ? 'Crear Cuenta' : 'Iniciar Sesión'}
             </h2>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3">
                 {isRegistering && (
                     <div className="relative group">
-                        <UserIcon size={20} className="absolute left-5 top-5 text-gray-300 group-focus-within:text-black transition-colors" />
+                        <UserIcon size={16} className="absolute left-3 top-3.5 text-gray-400 group-focus-within:text-black transition-colors" />
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full pl-14 pr-6 py-5 bg-background border-2 border-transparent rounded-2xl text-black font-bold placeholder-gray-300 focus:bg-white focus:border-black outline-none transition-all text-sm"
-                            placeholder="Tu Nombre"
+                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-black font-medium text-sm focus:bg-white focus:border-black outline-none transition-all"
+                            placeholder="Nombre completo"
                             required={isRegistering}
                         />
                     </div>
                 )}
 
                 <div className="relative group">
-                    <Mail size={20} className="absolute left-5 top-5 text-gray-300 group-focus-within:text-black transition-colors" />
+                    <Mail size={16} className="absolute left-3 top-3.5 text-gray-400 group-focus-within:text-black transition-colors" />
                     <input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full pl-14 pr-6 py-5 bg-background border-2 border-transparent rounded-2xl text-black font-bold placeholder-gray-300 focus:bg-white focus:border-black outline-none transition-all text-sm"
+                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-black font-medium text-sm focus:bg-white focus:border-black outline-none transition-all"
                         placeholder="correo@ejemplo.com"
                         required
                     />
                 </div>
 
                 <div className="relative group">
-                    <Lock size={20} className="absolute left-5 top-5 text-gray-300 group-focus-within:text-black transition-colors" />
+                    <Lock size={16} className="absolute left-3 top-3.5 text-gray-400 group-focus-within:text-black transition-colors" />
                     <input
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full pl-14 pr-6 py-5 bg-background border-2 border-transparent rounded-2xl text-black font-bold placeholder-gray-300 focus:bg-white focus:border-black outline-none transition-all text-sm"
+                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-black font-medium text-sm focus:bg-white focus:border-black outline-none transition-all"
                         placeholder="••••••••"
                         required
                     />
                 </div>
 
                 {error && (
-                    <div className="bg-red-50 p-4 rounded-2xl flex items-center gap-3 animate-pop-in">
-                        <AlertCircle className="text-red-500" size={16} />
-                        <p className="text-red-500 text-xs font-bold">{error.message}</p>
+                    <div className="bg-red-50 p-3 rounded-xl flex items-center gap-2">
+                        <AlertCircle className="text-red-500" size={14} />
+                        <p className="text-red-500 text-xs font-medium">{error.message}</p>
                     </div>
                 )}
 
-                {/* BOTÓN NEGRO (ELEGANCIA) */}
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-black text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-900 hover:shadow-lg hover:-translate-y-1 transition-all flex items-center justify-center gap-3 mt-6 shadow-xl active:scale-95 duration-200"
+                    className="w-full bg-black text-white py-3 rounded-xl font-bold text-sm hover:bg-gray-900 transition-all flex items-center justify-center gap-2 mt-2"
                 >
                     {loading ? (
-                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     ) : (
                        <>
-                         {isRegistering ? 'Registrar' : 'Ingresar'} <ArrowRight size={18} strokeWidth={3} />
+                         {isRegistering ? 'Registrarse' : 'Entrar'} <ArrowRight size={16} />
                        </>
                     )}
                 </button>
             </form>
-        </div>
 
-        <div className="mt-8 text-center">
-            <button 
-                onClick={() => { setIsRegistering(!isRegistering); setError(null); }}
-                className="text-xs font-bold text-gray-400 hover:text-black transition-colors uppercase tracking-widest"
-            >
-                {isRegistering ? 'Ya tengo cuenta' : 'No tengo cuenta'}
-            </button>
+            <div className="mt-6 text-center pt-4 border-t border-gray-50">
+                <button 
+                    onClick={() => { setIsRegistering(!isRegistering); setError(null); }}
+                    className="text-xs font-bold text-gray-400 hover:text-black transition-colors"
+                >
+                    {isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
+                </button>
+            </div>
         </div>
       </div>
     </div>

@@ -102,43 +102,40 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
     setIsDetailsModalOpen(true);
   };
 
-  const inputClass = "w-full bg-background border-2 border-transparent p-4 rounded-2xl text-black font-bold focus:outline-none focus:bg-white focus:border-black transition-all uppercase";
+  const inputClass = "w-full bg-gray-50 border border-gray-200 px-4 py-2.5 rounded-xl text-black font-medium text-sm focus:outline-none focus:bg-white focus:border-black transition-all";
 
   return (
-    <div className="space-y-8 animate-slide-up pb-20">
+    <div className="space-y-6 animate-slide-up pb-20">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-4xl font-black text-black tracking-tighter uppercase">Emisores</h2>
-          {/* Barra Morada */}
-          <div className="h-1.5 w-16 bg-primary mt-2 rounded-full"></div>
+          <h2 className="text-2xl font-black text-black tracking-tight">Emisores</h2>
         </div>
         
-        {/* BOTÓN MORADO (Primary) - Identidad de sección */}
         <button 
           onClick={() => setIsAddModalOpen(true)}
-          className="bg-primary hover:bg-black text-white px-8 py-4 rounded-2xl flex items-center justify-center space-x-3 shadow-glow-primary transition-all active:scale-95 group"
+          className="bg-black hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transition-all active:scale-95"
         >
-          <Plus size={24} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
-          <span className="font-black uppercase tracking-wide text-sm">Crear Nuevo</span>
+          <Plus size={18} />
+          <span className="font-bold text-xs uppercase tracking-wide">Nuevo Emisor</span>
         </button>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 bg-white p-3 rounded-3xl shadow-card border border-gray-100">
+      <div className="flex flex-col sm:flex-row gap-3 bg-white p-2 rounded-2xl shadow-sm border border-gray-100">
         <div className="relative flex-1 group">
-          <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={20} />
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           <input 
             type="text" 
-            placeholder="BUSCAR ID O NOMBRE..." 
-            className="w-full pl-14 pr-6 py-4 bg-transparent rounded-xl focus:outline-none text-black font-bold placeholder-gray-300 uppercase"
+            placeholder="Buscar por ID o nombre..." 
+            className="w-full pl-11 pr-4 py-2.5 bg-transparent rounded-xl focus:outline-none text-black font-medium text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="relative border-t sm:border-t-0 sm:border-l border-gray-100 sm:pl-4">
+        <div className="relative border-t sm:border-t-0 sm:border-l border-gray-100 sm:pl-2">
           <select 
-            className="w-full sm:w-48 h-full px-6 py-4 bg-gray-50 hover:bg-black hover:text-white rounded-2xl focus:outline-none appearance-none cursor-pointer font-bold text-sm uppercase tracking-wide transition-colors"
+            className="w-full sm:w-auto h-full px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-xl focus:outline-none appearance-none cursor-pointer font-bold text-xs uppercase text-gray-600 transition-colors"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
           >
@@ -146,64 +143,61 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
             <option value="activo">Activos</option>
             <option value="pausado">Pausados</option>
           </select>
-          <Filter className="absolute right-8 top-1/2 transform -translate-y-1/2 pointer-events-none opacity-50" size={16} />
+          <Filter className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none opacity-50" size={14} />
         </div>
       </div>
 
-      {/* List - CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* List - Compact Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {loading ? (
-           <div className="col-span-full flex justify-center py-20"><div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>
+           <div className="col-span-full flex justify-center py-10"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div></div>
         ) : filtered.length === 0 ? (
-           <div className="col-span-full text-center py-24">
-             <p className="text-gray-300 font-black text-4xl uppercase">Sin Resultados</p>
+           <div className="col-span-full text-center py-16">
+             <p className="text-gray-400 font-medium text-sm">No se encontraron emisores</p>
            </div>
         ) : (
-          filtered.map((emisor, index) => (
+          filtered.map((emisor) => (
             <div 
                 key={emisor.id} 
-                className="bg-white rounded-[2.5rem] p-8 shadow-card border border-transparent hover:border-primary/20 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden animate-pop-in"
-                style={{ animationDelay: `${index * 50}ms` }}
+                className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/30 transition-all duration-200 group relative"
             >
-                {/* Status Dot */}
-                <div className={`absolute top-8 right-8 w-3 h-3 rounded-full ${emisor.estado === 'activo' ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-red-500'}`}></div>
+                <div className={`absolute top-5 right-5 w-2 h-2 rounded-full ${emisor.estado === 'activo' ? 'bg-green-500' : 'bg-red-400'}`}></div>
 
-               <div className="mb-8 relative z-10">
-                  <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">ID: {emisor.bigo_id}</div>
-                  {/* NOMBRE MASIVO */}
-                  <h3 className="font-black text-black text-3xl leading-none uppercase tracking-tight group-hover:text-primary transition-colors break-words">
-                    {emisor.nombre}
+               <div className="mb-4 pr-4">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">ID: {emisor.bigo_id}</div>
+                  <h3 className="font-bold text-black text-lg leading-tight capitalize truncate">
+                    {emisor.nombre.toLowerCase()}
                   </h3>
                </div>
                 
-                <div className="flex items-end justify-between relative z-10">
+                <div className="flex items-end justify-between">
                     <div>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Horas</p>
-                        <p className="text-5xl font-black text-black tracking-tighter">{emisor.horas_mes}</p>
+                        <p className="text-[10px] text-gray-400 font-semibold uppercase">Horas</p>
+                        <p className="text-2xl font-black text-black">{emisor.horas_mes}</p>
                     </div>
                     
                     <button 
                         onClick={() => openDetails(emisor)}
-                        className="w-14 h-14 rounded-full bg-background flex items-center justify-center text-black hover:bg-primary hover:text-white transition-colors"
+                        className="p-2 rounded-full bg-gray-50 text-gray-600 hover:bg-black hover:text-white transition-colors"
                     >
-                        <Eye size={24} />
+                        <Eye size={18} />
                     </button>
                 </div>
 
                 {user.rol === 'admin' && (
-                  <div className="grid grid-cols-2 gap-3 mt-8 pt-6 border-t border-gray-100">
+                  <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-gray-50">
                     <button 
                       onClick={() => openEdit(emisor)}
-                      className="py-4 rounded-2xl text-xs font-black uppercase tracking-wider bg-black text-white hover:bg-primary transition-colors flex justify-center items-center gap-2"
+                      className="py-2 rounded-lg text-[10px] font-bold uppercase bg-gray-50 text-black hover:bg-gray-100 transition-colors flex justify-center items-center gap-1"
                     >
-                      <Edit2 size={14} /> Editar
+                      <Edit2 size={12} /> Editar
                     </button>
                     <button 
                       onClick={() => toggleStatus(emisor)}
-                      className={`py-4 rounded-2xl text-xs font-black uppercase tracking-wider border-2 transition-colors ${
+                      className={`py-2 rounded-lg text-[10px] font-bold uppercase transition-colors ${
                         emisor.estado === 'activo' 
-                          ? 'border-transparent bg-red-50 text-red-600 hover:bg-red-100' 
-                          : 'border-transparent bg-green-50 text-green-600 hover:bg-green-100'
+                          ? 'bg-red-50 text-red-600 hover:bg-red-100' 
+                          : 'bg-green-50 text-green-600 hover:bg-green-100'
                       }`}
                     >
                       {emisor.estado === 'activo' ? 'Pausar' : 'Activar'}
@@ -217,53 +211,50 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
       {/* Add Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/90 backdrop-blur-xl animate-pop-in">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-md p-8 md:p-10 shadow-2xl border border-gray-100 relative">
-            <button onClick={() => setIsAddModalOpen(false)} className="absolute top-6 right-6 p-2 bg-gray-50 rounded-full hover:bg-black hover:text-white transition-colors"><X size={20}/></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl relative animate-pop-in">
+            <button onClick={() => setIsAddModalOpen(false)} className="absolute top-4 right-4 p-1.5 bg-gray-50 rounded-full hover:bg-black hover:text-white transition-colors"><X size={16}/></button>
             
-            <h3 className="text-3xl font-black mb-8 text-black uppercase tracking-tight">Nuevo Emisor</h3>
-            <form onSubmit={handleAdd} className="space-y-5">
+            <h3 className="text-xl font-bold mb-6 text-black">Nuevo Emisor</h3>
+            <form onSubmit={handleAdd} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-black text-black uppercase tracking-[0.2em] mb-2">Nombre</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5">Nombre</label>
                 <input required className={inputClass} value={newEmisorName} onChange={e => setNewEmisorName(e.target.value)} placeholder="Nombre Completo" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                    <label className="block text-[10px] font-black text-black uppercase tracking-[0.2em] mb-2">BIGO ID</label>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5">BIGO ID</label>
                     <input required className={inputClass} value={newEmisorBigo} onChange={e => setNewEmisorBigo(e.target.value)} placeholder="00000" />
                 </div>
                 <div>
-                    <label className="block text-[10px] font-black text-black uppercase tracking-[0.2em] mb-2">Ingreso</label>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5">Ingreso</label>
                     <input required type="month" className={inputClass} value={newEmisorMonth} onChange={e => setNewEmisorMonth(e.target.value)} />
                 </div>
               </div>
               
               <div>
-                <label className="block text-[10px] font-black text-black uppercase tracking-[0.2em] mb-2">País</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5">País</label>
                 <input required className={inputClass} value={newEmisorCountry} onChange={e => setNewEmisorCountry(e.target.value)} placeholder="País" />
               </div>
               
               {user.rol === 'admin' && (
                 <div>
-                   <label className="block text-[10px] font-black text-black uppercase tracking-[0.2em] mb-2">Reclutador</label>
-                   <div className="relative">
-                       <select 
-                        className={`${inputClass} appearance-none cursor-pointer`}
-                        value={newEmisorRecruiterId} 
-                        onChange={e => setNewEmisorRecruiterId(e.target.value)}
-                       >
-                         <option value={user.id}>Asignar a mí</option>
-                         {recruiters.map(r => (
-                           <option key={r.id} value={r.id}>{r.nombre}</option>
-                         ))}
-                       </select>
-                   </div>
+                   <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5">Reclutador</label>
+                   <select 
+                    className={`${inputClass} appearance-none`}
+                    value={newEmisorRecruiterId} 
+                    onChange={e => setNewEmisorRecruiterId(e.target.value)}
+                   >
+                     <option value={user.id}>Asignar a mí</option>
+                     {recruiters.map(r => (
+                       <option key={r.id} value={r.id}>{r.nombre}</option>
+                     ))}
+                   </select>
                 </div>
               )}
 
-              <div className="pt-6">
-                {/* Botón NEGRO para la acción final (Cierre/Commit) */}
-                <button type="submit" className="w-full py-5 bg-black text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl hover:bg-primary hover:scale-[1.02] transition-all">Guardar Emisor</button>
+              <div className="pt-4">
+                <button type="submit" className="w-full py-3 bg-black text-white rounded-xl font-bold text-sm uppercase hover:bg-gray-800 transition-all">Guardar</button>
               </div>
             </form>
           </div>
@@ -272,20 +263,20 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
       {/* Edit Hours Modal */}
       {isEditModalOpen && selectedEmisor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/90 backdrop-blur-xl animate-pop-in">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-sm p-10 shadow-2xl border border-gray-100 relative">
-             <button onClick={() => setIsEditModalOpen(false)} className="absolute top-6 right-6 p-2 bg-gray-50 rounded-full hover:bg-black hover:text-white transition-colors"><X size={20}/></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-xs p-6 shadow-2xl relative animate-pop-in">
+             <button onClick={() => setIsEditModalOpen(false)} className="absolute top-4 right-4 p-1.5 bg-gray-50 rounded-full hover:bg-black hover:text-white transition-colors"><X size={16}/></button>
 
-            <h3 className="text-xl font-black mb-1 uppercase">Actualizar Horas</h3>
-            <p className="text-sm text-gray-400 mb-8 font-bold tracking-wide">{selectedEmisor.nombre}</p>
+            <h3 className="text-lg font-bold mb-1">Horas</h3>
+            <p className="text-xs text-gray-400 mb-6 font-medium capitalize">{selectedEmisor.nombre.toLowerCase()}</p>
             
-            <form onSubmit={handleEditHours} className="space-y-8">
+            <form onSubmit={handleEditHours} className="space-y-6">
               <div className="relative">
                  <input 
                     type="number" 
                     step="0.1"
                     required 
-                    className="w-full py-6 bg-transparent border-b-4 border-black text-6xl font-black text-black outline-none text-center focus:border-primary transition-colors placeholder-gray-200" 
+                    className="w-full py-2 bg-transparent border-b-2 border-black text-4xl font-black text-black outline-none text-center focus:border-primary transition-colors" 
                     value={editHours} 
                     onChange={e => setEditHours(e.target.value)} 
                     autoFocus
@@ -294,8 +285,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
               </div>
 
               <div className="pt-2">
-                {/* Botón NEGRO */}
-                <button type="submit" className="w-full py-5 bg-black text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl hover:bg-primary hover:scale-[1.02] transition-all">Confirmar Cambio</button>
+                <button type="submit" className="w-full py-3 bg-black text-white rounded-xl font-bold text-xs uppercase hover:bg-gray-800 transition-all">Actualizar</button>
               </div>
             </form>
           </div>
@@ -304,36 +294,35 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
       {/* Details Modal */}
       {isDetailsModalOpen && selectedEmisor && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-md animate-pop-in">
-            <div className="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden relative">
-                <button onClick={() => setIsDetailsModalOpen(false)} className="absolute top-6 right-6 p-2 bg-white/10 text-white rounded-full hover:bg-white hover:text-black transition-colors z-10"><X size={20}/></button>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden relative animate-pop-in">
+                <button onClick={() => setIsDetailsModalOpen(false)} className="absolute top-4 right-4 p-1.5 bg-white/10 text-white rounded-full hover:bg-white hover:text-black transition-colors z-10"><X size={16}/></button>
 
-                <div className="bg-black p-10 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full -mr-10 -mt-10 blur-3xl"></div>
-                    <h3 className="text-3xl font-black text-white mb-2 uppercase tracking-tight leading-none relative z-10">{selectedEmisor.nombre}</h3>
-                    <p className="text-gray-500 font-bold text-xs tracking-[0.2em] uppercase relative z-10">ID: {selectedEmisor.bigo_id}</p>
+                <div className="bg-black p-6 relative overflow-hidden">
+                    <h3 className="text-xl font-bold text-white mb-1 capitalize relative z-10">{selectedEmisor.nombre.toLowerCase()}</h3>
+                    <p className="text-gray-400 font-medium text-xs tracking-wider uppercase relative z-10">ID: {selectedEmisor.bigo_id}</p>
                 </div>
                 
-                <div className="p-10 space-y-8">
-                    <div className="grid grid-cols-2 gap-6">
-                         <div className="bg-background p-6 rounded-[1.5rem] text-center border border-gray-100">
-                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Horas</p>
-                             <p className="text-4xl font-black text-black">{selectedEmisor.horas_mes}</p>
+                <div className="p-6 space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                         <div className="bg-gray-50 p-4 rounded-xl text-center border border-gray-100">
+                             <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Total Horas</p>
+                             <p className="text-2xl font-black text-black">{selectedEmisor.horas_mes}</p>
                          </div>
-                         <div className="bg-background p-6 rounded-[1.5rem] text-center flex flex-col items-center justify-center border border-gray-100">
-                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Estado</p>
-                             <div className={`w-4 h-4 rounded-full ${selectedEmisor.estado === 'activo' ? 'bg-green-500 shadow-[0_0_15px_#22c55e]' : 'bg-red-500'}`}></div>
+                         <div className="bg-gray-50 p-4 rounded-xl text-center flex flex-col items-center justify-center border border-gray-100">
+                             <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Estado</p>
+                             <div className={`w-3 h-3 rounded-full ${selectedEmisor.estado === 'activo' ? 'bg-green-500' : 'bg-red-500'}`}></div>
                          </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                            <span className="font-bold text-gray-400 text-xs uppercase tracking-widest">País</span>
-                            <span className="font-black text-black uppercase">{selectedEmisor.pais}</span>
+                    <div className="space-y-0 text-sm">
+                        <div className="flex items-center justify-between py-3 border-b border-gray-50">
+                            <span className="font-medium text-gray-500">País</span>
+                            <span className="font-bold text-black">{selectedEmisor.pais}</span>
                         </div>
-                        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                            <span className="font-bold text-gray-400 text-xs uppercase tracking-widest">Ingreso</span>
-                            <span className="font-black text-black uppercase">{selectedEmisor.mes_entrada || '—'}</span>
+                        <div className="flex items-center justify-between py-3 border-b border-gray-50">
+                            <span className="font-medium text-gray-500">Fecha Ingreso</span>
+                            <span className="font-bold text-black">{selectedEmisor.mes_entrada || '—'}</span>
                         </div>
                     </div>
                 </div>
