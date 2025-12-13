@@ -1,6 +1,6 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import firebase from 'firebase/app';
+import 'firebase/auth';
+import 'firebase/firestore';
 
 // ------------------------------------------------------------------
 // CONFIGURACIÓN DE FIREBASE
@@ -15,11 +15,10 @@ const firebaseConfig = {
   appId: "1:177005324608:web:7d871a4fb159e669f6b2a5"
 };
 
-// Inicialización (Firebase v9+ Modular)
-const app = initializeApp(firebaseConfig);
+// Inicialización (v8 / Compat)
+const app = !firebase.apps.length ? firebase.initializeApp(firebaseConfig) : firebase.app();
 
-// Exportación de instancias modulares
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-
+// Exportación de servicios
+export const auth = app.auth();
+export const db = app.firestore();
 export default app;

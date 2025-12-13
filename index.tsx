@@ -6,12 +6,9 @@ import App from './App';
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     // USAR RUTA RELATIVA: ./sw.js
+    // Esto es vital para evitar el error "The origin of the provided scriptURL..."
     navigator.serviceWorker.register('./sw.js')
-      .then(reg => {
-          console.log('✅ Service Worker registrado con éxito:', reg.scope);
-          // Forzar chequeo de actualizaciones inmediatamente
-          reg.update();
-      })
+      .then(reg => console.log('✅ Service Worker registrado con éxito:', reg.scope))
       .catch(err => console.error('❌ Error al registrar Service Worker:', err));
   });
 }

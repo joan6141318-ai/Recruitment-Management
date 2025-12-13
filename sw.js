@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'agencia-moon-v13-final'; // VERSIÓN V13
+const CACHE_NAME = 'agencia-moon-v11-force-vercel'; // VERSIÓN NUEVA
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -9,7 +9,7 @@ const STATIC_ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting(); // Activar inmediatamente
+  self.skipWaiting(); // Forzar activación inmediata
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(STATIC_ASSETS))
@@ -22,24 +22,24 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log('♻️ Limpiando caché antigua:', cacheName);
+            console.log('Limpiando caché antigua:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => self.clients.claim())
+    }).then(() => self.clients.claim()) // Tomar control de inmediato
   );
 });
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Ignorar Firebase/API (Nunca cachear datos)
+  // No cachear llamadas a API/Firestore
   if (url.pathname.includes('firestore') || url.hostname.includes('firebase') || url.hostname.includes('googleapis')) {
     return;
   }
 
-  // Estrategia Network First para HTML: Siempre intenta la red primero
+  // Estrategia: Network First para HTML (asegurar actualización), Cache First para assets
   if (event.request.headers.get('accept').includes('text/html')) {
     event.respondWith(
       fetch(event.request)
@@ -54,20 +54,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Estrategia Stale-While-Revalidate para recursos estáticos (CSS, JS, Imágenes)
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        // Cachear solo respuestas válidas (status 200) o respuestas opacas (type 'opaque') de CDNs
-        if (networkResponse && (networkResponse.status === 200 || networkResponse.type === 'opaque')) {
+    caches.match(event.request)
+      .then((cachedResponse) => {
+        const fetchPromise = fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, responseToCache);
+              cache.put(event.request, responseToCache);
             });
-        }
-        return networkResponse;
-      });
-      return cachedResponse || fetchPromise;
-    })
+          }
+          return networkResponse;
+        });
+        return cachedResponse || fetchPromise;
+      })
   );
 });
