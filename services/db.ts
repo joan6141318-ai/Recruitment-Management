@@ -1,100 +1,128 @@
 import { User, Emisor, HistorialHoras, Role, SystemMetadata } from '../types';
+import { initializeApp } from 'firebase/app';
+import { 
+  getFirestore, 
+  collection, 
+  getDocs, 
+  doc, 
+  setDoc, 
+  updateDoc, 
+  addDoc, 
+  query, 
+  where,
+  getDoc,
+  Timestamp
+} from 'firebase/firestore';
 
-//Helper for current month
-const getCurrentMonth = () => new Date().toISOString().slice(0, 7); // YYYY-MM
-
-// --- MOCK DATA INITIALIZATION ---
-
-const MOCK_USERS: User[] = [
-  // Admins (No password required)
-  { id: 'admin1', nombre: 'Joan Admin', correo: 'Joan6141318@gmail.com', rol: 'admin' },
-  { id: 'admin2', nombre: 'Eliana Admin', correo: 'elianaloor86@gmail.com', rol: 'admin' },
-  
-  // Recruiters (Password: Moon2026)
-  { id: 'rec1', nombre: 'Juan Reclutador', correo: 'juan@agencia.com', rol: 'reclutador' },
-  { id: 'rec2', nombre: 'Maria Talentos', correo: 'maria@agencia.com', rol: 'reclutador' },
-];
-
-const MOCK_EMISORES: Emisor[] = [
-  // Historical Data
-  { id: 'e1', nombre: 'Luna Star', bigo_id: 'luna123', pais: 'Colombia', reclutador_id: 'rec1', horas_mes: 40, mes_entrada: '2023-01', estado: 'activo', fecha_registro: '2023-10-01' },
-  { id: 'e2', nombre: 'Sol Music', bigo_id: 'sol_beat', pais: 'Mexico', reclutador_id: 'rec2', horas_mes: 5, mes_entrada: '2023-03', estado: 'pausado', fecha_registro: '2023-10-05' },
-  
-  // Dynamic Data for "Current Month" testing (To show the new dashboard features)
-  { id: 'new1', nombre: 'New Talent A', bigo_id: 'new_a', pais: 'Colombia', reclutador_id: 'rec1', horas_mes: 25, mes_entrada: getCurrentMonth(), estado: 'activo', fecha_registro: new Date().toISOString() },
-  { id: 'new2', nombre: 'New Talent B', bigo_id: 'new_b', pais: 'Peru', reclutador_id: 'rec1', horas_mes: 10, mes_entrada: getCurrentMonth(), estado: 'activo', fecha_registro: new Date().toISOString() },
-  { id: 'new3', nombre: 'Gamer X', bigo_id: 'game_x', pais: 'Argentina', reclutador_id: 'rec1', horas_mes: 2, mes_entrada: getCurrentMonth(), estado: 'activo', fecha_registro: new Date().toISOString() },
-  
-  // Admin recruit
-  { id: 'e4', nombre: 'Dance Queen', bigo_id: 'dq_99', pais: 'Colombia', reclutador_id: 'admin1', horas_mes: 12, mes_entrada: '2023-08', estado: 'activo', fecha_registro: '2023-10-15' },
-];
-
-const MOCK_HISTORIAL: HistorialHoras[] = [];
-
-let SYSTEM_METADATA: SystemMetadata = {
-  lastUpdated: new Date().toISOString().split('T')[0] // Default to today YYYY-MM-DD
+// --- FIREBASE CONFIGURATION ---
+const firebaseConfig = {
+  apiKey: "AIzaSyAQKOMqF1JZGTfPQwH3GjAt0hhQOKrk1DY",
+  authDomain: "gestor-reclutamiento.firebaseapp.com",
+  projectId: "gestor-reclutamiento",
+  storageBucket: "gestor-reclutamiento.firebasestorage.app",
+  messagingSenderId: "177005324608",
+  appId: "1:177005324608:web:7d871a4fb159e669f6b2a5"
 };
 
-// Helper to simulate DB delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Helper for current month
+const getCurrentMonth = () => new Date().toISOString().slice(0, 7); // YYYY-MM
+
+// Admin whitelist for auto-creation/login
+const ADMIN_EMAILS = ['Joan6141318@gmail.com', 'elianaloor86@gmail.com'];
 
 // --- SERVICES ---
 
-// 1. Auth Simulation
+// 1. Auth Service (Firestore Based)
 export const authService = {
   login: async (email: string, password?: string): Promise<User | null> => {
-    await delay(500);
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase(); // Normalize email
     const cleanPassword = password?.trim();
     
-    // Check if user exists in the "Database"
-    let user = MOCK_USERS.find(u => u.correo.toLowerCase() === normalizedEmail);
-    
-    // 1. Existing User Logic
-    if (user) {
-      // Admin: Access allowed without password
-      if (user.rol === 'admin') {
-        return user;
+    // 1. Check if user exists in Firestore
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('correo', '==', normalizedEmail));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      // User exists
+      const userDoc = querySnapshot.docs[0];
+      const userData = userDoc.data() as User;
+      
+      // Admin: Access allowed immediately
+      if (userData.rol === 'admin') {
+        return { ...userData, id: userDoc.id };
       }
       
-      // Recruiter: Must match password
-      if (user.rol === 'reclutador') {
+      // Recruiter: Must match Master Password
+      if (userData.rol === 'reclutador') {
         if (cleanPassword === 'Moon2026') {
-          return user;
+          return { ...userData, id: userDoc.id };
         } else {
           return null; // Wrong password
         }
       }
+    } else {
+      // User does NOT exist. Logic for Auto-Registration.
+
+      // A. Is it a whitelisted Admin?
+      // Since emails can be case sensitive in input, we checked normalized above. 
+      // We check if the input matches our whitelist (case-insensitive check).
+      const isAdminEmail = ADMIN_EMAILS.map(e => e.toLowerCase()).includes(normalizedEmail);
+      
+      if (isAdminEmail) {
+        const newUser: User = {
+          id: '', // Will be set by Firestore ID or ignored
+          nombre: normalizedEmail.split('@')[0],
+          correo: normalizedEmail,
+          rol: 'admin'
+        };
+        // Create in DB
+        const docRef = await addDoc(usersRef, newUser);
+        return { ...newUser, id: docRef.id };
+      }
+
+      // B. Is it a Recruiter with Master Key?
+      if (cleanPassword === 'Moon2026') {
+         const newUser: User = {
+           id: '',
+           nombre: normalizedEmail.split('@')[0], // Default name
+           correo: normalizedEmail,
+           rol: 'reclutador'
+         };
+         const docRef = await addDoc(usersRef, newUser);
+         return { ...newUser, id: docRef.id };
+      }
     }
 
-    // 2. Auto-Registration Logic (If user doesn't exist, but has the Master Key)
-    // This allows any recruiter to "Sign Up" just by logging in with the code
-    if (cleanPassword === 'Moon2026') {
-       const newUser: User = {
-         id: 'rec_' + Math.random().toString(36).substr(2, 6),
-         nombre: email.split('@')[0], // Use part of email as name
-         correo: email,
-         rol: 'reclutador'
-       };
-       MOCK_USERS.push(newUser);
-       return newUser;
-    }
-
-    // If neither existing user matched nor master password provided
     return null;
   },
   
-  // For demo: create a user
+  // Register a user explicitly (Admin panel)
   registerUser: async (nombre: string, correo: string, rol: Role): Promise<User> => {
-    await delay(500);
+    const normalizedEmail = correo.trim().toLowerCase();
+    
+    // Check if exists first to avoid duplicates
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('correo', '==', normalizedEmail));
+    const snap = await getDocs(q);
+    
+    if (!snap.empty) {
+        throw new Error("El usuario ya existe");
+    }
+
     const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: '',
       nombre,
-      correo,
+      correo: normalizedEmail,
       rol
     };
-    MOCK_USERS.push(newUser);
-    return newUser;
+    
+    const docRef = await addDoc(usersRef, newUser);
+    return { ...newUser, id: docRef.id };
   }
 };
 
@@ -102,81 +130,124 @@ export const authService = {
 export const dataService = {
   // Get Metadata
   getMetadata: async (): Promise<SystemMetadata> => {
-    await delay(200);
-    return SYSTEM_METADATA;
+    try {
+      const docRef = doc(db, 'system', 'metadata');
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        return docSnap.data() as SystemMetadata;
+      } else {
+        // Initialize if doesn't exist
+        const initialData = { lastUpdated: new Date().toISOString().split('T')[0] };
+        await setDoc(docRef, initialData);
+        return initialData;
+      }
+    } catch (e) {
+      console.error("Error fetching metadata", e);
+      return { lastUpdated: new Date().toISOString().split('T')[0] };
+    }
   },
 
   // Update Metadata (Admin)
   updateMetadata: async (newDate: string): Promise<void> => {
-    await delay(300);
-    SYSTEM_METADATA.lastUpdated = newDate;
+    const docRef = doc(db, 'system', 'metadata');
+    await setDoc(docRef, { lastUpdated: newDate }, { merge: true });
   },
 
   // Get Users (Recruiters)
   getRecruiters: async (): Promise<User[]> => {
-    await delay(300);
-    return MOCK_USERS.filter(u => u.rol === 'reclutador');
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('rol', '==', 'reclutador'));
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as User));
   },
 
   // Get Emisores (filtered by role logic)
   getEmisores: async (currentUser: User): Promise<Emisor[]> => {
-    await delay(300);
+    const emisoresRef = collection(db, 'emisores');
+    let q;
+
     if (currentUser.rol === 'admin') {
-      return [...MOCK_EMISORES];
+      q = query(emisoresRef);
     } else {
-      return MOCK_EMISORES.filter(e => e.reclutador_id === currentUser.id);
+      q = query(emisoresRef, where('reclutador_id', '==', currentUser.id));
     }
+
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as Emisor));
   },
 
   // Add Emisor
   addEmisor: async (emisorData: Omit<Emisor, 'id' | 'fecha_registro' | 'horas_mes' | 'estado'>, currentUser: User): Promise<Emisor> => {
-    await delay(400);
-    const newEmisor: Emisor = {
-      id: Math.random().toString(36).substr(2, 9),
+    const newEmisor = {
       ...emisorData,
       horas_mes: 0,
       estado: 'activo',
       fecha_registro: new Date().toISOString(),
     };
-    MOCK_EMISORES.push(newEmisor);
-    return newEmisor;
+    
+    const docRef = await addDoc(collection(db, 'emisores'), newEmisor);
+    return { ...newEmisor, id: docRef.id } as Emisor;
   },
 
   // Update Hours (Admin Only)
   updateHours: async (emisorId: string, newHours: number, adminId: string): Promise<void> => {
-    await delay(300);
-    const index = MOCK_EMISORES.findIndex(e => e.id === emisorId);
-    if (index !== -1) {
-      const oldHours = MOCK_EMISORES[index].horas_mes;
-      MOCK_EMISORES[index].horas_mes = newHours;
+    const emisorRef = doc(db, 'emisores', emisorId);
+    
+    // Get current hours for history
+    const emisorSnap = await getDoc(emisorRef);
+    let oldHours = 0;
+    if (emisorSnap.exists()) {
+        oldHours = emisorSnap.data().horas_mes || 0;
+    }
 
-      // Log history
-      MOCK_HISTORIAL.push({
-        id: Math.random().toString(36).substr(2, 9),
+    // Update
+    await updateDoc(emisorRef, { horas_mes: newHours });
+
+    // Log history
+    await addDoc(collection(db, 'historial'), {
         emisor_id: emisorId,
         horas_anteriores: oldHours,
         horas_nuevas: newHours,
         fecha: new Date().toISOString(),
         modificado_por: adminId
-      });
-    }
+    });
   },
 
   // Toggle Status (Admin Only)
   toggleStatus: async (emisorId: string): Promise<void> => {
-    await delay(200);
-    const emisor = MOCK_EMISORES.find(e => e.id === emisorId);
-    if (emisor) {
-      emisor.estado = emisor.estado === 'activo' ? 'pausado' : 'activo';
+    const emisorRef = doc(db, 'emisores', emisorId);
+    const emisorSnap = await getDoc(emisorRef);
+    
+    if (emisorSnap.exists()) {
+      const currentStatus = emisorSnap.data().estado;
+      const newStatus = currentStatus === 'activo' ? 'pausado' : 'activo';
+      await updateDoc(emisorRef, { estado: newStatus });
     }
   },
 
   // Get History
   getHistory: async (emisorId?: string): Promise<HistorialHoras[]> => {
-    await delay(300);
+    const historyRef = collection(db, 'historial');
+    let q;
+    
     if (emisorId) {
-      return MOCK_HISTORIAL.filter(h => h.emisor_id === emisorId);
+        q = query(historyRef, where('emisor_id', '==', emisorId));
+    } else {
+        q = query(historyRef);
     }
-    return [...MOCK_HISTORIAL];
+    
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as HistorialHoras));
   }
 };
