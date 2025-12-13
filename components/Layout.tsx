@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User } from '../types';
-import { LogOut, Users, Radio, LayoutDashboard, Menu, X, ChevronRight } from 'lucide-react';
+import { LogOut, Users, Radio, LayoutDashboard, Menu, X, Moon } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 interface LayoutProps {
@@ -15,21 +15,40 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const NavItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => {
+  // LOGOTIPO CORREGIDO: AGENCIA MOON
+  const Logo = () => (
+    <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center shadow-lg shadow-black/20">
+            <Moon className="text-white fill-white" size={20} />
+        </div>
+        <span className="font-black text-xl tracking-tight text-black uppercase leading-none">
+            AGENCIA<br/><span className="text-primary">MOON</span>
+        </span>
+    </div>
+  );
+
+  const NavItem = ({ to, icon: Icon, label, baseColor, activeColor }: { to: string, icon: any, label: string, baseColor: string, activeColor: string }) => {
     const active = isActive(to);
     return (
       <Link
         to={to}
         onClick={() => setIsSidebarOpen(false)}
-        className={`group flex items-center gap-4 px-6 py-5 rounded-[1.5rem] transition-all duration-500 mb-2 ${
+        className={`group flex items-center gap-4 px-6 py-5 rounded-2xl transition-all duration-300 mb-2 relative overflow-hidden ${
           active 
-            ? 'bg-black text-white shadow-xl shadow-black/20 scale-105' 
-            : 'text-gray-400 hover:text-black hover:bg-white hover:shadow-card'
+            ? 'bg-white shadow-card' 
+            : 'hover:bg-white/50'
         }`}
       >
-        <Icon size={24} strokeWidth={active ? 2.5 : 2} className="transition-transform group-hover:scale-110" />
-        <span className="font-black text-sm tracking-wide uppercase">{label}</span>
-        {active && <ChevronRight size={16} className="ml-auto opacity-50" />}
+        {active && <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${activeColor}`}></div>}
+        
+        <Icon 
+            size={24} 
+            strokeWidth={active ? 2.5 : 2} 
+            className={`transition-colors ${active ? baseColor : 'text-gray-400 group-hover:text-black'}`} 
+        />
+        <span className={`text-sm tracking-wide ${active ? 'font-black text-black' : 'font-bold text-gray-500 group-hover:text-black'}`}>
+            {label.toUpperCase()}
+        </span>
       </Link>
     );
   };
@@ -38,8 +57,8 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
     <div className="h-[100dvh] bg-background flex flex-col md:flex-row overflow-hidden font-sans">
       
       {/* Mobile Header */}
-      <div className="md:hidden bg-white/80 backdrop-blur-lg px-6 py-5 flex justify-between items-center sticky top-0 z-30 border-b border-gray-100/50">
-        <span className="font-black text-3xl tracking-tighter text-black">MOON.</span>
+      <div className="md:hidden bg-white/80 backdrop-blur-lg px-6 py-5 flex justify-between items-center sticky top-0 z-30 border-b border-gray-100">
+        <Logo />
         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 text-black active:scale-90 transition-transform bg-gray-50 rounded-xl">
           {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -47,38 +66,55 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
 
       {/* Sidebar Desktop */}
       <aside className={`
-        fixed md:static top-0 left-0 h-full w-80 bg-surface border-r border-gray-100 z-40 transform transition-transform duration-700 cubic-bezier(0.2, 0.8, 0.2, 1) flex flex-col p-8
+        fixed md:static top-0 left-0 h-full w-80 bg-surface border-r border-gray-100 z-40 transform transition-transform duration-700 cubic-bezier(0.34, 1.56, 0.64, 1) flex flex-col p-8
         ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'}
       `}>
-          <div className="mb-12 hidden md:block">
-             <h1 className="font-black text-5xl tracking-tighter text-black mb-2">MOON.</h1>
-             <div className="h-1 w-12 bg-primary rounded-full"></div>
+          <div className="mb-16 hidden md:block">
+             <Logo />
           </div>
 
-          <nav className="flex-1 py-4">
-              <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
-              <NavItem to="/emisores" icon={Radio} label="Emisores" />
+          <nav className="flex-1 py-4 space-y-1">
+              <NavItem 
+                to="/" 
+                icon={LayoutDashboard} 
+                label="Dashboard" 
+                baseColor="text-black" // Icon color active
+                activeColor="bg-black" // Bar color
+              />
+              <NavItem 
+                to="/emisores" 
+                icon={Radio} 
+                label="Emisores" 
+                baseColor="text-primary" 
+                activeColor="bg-primary"
+              />
               {user.rol === 'admin' && (
-                <NavItem to="/reclutadores" icon={Users} label="Equipo" />
+                <NavItem 
+                    to="/reclutadores" 
+                    icon={Users} 
+                    label="Equipo" 
+                    baseColor="text-accent" 
+                    activeColor="bg-accent"
+                />
               )}
           </nav>
 
-          {/* PERFIL PROTAGONISTA */}
+          {/* PERFIL PROTAGONISTA (Sin correo) */}
           <div className="mt-auto pt-8 border-t border-gray-100">
-             <div className="mb-6">
-                <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">{user.rol}</p>
-                {/* Nombre Masivo */}
-                <h2 className="text-2xl font-black text-black leading-none break-words uppercase tracking-tight">
+             <div className="mb-6 px-2">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{user.rol}</p>
+                {/* Nombre Grande */}
+                <h2 className="text-3xl font-black text-black leading-none uppercase tracking-tight">
                     {user.nombre}
                 </h2>
              </div>
              
              <button 
                 onClick={onLogout} 
-                className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-black hover:text-white rounded-xl text-xs font-bold text-gray-400 transition-all uppercase tracking-widest group"
+                className="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-red-500 transition-colors font-bold text-xs uppercase tracking-widest group"
              >
-                <span>Cerrar Sesión</span>
-                <LogOut size={16} className="group-hover:translate-x-1 transition-transform"/>
+                <LogOut size={16} className="group-hover:-translate-x-1 transition-transform"/>
+                <span>Salir</span>
              </button>
           </div>
       </aside>
@@ -92,10 +128,10 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
       </main>
 
       {/* Mobile Bottom Nav */}
-      <div className="md:hidden fixed bottom-6 left-6 right-6 bg-black text-white rounded-[2rem] shadow-2xl flex justify-around items-center p-5 z-20">
-        <Link to="/" className={isActive('/') ? 'text-primary scale-110' : 'text-gray-500'}><LayoutDashboard size={26} strokeWidth={isActive('/') ? 3 : 2} /></Link>
-        <Link to="/emisores" className={isActive('/emisores') ? 'text-primary scale-110' : 'text-gray-500'}><Radio size={26} strokeWidth={isActive('/emisores') ? 3 : 2}/></Link>
-        {user.rol === 'admin' && <Link to="/reclutadores" className={isActive('/reclutadores') ? 'text-primary scale-110' : 'text-gray-500'}><Users size={26} strokeWidth={isActive('/reclutadores') ? 3 : 2}/></Link>}
+      <div className="md:hidden fixed bottom-6 left-6 right-6 bg-black text-white rounded-3xl shadow-2xl flex justify-around items-center p-5 z-20">
+        <Link to="/" className={isActive('/') ? 'text-white' : 'text-gray-600'}><LayoutDashboard size={24} strokeWidth={3} /></Link>
+        <Link to="/emisores" className={isActive('/emisores') ? 'text-primary' : 'text-gray-600'}><Radio size={24} strokeWidth={3}/></Link>
+        {user.rol === 'admin' && <Link to="/reclutadores" className={isActive('/reclutadores') ? 'text-accent' : 'text-gray-600'}><Users size={24} strokeWidth={3}/></Link>}
       </div>
     </div>
   );

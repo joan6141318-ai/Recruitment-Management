@@ -102,7 +102,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
     setIsDetailsModalOpen(true);
   };
 
-  const inputClass = "w-full bg-background border-2 border-transparent p-4 rounded-2xl text-black font-bold focus:outline-none focus:bg-white focus:border-black transition-all";
+  const inputClass = "w-full bg-background border-2 border-transparent p-4 rounded-2xl text-black font-bold focus:outline-none focus:bg-white focus:border-black transition-all uppercase";
 
   return (
     <div className="space-y-8 animate-slide-up pb-20">
@@ -110,24 +110,24 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h2 className="text-4xl font-black text-black tracking-tighter uppercase">Emisores</h2>
-          <div className="h-1 w-12 bg-black mt-2 rounded-full"></div>
+          <div className="h-1 w-12 bg-accent mt-2 rounded-full"></div>
         </div>
         <button 
           onClick={() => setIsAddModalOpen(true)}
-          className="bg-black hover:bg-primary text-white px-8 py-4 rounded-[1.5rem] flex items-center justify-center space-x-3 shadow-xl transition-all active:scale-95 group"
+          className="bg-black hover:bg-accent text-white px-8 py-4 rounded-2xl flex items-center justify-center space-x-3 shadow-xl transition-all active:scale-95 group"
         >
           <Plus size={20} className="group-hover:rotate-90 transition-transform" />
-          <span className="font-bold uppercase tracking-wide text-sm">Crear Nuevo</span>
+          <span className="font-bold uppercase tracking-wide text-sm">Crear</span>
         </button>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 bg-white p-3 rounded-[2rem] shadow-card border border-gray-100">
+      <div className="flex flex-col sm:flex-row gap-4 bg-white p-3 rounded-3xl shadow-card border border-gray-100">
         <div className="relative flex-1 group">
           <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={20} />
           <input 
             type="text" 
-            placeholder="BUSCAR EMISOR..." 
+            placeholder="BUSCAR ID O NOMBRE..." 
             className="w-full pl-14 pr-6 py-4 bg-transparent rounded-xl focus:outline-none text-black font-bold placeholder-gray-300 uppercase"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -135,7 +135,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
         </div>
         <div className="relative border-t sm:border-t-0 sm:border-l border-gray-100 sm:pl-4">
           <select 
-            className="w-full sm:w-48 h-full px-6 py-4 bg-gray-50 hover:bg-black hover:text-white rounded-[1.5rem] focus:outline-none appearance-none cursor-pointer font-bold text-sm uppercase tracking-wide transition-colors"
+            className="w-full sm:w-48 h-full px-6 py-4 bg-gray-50 hover:bg-black hover:text-white rounded-2xl focus:outline-none appearance-none cursor-pointer font-bold text-sm uppercase tracking-wide transition-colors"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
           >
@@ -147,10 +147,10 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
         </div>
       </div>
 
-      {/* List - CARDS PROTAGONISTAS */}
+      {/* List - CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
-           <p className="text-center text-gray-400 font-bold uppercase tracking-widest col-span-full py-20">Cargando...</p>
+           <div className="col-span-full flex justify-center py-20"><div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin"></div></div>
         ) : filtered.length === 0 ? (
            <div className="col-span-full text-center py-24">
              <p className="text-gray-300 font-black text-4xl uppercase">Sin Resultados</p>
@@ -159,16 +159,16 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
           filtered.map((emisor, index) => (
             <div 
                 key={emisor.id} 
-                className="bg-white rounded-[2.5rem] p-8 shadow-card border border-transparent hover:border-black/5 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden animate-fade-up"
+                className="bg-white rounded-[2.5rem] p-8 shadow-card border border-transparent hover:border-black/5 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden animate-pop-in"
                 style={{ animationDelay: `${index * 50}ms` }}
             >
-                {/* Status Dot Minimalist */}
+                {/* Status Dot */}
                 <div className={`absolute top-8 right-8 w-3 h-3 rounded-full ${emisor.estado === 'activo' ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-red-500'}`}></div>
 
                <div className="mb-8 relative z-10">
                   <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">ID: {emisor.bigo_id}</div>
                   {/* NOMBRE MASIVO */}
-                  <h3 className="font-black text-black text-2xl leading-none uppercase tracking-tight group-hover:text-primary transition-colors">
+                  <h3 className="font-black text-black text-2xl leading-none uppercase tracking-tight group-hover:text-primary transition-colors break-words">
                     {emisor.nombre}
                   </h3>
                </div>
@@ -214,8 +214,8 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
       {/* Add Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/80 backdrop-blur-xl animate-fade-in">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-md p-10 shadow-2xl border border-gray-100 animate-scale-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/90 backdrop-blur-xl animate-fade-in">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-md p-10 shadow-2xl border border-gray-100 animate-pop-in">
             <h3 className="text-3xl font-black mb-8 text-black uppercase tracking-tight">Nuevo Emisor</h3>
             <form onSubmit={handleAdd} className="space-y-5">
               <div>
@@ -267,8 +267,8 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
       {/* Edit Hours Modal */}
       {isEditModalOpen && selectedEmisor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/80 backdrop-blur-xl animate-fade-in">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-sm p-10 shadow-2xl animate-scale-in border border-gray-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/90 backdrop-blur-xl animate-fade-in">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-sm p-10 shadow-2xl animate-pop-in border border-gray-100">
             <h3 className="text-xl font-black mb-1 uppercase">Actualizar Horas</h3>
             <p className="text-sm text-gray-400 mb-8 font-bold uppercase tracking-wide">{selectedEmisor.nombre}</p>
             
@@ -278,7 +278,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                     type="number" 
                     step="0.1"
                     required 
-                    className="w-full py-6 bg-transparent border-b-4 border-black text-6xl font-black text-black outline-none text-center focus:border-primary transition-colors placeholder-gray-200" 
+                    className="w-full py-6 bg-transparent border-b-4 border-black text-6xl font-black text-black outline-none text-center focus:border-accent transition-colors placeholder-gray-200" 
                     value={editHours} 
                     onChange={e => setEditHours(e.target.value)} 
                     autoFocus
@@ -288,7 +288,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
               <div className="flex gap-4">
                 <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 text-gray-400 hover:text-black font-bold text-xs uppercase tracking-widest">Cancelar</button>
-                <button type="submit" className="flex-1 py-4 bg-primary text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-glow hover:scale-105 transition-all">Confirmar</button>
+                <button type="submit" className="flex-1 py-4 bg-accent text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg hover:scale-105 transition-all">Confirmar</button>
               </div>
             </form>
           </div>
@@ -298,7 +298,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       {/* Details Modal */}
       {isDetailsModalOpen && selectedEmisor && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/50 backdrop-blur-md animate-fade-in">
-            <div className="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden animate-scale-in">
+            <div className="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden animate-pop-in">
                 <div className="bg-black p-10">
                     <h3 className="text-3xl font-black text-white mb-2 uppercase tracking-tight leading-none">{selectedEmisor.nombre}</h3>
                     <p className="text-gray-500 font-bold text-xs tracking-[0.2em] uppercase">ID: {selectedEmisor.bigo_id}</p>

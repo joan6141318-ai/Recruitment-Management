@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { authService } from '../services/auth';
 import { User } from '../types';
-import { ArrowRight, Lock, Mail, User as UserIcon, AlertCircle } from 'lucide-react';
+import { ArrowRight, Lock, Mail, User as UserIcon, AlertCircle, Moon } from 'lucide-react';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -35,79 +35,90 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
       if (user) onLogin(user);
     } catch (err: any) {
-      setError({ message: 'Error de autenticación. Verifica tus datos.', code: err.code });
+      setError({ message: 'Error de autenticación.', code: err.code });
       setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-6">
-      <div className="w-full max-w-[380px] animate-enter">
+      <div className="w-full max-w-[400px] animate-pop-in">
         
-        <div className="text-center mb-10">
-            <h1 className="text-5xl font-black text-black tracking-tighter mb-2">MOON.</h1>
-            <p className="text-gray-400 font-bold text-xs uppercase tracking-[0.3em]">Agency Manager</p>
+        <div className="flex flex-col items-center mb-12">
+            <div className="w-20 h-20 bg-black rounded-3xl flex items-center justify-center shadow-xl shadow-black/20 mb-6 rotate-3">
+                <Moon className="text-white fill-white" size={40} />
+            </div>
+            {/* TEXTO CORREGIDO: AGENCIA MOON */}
+            <h1 className="text-4xl font-black text-black tracking-tighter uppercase text-center leading-none">
+                AGENCIA<br/><span className="text-primary">MOON</span>
+            </h1>
+            <p className="text-accent font-bold text-[10px] uppercase tracking-[0.4em] mt-2">Plataforma de Gestión</p>
         </div>
 
-        <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl shadow-purple-900/5 border border-gray-100">
-            <h2 className="text-2xl font-bold text-black mb-6">{isRegistering ? 'Crear Cuenta' : 'Bienvenido'}</h2>
+        <div className="bg-white p-10 rounded-[3rem] shadow-card border border-white relative overflow-hidden">
+            {/* Decoration */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-[3rem] -z-0"></div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <h2 className="text-2xl font-black text-black mb-8 relative z-10 uppercase">
+                {isRegistering ? 'Registro' : 'Ingresar'}
+            </h2>
+
+            <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
                 {isRegistering && (
                     <div className="relative group">
-                        <UserIcon size={18} className="absolute left-5 top-5 text-gray-400 group-focus-within:text-black transition-colors" />
+                        <UserIcon size={20} className="absolute left-5 top-5 text-gray-300 group-focus-within:text-black transition-colors" />
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full pl-12 pr-6 py-4 bg-background border-2 border-transparent rounded-2xl text-black font-bold placeholder-gray-300 focus:bg-white focus:border-black outline-none transition-all"
-                            placeholder="Nombre"
+                            className="w-full pl-14 pr-6 py-5 bg-background border-2 border-transparent rounded-2xl text-black font-bold placeholder-gray-300 focus:bg-white focus:border-black outline-none transition-all uppercase text-sm"
+                            placeholder="NOMBRE"
                             required={isRegistering}
                         />
                     </div>
                 )}
 
                 <div className="relative group">
-                    <Mail size={18} className="absolute left-5 top-5 text-gray-400 group-focus-within:text-black transition-colors" />
+                    <Mail size={20} className="absolute left-5 top-5 text-gray-300 group-focus-within:text-black transition-colors" />
                     <input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full pl-12 pr-6 py-4 bg-background border-2 border-transparent rounded-2xl text-black font-bold placeholder-gray-300 focus:bg-white focus:border-black outline-none transition-all"
-                        placeholder="Correo"
+                        className="w-full pl-14 pr-6 py-5 bg-background border-2 border-transparent rounded-2xl text-black font-bold placeholder-gray-300 focus:bg-white focus:border-black outline-none transition-all uppercase text-sm"
+                        placeholder="CORREO"
                         required
                     />
                 </div>
 
                 <div className="relative group">
-                    <Lock size={18} className="absolute left-5 top-5 text-gray-400 group-focus-within:text-black transition-colors" />
+                    <Lock size={20} className="absolute left-5 top-5 text-gray-300 group-focus-within:text-black transition-colors" />
                     <input
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full pl-12 pr-6 py-4 bg-background border-2 border-transparent rounded-2xl text-black font-bold placeholder-gray-300 focus:bg-white focus:border-black outline-none transition-all"
-                        placeholder="Contraseña"
+                        className="w-full pl-14 pr-6 py-5 bg-background border-2 border-transparent rounded-2xl text-black font-bold placeholder-gray-300 focus:bg-white focus:border-black outline-none transition-all uppercase text-sm"
+                        placeholder="CONTRASEÑA"
                         required
                     />
                 </div>
 
                 {error && (
-                    <div className="bg-red-50 p-4 rounded-xl flex items-center gap-3">
+                    <div className="bg-red-50 p-4 rounded-2xl flex items-center gap-3 animate-fade-in">
                         <AlertCircle className="text-red-500" size={16} />
-                        <p className="text-red-500 text-xs font-bold">{error.message}</p>
+                        <p className="text-red-500 text-xs font-bold uppercase">{error.message}</p>
                     </div>
                 )}
 
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-black text-white py-5 rounded-2xl font-bold text-lg hover:bg-primary transition-colors flex items-center justify-center gap-2 mt-4 shadow-xl active:scale-95 duration-200"
+                    className="w-full bg-black text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-accent transition-colors flex items-center justify-center gap-3 mt-6 shadow-xl active:scale-95 duration-200"
                 >
                     {loading ? (
                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     ) : (
                        <>
-                         {isRegistering ? 'Registrarse' : 'Entrar'} <ArrowRight size={20} />
+                         {isRegistering ? 'Crear Cuenta' : 'Acceder'} <ArrowRight size={18} />
                        </>
                     )}
                 </button>
@@ -117,9 +128,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <div className="mt-8 text-center">
             <button 
                 onClick={() => { setIsRegistering(!isRegistering); setError(null); }}
-                className="text-xs font-bold text-gray-400 hover:text-black transition-colors uppercase tracking-widest"
+                className="text-[10px] font-bold text-gray-400 hover:text-black transition-colors uppercase tracking-[0.2em]"
             >
-                {isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
+                {isRegistering ? '¿Tienes cuenta? Entrar' : '¿No tienes cuenta? Crear'}
             </button>
         </div>
       </div>

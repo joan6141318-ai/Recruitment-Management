@@ -18,8 +18,9 @@ const SplashScreen = () => (
        </div>
     </div>
     
-    <h1 className="text-2xl font-bold tracking-[0.2em] text-black animate-pulse">
-      MOON
+    {/* TEXTO CORREGIDO: AGENCIA MOON */}
+    <h1 className="text-3xl font-black tracking-tighter text-black animate-pulse uppercase">
+      AGENCIA MOON
     </h1>
   </div>
 );
