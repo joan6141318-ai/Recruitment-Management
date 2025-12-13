@@ -10,21 +10,20 @@ import { Moon } from 'lucide-react';
 
 const SplashScreen = () => (
   <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
-    <div className="relative mb-8 animate-fade-in-up">
-       <div className="relative bg-black p-6 rounded-2xl shadow-2xl flex items-center justify-center transform transition-transform hover:scale-105">
-          <Moon size={40} className="text-white fill-current" />
+    <div className="animate-bounce-slow mb-4">
+       <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
+          <Moon size={40} className="text-primary fill-current" />
        </div>
     </div>
     
-    <div className="text-center space-y-3">
-      <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-        Agencia <span className="text-primary">Moon</span>
-      </h1>
-      <div className="flex justify-center gap-1.5 pt-2">
-         <div className="w-1.5 h-1.5 bg-gray-200 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
-         <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.15s'}}></div>
-         <div className="w-1.5 h-1.5 bg-black rounded-full animate-bounce" style={{animationDelay: '0.3s'}}></div>
-      </div>
+    <h1 className="text-2xl font-bold text-gray-900 tracking-tight animate-fade-in">
+      Agencia <span className="text-primary">Moon</span>
+    </h1>
+    
+    <div className="mt-8 flex space-x-2">
+      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+      <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+      <div className="w-2 h-2 bg-primary/30 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
     </div>
   </div>
 );
@@ -37,8 +36,8 @@ const App: React.FC = () => {
     // Check local storage and simulate initial load time for splash screen
     const initApp = async () => {
       const storedUser = localStorage.getItem('agencia_user');
-      // Force a minimum splash screen time for branding experience
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Reduced splash screen time for better UX
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       if (storedUser) {
         setUser(JSON.parse(storedUser));
@@ -54,9 +53,10 @@ const App: React.FC = () => {
     setUser(newUser);
     localStorage.setItem('agencia_user', JSON.stringify(newUser));
     
+    // Quick transition
     setTimeout(() => {
       setLoading(false);
-    }, 1500);
+    }, 800);
   };
 
   const handleLogout = () => {
