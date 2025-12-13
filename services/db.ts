@@ -1,6 +1,14 @@
 import { User, Emisor, HistorialHoras, Role, SystemMetadata } from '../types';
 import { initializeApp } from 'firebase/app';
 import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  User as FirebaseUser,
+  AuthError
+} from 'firebase/auth';
+import { 
   getFirestore, 
   collection, 
   getDocs, 
@@ -25,7 +33,8 @@ const firebaseConfig = {
 
 // Inicialización Singleton
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+export const auth = getAuth(app); // Exportamos auth para uso en App.tsx
+export const db = getFirestore(app);
 
 // --- CONFIGURACIÓN DE ACCESO ---
 const ADMIN_EMAILS = [
@@ -34,123 +43,138 @@ const ADMIN_EMAILS = [
 ];
 
 export const authService = {
-  login: async (email: string, password?: string): Promise<User | null> => {
+  // Login usando Firebase Auth Real
+  login: async (email: string, password?: string): Promise<User> => {
     try {
-        const normalizedEmail = email.trim().toLowerCase();
-        
-        // Validación básica
-        if (!password) return null;
-        if (password !== 'revalidate_session' && password.length < 4) return null;
-
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('correo', '==', normalizedEmail));
-        const querySnapshot = await getDocs(q);
-
-        if (!querySnapshot.empty) {
-            const userDoc = querySnapshot.docs[0];
-            const userData = userDoc.data();
-            const userId = userDoc.id;
-            
-            // LOGICA DE SEGURIDAD Y RECUPERACIÓN
-            if (password !== 'revalidate_session') {
-                const isAdmin = ADMIN_EMAILS.includes(normalizedEmail);
-                
-                if (isAdmin) {
-                    // *** SOLUCIÓN MAESTRA PARA EL DUEÑO ***
-                    // Si eres Admin y la contraseña no coincide, ASUMIMOS QUE ESTÁS RESETEANDOLA.
-                    // Esto evita que te quedes fuera de tu propio sistema.
-                    if (userData.password !== password) {
-                        await updateDoc(doc(db, 'users', userId), { password: password });
-                        console.log("Contraseña de Admin actualizada automáticamente.");
-                    }
-                } else {
-                    // Para usuarios normales (Reclutadores), la verificación es ESTRICTA.
-                    if (userData.password && userData.password !== password) {
-                        console.warn("Contraseña incorrecta para usuario estándar");
-                        return null;
-                    }
-                }
-
-                // Migración para usuarios viejos sin contraseña
-                if (!userData.password) {
-                    await updateDoc(doc(db, 'users', userId), { password: password });
-                }
-            }
-
-            // Integridad: Forzar rol de admin si está en la lista blanca
-            let currentRole = userData.rol;
-            if (ADMIN_EMAILS.includes(normalizedEmail) && currentRole !== 'admin') {
-                await updateDoc(doc(db, 'users', userId), { rol: 'admin' });
-                currentRole = 'admin';
-            }
-
-            return { 
-                id: userId,
-                nombre: userData.nombre,
-                correo: userData.correo,
-                rol: currentRole
-            } as User;
-        } else {
-            // Si es revalidación y no existe, adios.
-            if (password === 'revalidate_session') return null;
-
-            // Auto-registro para nuevos usuarios
-            const shouldBeAdmin = ADMIN_EMAILS.includes(normalizedEmail);
-            const newRole: Role = shouldBeAdmin ? 'admin' : 'reclutador';
-            
-            const newUserPayload = {
-                nombre: normalizedEmail.split('@')[0],
-                correo: normalizedEmail,
-                password: password, 
-                rol: newRole,
-                fecha_registro: new Date().toISOString()
-            };
-            
-            const docRef = await addDoc(usersRef, newUserPayload);
-            
-            return { 
-                id: docRef.id,
-                nombre: newUserPayload.nombre,
-                correo: newUserPayload.correo,
-                rol: newUserPayload.rol
-            } as User;
-        }
-    } catch (error) {
+      if (!password) throw new Error("Contraseña requerida");
+      
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const fbUser = userCredential.user;
+      
+      // Obtener datos adicionales del perfil en Firestore
+      const userProfile = await authService.getUserProfile(fbUser.uid, fbUser.email || email);
+      return userProfile;
+    } catch (error: any) {
       console.error("[Auth Error]", error);
-      throw new Error("Error de conexión"); 
+      throw error;
     }
   },
-  
-  registerUser: async (nombre: string, correo: string, rol: Role, password?: string): Promise<User> => {
-    try {
-        const normalizedEmail = correo.trim().toLowerCase();
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('correo', '==', normalizedEmail));
-        const snap = await getDocs(q);
-        
-        if (!snap.empty) {
-            throw new Error("El usuario ya existe");
-        }
 
-        const newUserPayload = {
-            nombre,
-            correo: normalizedEmail,
-            rol,
-            password: password || '123456', 
-            fecha_registro: new Date().toISOString()
-        };
-        
-        const docRef = await addDoc(usersRef, newUserPayload);
-        return { 
-            id: docRef.id, 
-            nombre: newUserPayload.nombre, 
-            correo: newUserPayload.correo, 
-            rol: newUserPayload.rol 
-        } as User;
-    } catch (error) {
-        console.error("[Register Error]", error);
-        throw error;
+  // Registro usando Firebase Auth Real
+  register: async (email: string, password?: string, nombre?: string): Promise<User> => {
+    try {
+      if (!password) throw new Error("Contraseña requerida");
+      
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const fbUser = userCredential.user;
+
+      // Crear o actualizar perfil en Firestore
+      const userProfile = await authService.createUserProfile(fbUser.uid, email, nombre || email.split('@')[0]);
+      return userProfile;
+    } catch (error: any) {
+      console.error("[Register Error]", error);
+      throw error;
     }
+  },
+
+  logout: async () => {
+    await signOut(auth);
+  },
+
+  // Obtiene el perfil de Firestore. Si no existe, verifica si es Admin por email.
+  getUserProfile: async (uid: string, email: string): Promise<User> => {
+    const userDocRef = doc(db, 'users', uid);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (userDocSnap.exists()) {
+      const data = userDocSnap.data();
+      // Force admin role if in whitelist
+      if (ADMIN_EMAILS.includes(email.toLowerCase()) && data.rol !== 'admin') {
+         await updateDoc(userDocRef, { rol: 'admin' });
+         data.rol = 'admin';
+      }
+      return { id: uid, ...data } as User;
+    } else {
+      // Si el usuario existe en Auth pero no en Firestore (raro, pero posible)
+      // O si es la primera vez que un Admin entra
+      return await authService.createUserProfile(uid, email, email.split('@')[0]);
+    }
+  },
+
+  createUserProfile: async (uid: string, email: string, nombre: string): Promise<User> => {
+    const normalizedEmail = email.toLowerCase();
+    
+    // Verificar si ya existe un documento con este correo (creado por un Admin previamente)
+    // para enlazar el UID de Auth con el documento existente.
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('correo', '==', normalizedEmail));
+    const querySnapshot = await getDocs(q);
+
+    let role: Role = 'reclutador';
+    if (ADMIN_EMAILS.includes(normalizedEmail)) {
+      role = 'admin';
+    }
+
+    if (!querySnapshot.empty) {
+      // El admin ya había creado una invitación/perfil. Actualizamos el ID del documento
+      // Nota: Firestore no permite cambiar ID de documento fácilmente, así que copiamos y borramos
+      // o simplemente actualizamos los datos si usamos el correo como clave lógica.
+      // Para simplificar, si ya existe por correo, usamos ese documento pero NO cambiamos su ID a UID Auth
+      // Esto significa que Auth UID y Firestore ID pueden diferir. Mantenemos el Auth UID.
+      
+      const existingDoc = querySnapshot.docs[0];
+      // Actualizamos datos faltantes
+      await updateDoc(doc(db, 'users', existingDoc.id), { 
+        auth_uid: uid, // Enlazamos
+        last_login: new Date().toISOString()
+      });
+      
+      return {
+        id: existingDoc.id,
+        nombre: existingDoc.data().nombre,
+        correo: normalizedEmail,
+        rol: existingDoc.data().rol as Role
+      };
+    }
+
+    // Nuevo usuario total
+    const newUser: Omit<User, 'id'> = {
+      nombre,
+      correo: normalizedEmail,
+      rol: role
+    };
+
+    // Usamos el UID de Auth como ID del documento para consistencia futura
+    await setDoc(doc(db, 'users', uid), {
+      ...newUser,
+      fecha_registro: new Date().toISOString()
+    });
+
+    return { id: uid, ...newUser };
+  },
+  
+  // Función para que el ADMIN cree un "hueco" de reclutador. 
+  // No crea usuario en Auth, solo en DB. El usuario debe registrarse después.
+  createRecruiterInvite: async (nombre: string, correo: string): Promise<User> => {
+    const normalizedEmail = correo.trim().toLowerCase();
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('correo', '==', normalizedEmail));
+    const snap = await getDocs(q);
+    
+    if (!snap.empty) {
+      throw new Error("El usuario ya existe");
+    }
+
+    const newUserPayload = {
+      nombre,
+      correo: normalizedEmail,
+      rol: 'reclutador' as Role,
+      fecha_registro: new Date().toISOString(),
+      invited_by_admin: true
+    };
+    
+    const docRef = await addDoc(usersRef, newUserPayload);
+    return { id: docRef.id, ...newUserPayload };
   }
 };
 
@@ -195,6 +219,8 @@ export const dataService = {
     if (currentUser.rol === 'admin') {
       q = query(emisoresRef);
     } else {
+      // Buscar por ID de documento (si coincide con UID) o por campo auth_uid o reclutador_id
+      // Asumimos que reclutador_id guarda el ID de Firestore del usuario
       q = query(emisoresRef, where('reclutador_id', '==', currentUser.id));
     }
 

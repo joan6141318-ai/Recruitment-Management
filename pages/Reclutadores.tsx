@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { User } from '../types';
 import { dataService, authService } from '../services/db';
-import { Plus, Mail, User as UserIcon, Lock } from 'lucide-react';
+import { Plus, Mail, User as UserIcon } from 'lucide-react';
 
 const Reclutadores: React.FC = () => {
   const [recruiters, setRecruiters] = useState<User[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
-  const [newPassword, setNewPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadData();
@@ -21,13 +22,21 @@ const Reclutadores: React.FC = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Registramos con contraseña
-    await authService.registerUser(newName, newEmail, 'reclutador', newPassword);
-    setIsModalOpen(false);
-    setNewName('');
-    setNewEmail('');
-    setNewPassword('');
-    loadData();
+    setLoading(true);
+    setError('');
+    
+    try {
+      // El admin crea el "Cupo" o perfil en BD. El usuario real debe registrarse
+      await authService.createRecruiterInvite(newName, newEmail);
+      setIsModalOpen(false);
+      setNewName('');
+      setNewEmail('');
+      loadData();
+    } catch (err: any) {
+      setError(err.message || 'Error al registrar.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputClass = "w-full bg-white border border-gray-200 pl-10 p-2.5 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm";
@@ -44,7 +53,7 @@ const Reclutadores: React.FC = () => {
           className="bg-primary hover:bg-purple-800 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 shadow-md transition-colors"
         >
           <Plus size={18} />
-          <span>Nuevo Reclutador</span>
+          <span>Invitar Reclutador</span>
         </button>
       </div>
 
@@ -52,7 +61,7 @@ const Reclutadores: React.FC = () => {
         {recruiters.map(rec => (
           <div key={rec.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4 hover:shadow-md transition-shadow">
             <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-primary font-bold text-xl">
-              {rec.nombre.charAt(0)}
+              {rec.nombre.charAt(0).toUpperCase()}
             </div>
             <div className="overflow-hidden">
               <h4 className="font-bold text-gray-900 truncate">{rec.nombre}</h4>
@@ -69,7 +78,9 @@ const Reclutadores: React.FC = () => {
        {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <h3 className="text-xl font-bold mb-4">Registrar Reclutador</h3>
+            <h3 className="text-xl font-bold mb-2">Invitar Reclutador</h3>
+            <p className="text-sm text-gray-500 mb-4">Crea un perfil para que el reclutador pueda registrarse.</p>
+            
             <form onSubmit={handleRegister} className="space-y-4">
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Nombre Completo</label>
@@ -85,17 +96,14 @@ const Reclutadores: React.FC = () => {
                   <input type="email" required className={inputClass} value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="correo@ejemplo.com" />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Contraseña Temporal</label>
-                <div className="relative">
-                  <Lock size={16} className="absolute left-3 top-3.5 text-gray-400" />
-                  <input type="text" required className={inputClass} value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Asignar clave" />
-                </div>
-              </div>
+              
+              {error && <p className="text-red-500 text-sm">{error}</p>}
 
               <div className="flex gap-3 pt-4">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Cancelar</button>
-                <button type="submit" className="flex-1 py-2 bg-primary text-white rounded-lg hover:bg-purple-800 transition-colors shadow-md">Guardar</button>
+                <button type="submit" disabled={loading} className="flex-1 py-2 bg-primary text-white rounded-lg hover:bg-purple-800 transition-colors shadow-md">
+                  {loading ? 'Guardando...' : 'Guardar Perfil'}
+                </button>
               </div>
             </form>
           </div>

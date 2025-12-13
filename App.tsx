@@ -6,8 +6,9 @@ import Dashboard from './pages/Dashboard';
 import Emisores from './pages/Emisores';
 import Reclutadores from './pages/Reclutadores';
 import { User } from './types';
-import { authService } from './services/db'; 
+import { authService, auth } from './services/db'; 
 import { Moon } from 'lucide-react';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const SplashScreen = () => (
   <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
@@ -28,43 +29,36 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const initApp = async () => {
-      const storedUser = localStorage.getItem('agencia_user');
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      if (storedUser) {
+    // Escucha real de Firebase Auth
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
         try {
-          const parsedUser = JSON.parse(storedUser);
-          const freshUser = await authService.login(parsedUser.correo, 'revalidate_session');
-          
-          if (freshUser) {
-            setUser(freshUser);
-            localStorage.setItem('agencia_user', JSON.stringify(freshUser));
-          } else {
-            localStorage.removeItem('agencia_user');
-          }
+          // Si hay usuario en Auth, traemos sus datos de negocio de Firestore
+          const profile = await authService.getUserProfile(firebaseUser.uid, firebaseUser.email || '');
+          setUser(profile);
         } catch (error) {
-          console.log("Modo Offline");
-          setUser(JSON.parse(storedUser));
+          console.error("Error fetching profile", error);
+          setUser(null);
         }
+      } else {
+        setUser(null);
       }
-      setLoading(false);
-    };
-    
-    initApp();
+      // Pequeño delay artificial para que la Splash Screen no parpadee demasiado rápido
+      setTimeout(() => setLoading(false), 800);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const handleLogin = (newUser: User) => {
-    setLoading(true);
+  const handleLoginSuccess = (newUser: User) => {
+    // El estado se actualizará automáticamente gracias a onAuthStateChanged,
+    // pero podemos forzar el estado aquí para feedback inmediato si es necesario.
     setUser(newUser);
-    localStorage.setItem('agencia_user', JSON.stringify(newUser));
-    setTimeout(() => setLoading(false), 800);
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem('agencia_user');
+  const handleLogout = async () => {
+    await authService.logout();
+    // setUser(null) lo maneja el onAuthStateChanged
   };
 
   if (loading) return <SplashScreen />;
@@ -72,7 +66,7 @@ const App: React.FC = () => {
   return (
     <BrowserRouter>
       {!user ? (
-        <Login onLogin={handleLogin} />
+        <Login onLogin={handleLoginSuccess} />
       ) : (
         <Layout user={user} onLogout={handleLogout}>
           <Routes>
