@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from '../types';
-import { LogOut, Users, Radio, LayoutDashboard, Menu, X, Moon } from 'lucide-react';
+import { LogOut, Users, Radio, LayoutDashboard, Menu, X, Moon, RefreshCw, Edit2, Check } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { dataService } from '../services/db';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,8 +13,38 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
+  
+  // Estado para editar nombre
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState(user.nombre);
 
   const isActive = (path: string) => location.pathname === path;
+
+  // Actualizar nombre localmente si cambia el prop
+  useEffect(() => {
+    setTempName(user.nombre);
+  }, [user.nombre]);
+
+  const handleForceUpdate = () => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+          registration.unregister();
+        }
+        window.location.reload();
+      });
+    } else {
+      window.location.reload();
+    }
+  };
+
+  const handleSaveName = async () => {
+    if (tempName.trim() && tempName !== user.nombre) {
+        await dataService.updateUserName(user.id, tempName);
+        user.nombre = tempName; // Actualización optimista
+    }
+    setIsEditingName(false);
+  };
 
   // LOGOTIPO MEJORADO: Title Case
   const Logo = () => (
@@ -86,13 +117,35 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
               )}
           </nav>
 
-          {/* PERFIL PROTAGONISTA */}
-          <div className="mt-auto pt-8 border-t border-gray-100">
-             <div className="mb-6 px-2">
+          {/* PERFIL PROTAGONISTA & OPCIONES */}
+          <div className="mt-auto pt-8 border-t border-gray-100 space-y-4">
+             
+             {/* Sección Nombre con Edición */}
+             <div className="px-2">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{user.rol}</p>
-                <h2 className="text-2xl font-black text-black leading-none tracking-tight break-words capitalize">
-                    {user.nombre.toLowerCase()}
-                </h2>
+                
+                {isEditingName ? (
+                    <div className="flex items-center gap-2">
+                        <input 
+                            autoFocus
+                            value={tempName}
+                            onChange={(e) => setTempName(e.target.value)}
+                            onBlur={handleSaveName}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+                            className="w-full bg-gray-50 border-b-2 border-black text-black font-black text-lg outline-none uppercase"
+                        />
+                        <button onClick={handleSaveName} className="text-green-600"><Check size={20}/></button>
+                    </div>
+                ) : (
+                    <div className="flex items-center justify-between group">
+                        <h2 className="text-2xl font-black text-black leading-none tracking-tight break-words capitalize truncate pr-2">
+                            {tempName.toLowerCase()}
+                        </h2>
+                        <button onClick={() => setIsEditingName(true)} className="text-gray-300 hover:text-black transition-colors opacity-0 group-hover:opacity-100">
+                            <Edit2 size={16} />
+                        </button>
+                    </div>
+                )}
              </div>
              
              <button 
@@ -102,9 +155,18 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
                 <LogOut size={16} className="group-hover:-translate-x-1 transition-transform"/>
                 <span>Cerrar Sesión</span>
              </button>
+
+             {/* BOTÓN HARD REFRESH */}
+             <button 
+                onClick={handleForceUpdate} 
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white rounded-2xl transition-all font-black text-[10px] uppercase tracking-widest"
+             >
+                <RefreshCw size={12} />
+                <span>Actualizar Sistema</span>
+             </button>
              
-             <div className="text-center mt-4">
-               <span className="text-[9px] font-black text-gray-200 uppercase tracking-widest">v1.1 System</span>
+             <div className="text-center mt-2">
+               <span className="text-[9px] font-black text-gray-200 uppercase tracking-widest">v1.2</span>
              </div>
           </div>
       </aside>
