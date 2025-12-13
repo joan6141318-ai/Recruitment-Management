@@ -14,7 +14,6 @@ import {
 } from 'firebase/firestore';
 
 // --- FIREBASE CONFIGURATION ---
-// Credenciales de conexión directa para el cliente web.
 const firebaseConfig = {
   apiKey: "AIzaSyAQKOMqF1JZGTfPQwH3GjAt0hhQOKrk1DY",
   authDomain: "gestor-reclutamiento.firebaseapp.com",
@@ -24,42 +23,40 @@ const firebaseConfig = {
   appId: "1:177005324608:web:7d871a4fb159e669f6b2a5"
 };
 
-// Inicialización controlada de Firebase
+// Inicialización Singleton
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// --- CONFIGURACIÓN DE ACCESO Y SEGURIDAD ---
-// Solo estos correos pueden elevarse a Admin automáticamente
+// --- CONFIGURACIÓN DE ACCESO ---
 const ADMIN_EMAILS = [
   'joan6141318@gmail.com',
   'elianaloor86@gmail.com'
 ];
 
-// --- SERVICES ---
-
 export const authService = {
+  // Login soporta un modo 'revalidate_session' para comprobaciones automáticas de seguridad
   login: async (email: string, password?: string): Promise<User | null> => {
     try {
         const normalizedEmail = email.trim().toLowerCase();
         
-        // Validación local básica
-        if (!password || password.length < 4) return null;
+        // Validación de password solo si no es una revalidación de sesión
+        if (password !== 'revalidate_session') {
+           if (!password || password.length < 4) return null;
+        }
 
         const shouldBeAdmin = ADMIN_EMAILS.includes(normalizedEmail);
-
-        // Consulta segura a Firestore
         const usersRef = collection(db, 'users');
         const q = query(usersRef, where('correo', '==', normalizedEmail));
         
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
-            // Usuario encontrado
+            // Usuario existe
             const userDoc = querySnapshot.docs[0];
             const userData = userDoc.data() as User;
             const userId = userDoc.id;
 
-            // Corrección de integridad: Si debe ser admin, forzar el rol en BD
+            // Integridad: Forzar rol de admin si está en la lista blanca
             if (shouldBeAdmin && userData.rol !== 'admin') {
                 await updateDoc(doc(db, 'users', userId), { rol: 'admin' });
                 userData.rol = 'admin';
@@ -67,7 +64,10 @@ export const authService = {
 
             return { ...userData, id: userId };
         } else {
-            // Registro automático (Fallback seguro)
+            // Si es revalidación de sesión y no existe, devolver null (bloquear acceso)
+            if (password === 'revalidate_session') return null;
+
+            // Auto-registro controlado para nuevos usuarios
             const newRole: Role = shouldBeAdmin ? 'admin' : 'reclutador';
             const newUser: User = {
                 id: '',
@@ -80,8 +80,9 @@ export const authService = {
             return { ...newUser, id: docRef.id };
         }
     } catch (error) {
-      console.error("[Auth Error] Fallo en la conexión con la base de datos:", error);
-      throw new Error("Error de conexión. Verifique su red.");
+      console.error("[Auth Error]", error);
+      // Propagar error para que la UI sepa que hubo fallo de red
+      throw new Error("Error de conexión"); 
     }
   },
   
@@ -126,8 +127,7 @@ export const dataService = {
         return initialData;
       }
     } catch (e) {
-      console.error("[Metadata Error]", e);
-      // Fallback seguro en caso de error de red
+      // Fallback offline seguro
       return { lastUpdated: new Date().toISOString().split('T')[0] };
     }
   },

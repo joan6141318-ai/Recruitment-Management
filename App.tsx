@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Emisores from './pages/Emisores';
 import Reclutadores from './pages/Reclutadores';
 import { User } from './types';
+import { authService } from './services/db'; // Importamos authService para re-validar
 import { Moon } from 'lucide-react';
 
 const SplashScreen = () => (
@@ -33,14 +34,33 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check local storage and simulate initial load time for splash screen
     const initApp = async () => {
       const storedUser = localStorage.getItem('agencia_user');
-      // Reduced splash screen time for better UX
+      
+      // Splash screen delay for UX
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          
+          // SEGURIDAD: Re-validar contra la base de datos para asegurar que el usuario sigue activo y con el rol correcto
+          // Esto evita vulnerabilidades de manipulación de LocalStorage
+          const freshUser = await authService.login(parsedUser.correo, 'revalidate_session');
+          
+          if (freshUser) {
+            setUser(freshUser);
+            localStorage.setItem('agencia_user', JSON.stringify(freshUser));
+          } else {
+            // Si el usuario fue borrado de la BD, cerrar sesión local
+            console.warn("Sesión inválida o usuario eliminado");
+            localStorage.removeItem('agencia_user');
+          }
+        } catch (error) {
+          // En caso de error de red (offline), confiamos temporalmente en el caché local (PWA Behavior)
+          console.log("Modo Offline: Usando credenciales cacheadas");
+          setUser(JSON.parse(storedUser));
+        }
       }
       setLoading(false);
     };
