@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'agencia-moon-v13-final';
+const CACHE_NAME = 'agencia-moon-v14-fix';
 const STATIC_ASSETS = [
   './',
   './index.html',
