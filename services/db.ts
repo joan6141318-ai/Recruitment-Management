@@ -1,28 +1,17 @@
 import { User, Emisor, HistorialHoras, SystemMetadata } from '../types';
-import { 
-  collection, 
-  getDocs, 
-  doc, 
-  setDoc, 
-  updateDoc, 
-  addDoc, 
-  query, 
-  where,
-  getDoc
-} from 'firebase/firestore';
-import { db } from './firebase'; // Importamos la instancia única
+import { db } from './firebase'; // Importamos la instancia única (v8/Compat)
 
 export const dataService = {
   getMetadata: async (): Promise<SystemMetadata> => {
     try {
-      const docRef = doc(db, 'system', 'metadata');
-      const docSnap = await getDoc(docRef);
+      const docRef = db.collection('system').doc('metadata');
+      const docSnap = await docRef.get();
       
-      if (docSnap.exists()) {
+      if (docSnap.exists) {
         return docSnap.data() as SystemMetadata;
       } else {
         const initialData = { lastUpdated: new Date().toISOString().split('T')[0] };
-        await setDoc(docRef, initialData);
+        await docRef.set(initialData);
         return initialData;
       }
     } catch (e) {
@@ -31,14 +20,14 @@ export const dataService = {
   },
 
   updateMetadata: async (newDate: string): Promise<void> => {
-    const docRef = doc(db, 'system', 'metadata');
-    await setDoc(docRef, { lastUpdated: newDate }, { merge: true });
+    const docRef = db.collection('system').doc('metadata');
+    await docRef.set({ lastUpdated: newDate }, { merge: true });
   },
 
   getRecruiters: async (): Promise<User[]> => {
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('rol', '==', 'reclutador'));
-    const querySnapshot = await getDocs(q);
+    const usersRef = db.collection('users');
+    const q = usersRef.where('rol', '==', 'reclutador');
+    const querySnapshot = await q.get();
     
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
@@ -47,17 +36,17 @@ export const dataService = {
   },
 
   getEmisores: async (currentUser: User): Promise<Emisor[]> => {
-    const emisoresRef = collection(db, 'emisores');
+    const emisoresRef = db.collection('emisores');
     let q;
 
     if (currentUser.rol === 'admin') {
-      q = query(emisoresRef);
+      q = emisoresRef;
     } else {
       // Filtramos por el ID del reclutador (que ahora siempre coincide con su UID de Auth)
-      q = query(emisoresRef, where('reclutador_id', '==', currentUser.id));
+      q = emisoresRef.where('reclutador_id', '==', currentUser.id);
     }
 
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await q.get();
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
@@ -72,19 +61,21 @@ export const dataService = {
       fecha_registro: new Date().toISOString(),
     };
     
-    const docRef = await addDoc(collection(db, 'emisores'), newEmisor);
+    const docRef = await db.collection('emisores').add(newEmisor);
+    // @ts-ignore - v8 types might be strict about what is returned
     return { ...newEmisor, id: docRef.id } as Emisor;
   },
 
   updateHours: async (emisorId: string, newHours: number, adminId: string): Promise<void> => {
-    const emisorRef = doc(db, 'emisores', emisorId);
-    const emisorSnap = await getDoc(emisorRef);
+    const emisorRef = db.collection('emisores').doc(emisorId);
+    const emisorSnap = await emisorRef.get();
     let oldHours = 0;
-    if (emisorSnap.exists()) {
-        oldHours = emisorSnap.data().horas_mes || 0;
+    if (emisorSnap.exists) {
+        const data = emisorSnap.data();
+        oldHours = data ? data.horas_mes : 0;
     }
-    await updateDoc(emisorRef, { horas_mes: newHours });
-    await addDoc(collection(db, 'historial'), {
+    await emisorRef.update({ horas_mes: newHours });
+    await db.collection('historial').add({
         emisor_id: emisorId,
         horas_anteriores: oldHours,
         horas_nuevas: newHours,
@@ -94,20 +85,22 @@ export const dataService = {
   },
 
   toggleStatus: async (emisorId: string): Promise<void> => {
-    const emisorRef = doc(db, 'emisores', emisorId);
-    const emisorSnap = await getDoc(emisorRef);
+    const emisorRef = db.collection('emisores').doc(emisorId);
+    const emisorSnap = await emisorRef.get();
     
-    if (emisorSnap.exists()) {
-      const currentStatus = emisorSnap.data().estado;
+    if (emisorSnap.exists) {
+      const data = emisorSnap.data();
+      const currentStatus = data ? data.estado : 'activo';
       const newStatus = currentStatus === 'activo' ? 'pausado' : 'activo';
-      await updateDoc(emisorRef, { estado: newStatus });
+      await emisorRef.update({ estado: newStatus });
     }
   },
 
   getHistory: async (emisorId?: string): Promise<HistorialHoras[]> => {
-    const historyRef = collection(db, 'historial');
-    let q = emisorId ? query(historyRef, where('emisor_id', '==', emisorId)) : query(historyRef);
-    const querySnapshot = await getDocs(q);
+    const historyRef = db.collection('historial');
+    let q = emisorId ? historyRef.where('emisor_id', '==', emisorId) : historyRef;
+    // @ts-ignore - Typescript check for query vs collection usage
+    const querySnapshot = await q.get();
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()

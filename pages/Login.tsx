@@ -34,36 +34,22 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     } catch (err: any) {
       console.error("Firebase Auth Error:", err);
       
-      // Diagnóstico preciso de errores de configuración
-      let errorMsg = 'Error desconocido.';
+      let errorMsg = 'Ocurrió un error inesperado.';
       const errorCode = err.code || 'unknown';
 
-      switch (errorCode) {
-        case 'auth/invalid-api-key':
-          errorMsg = 'CRÍTICO: La API Key en services/firebase.ts es inválida o no existe.';
-          break;
-        case 'auth/operation-not-allowed':
-          errorMsg = 'CONFIGURACIÓN: Debes habilitar "Correo/Contraseña" en la consola de Firebase > Authentication.';
-          break;
-        case 'auth/email-already-in-use':
-          errorMsg = 'Este correo ya está registrado. Intenta iniciar sesión.';
-          break;
-        case 'auth/invalid-credential':
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-          errorMsg = 'Correo o contraseña incorrectos.';
-          break;
-        case 'auth/weak-password':
-          errorMsg = 'La contraseña es muy débil (mínimo 6 caracteres).';
-          break;
-        case 'permission-denied':
-          errorMsg = 'PERMISOS: Las reglas de Firestore bloquean la escritura. Revisa las reglas de seguridad.';
-          break;
-        case 'auth/network-request-failed':
-          errorMsg = 'Error de conexión. Verifica tu internet o la configuración de CORS.';
-          break;
-        default:
-          errorMsg = err.message || 'Error de conexión o datos inválidos.';
+      // Mensajes de error amigables y diagnóstico de configuración
+      if (errorCode === 'auth/invalid-api-key') {
+        errorMsg = 'FALTAN CREDENCIALES: Configura tu API Key en "services/firebase.ts".';
+      } else if (errorCode === 'auth/operation-not-allowed') {
+        errorMsg = 'CONFIGURACIÓN: Habilita "Email/Password" en Firebase Console -> Authentication.';
+      } else if (errorCode === 'auth/email-already-in-use') {
+        errorMsg = 'Este correo ya está registrado. Por favor inicia sesión.';
+      } else if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password' || errorCode === 'auth/invalid-credential') {
+        errorMsg = 'Credenciales incorrectas.';
+      } else if (errorCode === 'auth/weak-password') {
+        errorMsg = 'La contraseña debe tener al menos 6 caracteres.';
+      } else if (err.message && err.message.includes('Reglas de Firestore')) {
+        errorMsg = 'PERMISOS: La base de datos no permite escritura. Revisa las reglas de seguridad.';
       }
 
       setError({ message: errorMsg, code: errorCode });
@@ -74,7 +60,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6 animate-fade-in">
       <div className="w-full max-w-sm">
-        {/* Header Minimalista */}
         <div className="mb-10 text-center md:text-left">
           <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center mb-6 shadow-glow mx-auto md:mx-0">
              <Moon size={24} className="text-white fill-current" />
@@ -83,7 +68,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             {isRegistering ? 'Crear Cuenta' : 'Bienvenido'}
           </h1>
           <p className="text-gray-400 text-lg">
-            {isRegistering ? 'Únete al equipo Moon.' : 'Inicia sesión en Moon.'}
+            {isRegistering ? 'Únete al equipo Moon.' : 'Gestión de reclutamiento.'}
           </p>
         </div>
 
@@ -143,7 +128,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 <AlertTriangle className="text-danger shrink-0 mt-0.5" size={18} />
                 <div>
                    <p className="text-danger text-sm font-bold">{error.message}</p>
-                   <p className="text-red-400 text-xs mt-1 font-mono">{error.code}</p>
+                   {error.code && error.code !== 'unknown' && (
+                     <p className="text-red-400 text-xs mt-1 font-mono break-all">{error.code}</p>
+                   )}
                 </div>
               </div>
             </div>

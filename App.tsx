@@ -9,7 +9,6 @@ import { User } from './types';
 import { authService } from './services/auth'; 
 import { auth } from './services/firebase';
 import { Moon } from 'lucide-react';
-import { onAuthStateChanged } from 'firebase/auth';
 
 const SplashScreen = () => (
   <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
@@ -30,23 +29,20 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Escucha de estado de autenticación robusta
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    // Listener de sesión de Firebase (Compat/v8 syntax)
+    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
         try {
           const profile = await authService.getUserProfile(firebaseUser.uid, firebaseUser.email || '');
           setUser(profile);
         } catch (error) {
-          console.error("Error crítico obteniendo perfil:", error);
-          // No desloguear inmediatamente para permitir depuración visual si falla Firestore
+          console.error("Error crítico recuperando perfil:", error);
           setUser(null);
         }
       } else {
         setUser(null);
       }
-      
-      // Delay mínimo para suavizar la transición visual
-      setTimeout(() => setLoading(false), 800);
+      setLoading(false);
     });
 
     return () => unsubscribe();

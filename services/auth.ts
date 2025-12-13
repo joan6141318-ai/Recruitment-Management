@@ -1,16 +1,3 @@
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  collection, 
-  query, 
-  where, 
-  getDocs,
-  deleteDoc,
-  addDoc
-} from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { User, Role } from '../types';
 
@@ -26,12 +13,16 @@ export const authService = {
     if (!password) throw new Error("Contraseña requerida");
     
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // 1. Autenticar con Firebase Auth (v8)
+      const userCredential = await auth.signInWithEmailAndPassword(email, password);
       const fbUser = userCredential.user;
       
+      if (!fbUser) throw new Error("Error obteniendo usuario");
+
+      // 2. Obtener datos del perfil de Firestore
       return await authService.getUserProfile(fbUser.uid, fbUser.email || email);
     } catch (error: any) {
-      console.error("[Auth Error]", error);
+      console.error("[Auth Error]", error.code, error.message);
       throw error;
     }
   },
@@ -41,36 +32,51 @@ export const authService = {
     if (!password) throw new Error("Contraseña requerida");
     
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // 1. Crear usuario en Firebase Auth (v8)
+      const userCredential = await auth.createUserWithEmailAndPassword(email, password);
       const fbUser = userCredential.user;
 
+      if (!fbUser) throw new Error("Error creando usuario");
+
+      // 2. Actualizar Display Name en Auth
+      if (nombre) {
+        await fbUser.updateProfile({ displayName: nombre });
+      }
+
+      // 3. Crear perfil en Firestore
       return await authService.createUserProfile(fbUser.uid, email, nombre || email.split('@')[0]);
     } catch (error: any) {
-      console.error("[Register Error]", error);
+      console.error("[Register Error]", error.code, error.message);
       throw error;
     }
   },
 
   logout: async () => {
-    await signOut(auth);
+    await auth.signOut();
   },
 
   // Obtener Perfil
   getUserProfile: async (uid: string, email: string): Promise<User> => {
-    const userDocRef = doc(db, 'users', uid);
-    const userDocSnap = await getDoc(userDocRef);
+    try {
+      // v8 Firestore syntax
+      const userDocRef = db.collection('users').doc(uid);
+      const userDocSnap = await userDocRef.get();
 
-    if (userDocSnap.exists()) {
-      const data = userDocSnap.data();
-      // Verificación de seguridad de rol Admin
-      if (ADMIN_EMAILS.includes(email.toLowerCase()) && data.rol !== 'admin') {
-         await updateDoc(userDocRef, { rol: 'admin' });
-         data.rol = 'admin';
+      if (userDocSnap.exists) {
+        const data = userDocSnap.data() as User; // Cast for v8 data()
+        // Verificación de seguridad de rol Admin
+        if (ADMIN_EMAILS.includes(email.toLowerCase()) && data.rol !== 'admin') {
+           await userDocRef.update({ rol: 'admin' });
+           data.rol = 'admin';
+        }
+        return { id: uid, ...data } as User;
+      } else {
+        // Recuperación automática: si el usuario está en Auth pero no en DB
+        return await authService.createUserProfile(uid, email, email.split('@')[0]);
       }
-      return { id: uid, ...data } as User;
-    } else {
-      // Recuperación automática si el documento no existe pero el Auth sí
-      return await authService.createUserProfile(uid, email, email.split('@')[0]);
+    } catch (error) {
+      console.error("Error obteniendo perfil:", error);
+      throw error;
     }
   },
 
@@ -78,46 +84,50 @@ export const authService = {
   createUserProfile: async (uid: string, email: string, nombre: string): Promise<User> => {
     const normalizedEmail = email.toLowerCase();
     
-    // Verificar invitación previa
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('correo', '==', normalizedEmail));
-    const querySnapshot = await getDocs(q);
-
+    // Configuración inicial del usuario
     let role: Role = 'reclutador';
     if (ADMIN_EMAILS.includes(normalizedEmail)) {
       role = 'admin';
     }
 
-    let finalUserData: any = {
+    const userData = {
       nombre,
       correo: normalizedEmail,
       rol: role,
       fecha_registro: new Date().toISOString()
     };
 
-    // Procesar invitación si existe
-    if (!querySnapshot.empty) {
-      const existingDoc = querySnapshot.docs[0];
-      const existingData = existingDoc.data();
-      
-      finalUserData = { ...finalUserData, ...existingData, rol: role === 'admin' ? 'admin' : existingData.rol };
-      
-      // Eliminar el documento temporal de invitación
-      await deleteDoc(doc(db, 'users', existingDoc.id));
+    // Verificar si existía una invitación previa
+    try {
+      const usersRef = db.collection('users');
+      const q = usersRef.where('correo', '==', normalizedEmail);
+      const querySnapshot = await q.get();
+
+      if (!querySnapshot.empty) {
+        // Si había invitación, la borramos y usamos sus datos si es necesario
+        const existingDoc = querySnapshot.docs[0];
+        await existingDoc.ref.delete();
+      }
+
+      // Guardar el documento definitivo en la colección 'users' con el ID del usuario
+      await db.collection('users').doc(uid).set(userData);
+
+      return { id: uid, ...userData } as User;
+    } catch (error: any) {
+      // Manejo específico para permisos de Firestore
+      if (error.code === 'permission-denied') {
+        throw new Error('Error de permisos: Revisa las Reglas de Firestore en la consola.');
+      }
+      throw error;
     }
-
-    // Guardar documento definitivo con ID igual al UID de Auth
-    await setDoc(doc(db, 'users', uid), finalUserData);
-
-    return { id: uid, ...finalUserData };
   },
   
   // Crear invitación (Solo Admin)
   createRecruiterInvite: async (nombre: string, correo: string): Promise<User> => {
     const normalizedEmail = correo.trim().toLowerCase();
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('correo', '==', normalizedEmail));
-    const snap = await getDocs(q);
+    const usersRef = db.collection('users');
+    const q = usersRef.where('correo', '==', normalizedEmail);
+    const snap = await q.get();
     
     if (!snap.empty) {
       throw new Error("El usuario ya existe");
@@ -131,7 +141,7 @@ export const authService = {
       invited_by_admin: true
     };
     
-    const docRef = await addDoc(usersRef, newUserPayload);
-    return { id: docRef.id, ...newUserPayload };
+    const docRef = await usersRef.add(newUserPayload);
+    return { id: docRef.id, ...newUserPayload } as User;
   }
 };
