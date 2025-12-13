@@ -1,4 +1,5 @@
-const CACHE_NAME = 'agencia-moon-v7'; // Incrementado
+
+const CACHE_NAME = 'agencia-moon-v13-final';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -21,6 +22,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
+            console.log('♻️ Limpiando caché antigua:', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -32,26 +34,39 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // SEGURIDAD Y DATOS:
-  // Nunca cachear peticiones a Firebase o Firestore.
+  // SEGURIDAD: Nunca cachear Firebase/API
   if (url.pathname.includes('firestore') || url.hostname.includes('firebase') || url.hostname.includes('googleapis')) {
     return;
   }
 
-  // UI Y ASSETS (PWA):
+  // HTML: Network First
+  if (event.request.headers.get('accept').includes('text/html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          return caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, response.clone());
+            return response;
+          });
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // ASSETS: Stale-While-Revalidate
   event.respondWith(
-    caches.match(event.request)
-      .then((cachedResponse) => {
-        const fetchPromise = fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        if (networkResponse && (networkResponse.status === 200 || networkResponse.type === 'opaque')) {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
+                cache.put(event.request, responseToCache);
             });
-          }
-          return networkResponse;
-        });
-        return cachedResponse || fetchPromise;
-      })
+        }
+        return networkResponse;
+      });
+      return cachedResponse || fetchPromise;
+    })
   );
 });

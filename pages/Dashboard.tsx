@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
-import { Activity, Users, Clock, Target, TrendingUp, AlertTriangle, CheckCircle2, Calendar, MoreHorizontal, Info } from 'lucide-react';
+import { Activity, Users, Clock, Target, TrendingUp, AlertTriangle, CheckCircle2, Calendar, MoreHorizontal, Info, User as UserIcon } from 'lucide-react';
 
 interface DashboardProps {
   user: User;
@@ -146,7 +146,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             title="Ingresos Mes" 
             value={recruitmentCount} 
             subtext={`${Math.round(recruitmentPercent)}% de la meta (${GOAL_RECRUITMENT})`}
-            icon={User} 
+            icon={UserIcon} 
             colorClass="bg-purple-600"
         />
         <KPICard 
@@ -337,6 +337,3 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 };
 
 export default Dashboard;
-
-// Dummy icon import fix
-function User(props: any) { return <Users {...props} /> }
