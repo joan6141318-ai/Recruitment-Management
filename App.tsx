@@ -9,21 +9,21 @@ import { User } from './types';
 import { Moon } from 'lucide-react';
 
 const SplashScreen = () => (
-  <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
-    <div className="animate-bounce-slow mb-4">
-       <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
-          <Moon size={40} className="text-primary fill-current" />
+  <div className="fixed inset-0 bg-primary z-50 flex flex-col items-center justify-center text-white">
+    <div className="animate-bounce-slow mb-6">
+       <div className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg border border-white/10">
+          <Moon size={48} className="text-white fill-current" />
        </div>
     </div>
     
-    <h1 className="text-2xl font-bold text-gray-900 tracking-tight animate-fade-in">
-      Agencia <span className="text-primary">Moon</span>
+    <h1 className="text-3xl font-bold tracking-tight animate-fade-in drop-shadow-sm">
+      Agencia <span className="text-white/90">Moon</span>
     </h1>
     
-    <div className="mt-8 flex space-x-2">
-      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
-      <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-      <div className="w-2 h-2 bg-primary/30 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+    <div className="mt-10 flex space-x-2">
+      <div className="w-2.5 h-2.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+      <div className="w-2.5 h-2.5 bg-white/70 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+      <div className="w-2.5 h-2.5 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
     </div>
   </div>
 );
@@ -37,7 +37,7 @@ const App: React.FC = () => {
     const initApp = async () => {
       const storedUser = localStorage.getItem('agencia_user');
       // Reduced splash screen time for better UX
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       if (storedUser) {
         setUser(JSON.parse(storedUser));
