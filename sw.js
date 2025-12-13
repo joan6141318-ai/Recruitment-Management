@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'agencia-moon-v11-force-vercel'; // VERSIÓN NUEVA
+const CACHE_NAME = 'agencia-moon-v12-nuclear'; // VERSIÓN CRÍTICA
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -9,7 +9,7 @@ const STATIC_ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting(); // Forzar activación inmediata
+  self.skipWaiting(); // Activar inmediatamente sin esperar
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(STATIC_ASSETS))
@@ -21,25 +21,26 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
+          // Borrar TODO lo que no sea la versión actual
           if (cacheName !== CACHE_NAME) {
-            console.log('Limpiando caché antigua:', cacheName);
+            console.log('🔥 Destruyendo caché viejo:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => self.clients.claim()) // Tomar control de inmediato
+    }).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // No cachear llamadas a API/Firestore
+  // Ignorar Firebase/API
   if (url.pathname.includes('firestore') || url.hostname.includes('firebase') || url.hostname.includes('googleapis')) {
     return;
   }
 
-  // Estrategia: Network First para HTML (asegurar actualización), Cache First para assets
+  // Network First para HTML (Siempre busca versión nueva)
   if (event.request.headers.get('accept').includes('text/html')) {
     event.respondWith(
       fetch(event.request)
@@ -54,19 +55,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Stale-While-Revalidate para assets (Carga rápido, actualiza en fondo)
   event.respondWith(
-    caches.match(event.request)
-      .then((cachedResponse) => {
-        const fetchPromise = fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-            const responseToCache = networkResponse.clone();
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
+                cache.put(event.request, networkResponse.clone());
             });
-          }
-          return networkResponse;
-        });
-        return cachedResponse || fetchPromise;
-      })
+        }
+        return networkResponse;
+      });
+      return cachedResponse || fetchPromise;
+    })
   );
 });

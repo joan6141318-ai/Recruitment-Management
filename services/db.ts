@@ -24,6 +24,11 @@ export const dataService = {
     await docRef.set({ lastUpdated: newDate }, { merge: true });
   },
 
+  // NUEVA FUNCIÓN PARA CORREGIR NOMBRE
+  updateUserName: async (userId: string, newName: string): Promise<void> => {
+    await db.collection('users').doc(userId).update({ nombre: newName });
+  },
+
   getRecruiters: async (): Promise<User[]> => {
     const usersRef = db.collection('users');
     const q = usersRef.where('rol', '==', 'reclutador');
