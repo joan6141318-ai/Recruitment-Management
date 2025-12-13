@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
-import { Search, Plus, Filter, Edit2, PlayCircle, PauseCircle, Clock, Eye, Calendar, Globe, User as UserIcon, Activity, Award } from 'lucide-react';
+import { Search, Plus, Filter, Edit2, PlayCircle, PauseCircle, Clock, Eye, Calendar, Globe, User as UserIcon, Activity, Zap } from 'lucide-react';
 
 interface EmisoresProps {
   user: User;
@@ -26,11 +26,8 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   const [newEmisorCountry, setNewEmisorCountry] = useState('');
   const [newEmisorMonth, setNewEmisorMonth] = useState(''); // YYYY-MM
   const [newEmisorRecruiterId, setNewEmisorRecruiterId] = useState(user.id);
-  
-  // Bug fix: use string | number to handle empty input correctly
   const [editHours, setEditHours] = useState<string | number>('');
 
-  // Load Recruiters for Admin dropdown
   const [recruiters, setRecruiters] = useState<User[]>([]);
 
   useEffect(() => {
@@ -72,7 +69,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       reclutador_id: newEmisorRecruiterId
     }, user);
     
-    // Reset and reload
     setIsAddModalOpen(false);
     setNewEmisorName('');
     setNewEmisorBigo('');
@@ -106,40 +102,39 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
     setIsDetailsModalOpen(true);
   };
 
-  const inputClass = "w-full bg-white border border-gray-200 p-2.5 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm";
+  const inputClass = "w-full bg-white border border-gray-200 p-3 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all shadow-sm";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-slide-up">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Emisores</h2>
-          <p className="text-gray-500 text-sm">Gestiona el talento de la agencia</p>
+          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Gestión de Emisores</h2>
         </div>
         <button 
           onClick={() => setIsAddModalOpen(true)}
-          className="bg-primary hover:bg-purple-800 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 shadow-md transition-colors"
+          className="bg-black hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl flex items-center justify-center space-x-2 shadow-lg shadow-black/10 transition-all active:scale-95"
         >
           <Plus size={18} />
-          <span>Registrar Emisor</span>
+          <span className="font-medium">Nuevo Emisor</span>
         </button>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+      <div className="flex flex-col sm:flex-row gap-3 bg-white p-2 rounded-2xl shadow-card border border-gray-100">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           <input 
             type="text" 
-            placeholder="Buscar por nombre o BIGO ID..." 
-            className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
+            placeholder="Buscar..." 
+            className="w-full pl-11 pr-4 py-2.5 bg-transparent rounded-xl focus:outline-none focus:bg-gray-50 transition-colors"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="relative">
+        <div className="relative border-t sm:border-t-0 sm:border-l border-gray-100">
           <select 
-            className="w-full sm:w-40 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none transition-shadow"
+            className="w-full sm:w-40 pl-4 pr-10 py-2.5 bg-transparent rounded-xl focus:outline-none focus:bg-gray-50 appearance-none cursor-pointer"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
           >
@@ -147,71 +142,66 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
             <option value="activo">Activos</option>
             <option value="pausado">Pausados</option>
           </select>
-          <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+          <Filter className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
         </div>
       </div>
 
       {/* List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {loading ? (
-           <p className="text-center text-gray-400 col-span-full py-10">Cargando datos...</p>
+           <p className="text-center text-gray-400 col-span-full py-10">Cargando...</p>
         ) : filtered.length === 0 ? (
-           <div className="col-span-full text-center py-10 bg-white rounded-xl border border-dashed border-gray-300">
-             <p className="text-gray-500">No se encontraron emisores</p>
+           <div className="col-span-full text-center py-16 bg-white rounded-3xl border border-dashed border-gray-200">
+             <p className="text-gray-400 font-medium">No se encontraron resultados</p>
            </div>
         ) : (
           filtered.map(emisor => (
-            <div key={emisor.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow relative group">
-               <button 
-                  onClick={() => openDetails(emisor)}
-                  className="absolute top-4 right-4 text-gray-300 group-hover:text-primary transition-colors"
-               >
-                 <Eye size={20} />
-               </button>
-              <div className="p-5">
-                <div className="flex justify-between items-start mb-4 pr-6">
-                  <div>
-                    <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-gray-900 text-lg">{emisor.nombre}</h3>
-                        {/* PRODUCTIVE BADGE */}
-                        {emisor.horas_mes >= 20 && (
-                            <span title="Emisor Productivo (+20h)" className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider flex items-center">
-                                <Award size={10} className="mr-1" /> Productivo
-                            </span>
-                        )}
-                    </div>
-                    <span className="text-xs font-mono bg-gray-50 text-gray-500 px-2 py-1 rounded border border-gray-100">ID: {emisor.bigo_id}</span>
-                  </div>
+            <div key={emisor.id} className="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group">
+               <div className="p-5">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-bold text-gray-900 text-lg leading-tight">{emisor.nombre}</h3>
+                  <button 
+                     onClick={() => openDetails(emisor)}
+                     className="text-gray-300 hover:text-black transition-colors"
+                  >
+                    <Eye size={20} />
+                  </button>
                 </div>
                 
-                <div className="space-y-2 text-sm text-gray-600 mb-4">
-                   <div className="flex items-center space-x-2">
-                       <span className={`w-2 h-2 rounded-full ${emisor.estado === 'activo' ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                       <span className="capitalize">{emisor.estado}</span>
-                   </div>
-                  <div className="flex justify-between">
-                    <span>Horas Mes:</span>
-                    <span className="font-bold text-secondary text-base">{emisor.horas_mes} hrs</span>
-                  </div>
+                <div className="flex items-center gap-2 mb-4">
+                     <span className="text-xs font-mono bg-gray-50 text-gray-500 px-2 py-0.5 rounded-md border border-gray-100">ID: {emisor.bigo_id}</span>
+                     {emisor.horas_mes >= 20 && (
+                        <span className="px-1.5 py-0.5 rounded-md bg-green-50 text-green-700 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                            <Zap size={10} fill="currentColor" /> Pro
+                        </span>
+                    )}
+                </div>
+                
+                <div className="flex items-end justify-between mt-4">
+                    <div>
+                        <p className="text-xs text-gray-400 font-medium uppercase">Horas Mes</p>
+                        <p className="text-2xl font-bold text-black">{emisor.horas_mes}</p>
+                    </div>
+                    <div className={`w-2 h-2 rounded-full mb-2 ${emisor.estado === 'activo' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-400'}`}></div>
                 </div>
 
                 {user.rol === 'admin' && (
-                  <div className="flex gap-2 pt-4 border-t border-gray-100">
+                  <div className="flex gap-2 pt-4 mt-4 border-t border-gray-50">
                     <button 
                       onClick={() => openEdit(emisor)}
-                      className="flex-1 bg-white border border-primary text-primary hover:bg-primary hover:text-white py-2 rounded-lg text-sm font-medium transition-colors flex justify-center items-center gap-2"
+                      className="flex-1 bg-black text-white py-2 rounded-lg text-sm font-medium transition-transform active:scale-95 flex justify-center items-center gap-2"
                     >
-                      <Edit2 size={14} /> Horas
+                      <Edit2 size={14} /> Editar
                     </button>
                     <button 
                       onClick={() => toggleStatus(emisor)}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors flex justify-center items-center gap-2 border ${
+                      className={`w-10 flex items-center justify-center rounded-lg transition-colors border ${
                         emisor.estado === 'activo' 
-                          ? 'border-red-200 text-red-600 hover:bg-red-50' 
-                          : 'border-green-200 text-green-600 hover:bg-green-50'
+                          ? 'border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50' 
+                          : 'border-green-200 text-green-600 bg-green-50'
                       }`}
                     >
-                      {emisor.estado === 'activo' ? <PauseCircle size={16} /> : <PlayCircle size={16} />}
+                      {emisor.estado === 'activo' ? <PauseCircle size={18} /> : <PlayCircle size={18} />}
                     </button>
                   </div>
                 )}
@@ -223,49 +213,52 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
       {/* Add Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <h3 className="text-xl font-bold mb-4">Registrar Nuevo Emisor</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl animate-scale-in">
+            <h3 className="text-xl font-bold mb-6 text-gray-900">Nuevo Emisor</h3>
             <form onSubmit={handleAdd} className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Nombre</label>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Nombre</label>
                 <input required className={inputClass} value={newEmisorName} onChange={e => setNewEmisorName(e.target.value)} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm text-gray-600 mb-1">BIGO ID</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">BIGO ID</label>
                     <input required className={inputClass} value={newEmisorBigo} onChange={e => setNewEmisorBigo(e.target.value)} />
                 </div>
                 <div>
-                    <label className="block text-sm text-gray-600 mb-1">Mes de Entrada</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ingreso</label>
                     <input required type="month" className={inputClass} value={newEmisorMonth} onChange={e => setNewEmisorMonth(e.target.value)} />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm text-gray-600 mb-1">País</label>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">País</label>
                 <input required className={inputClass} value={newEmisorCountry} onChange={e => setNewEmisorCountry(e.target.value)} />
               </div>
               
               {user.rol === 'admin' && (
                 <div>
-                   <label className="block text-sm text-gray-600 mb-1">Asignar a Reclutador</label>
-                   <select 
-                    className={inputClass} 
-                    value={newEmisorRecruiterId} 
-                    onChange={e => setNewEmisorRecruiterId(e.target.value)}
-                   >
-                     <option value={user.id}>Yo (Admin)</option>
-                     {recruiters.map(r => (
-                       <option key={r.id} value={r.id}>{r.nombre}</option>
-                     ))}
-                   </select>
+                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Reclutador</label>
+                   <div className="relative">
+                       <select 
+                        className={`${inputClass} appearance-none`}
+                        value={newEmisorRecruiterId} 
+                        onChange={e => setNewEmisorRecruiterId(e.target.value)}
+                       >
+                         <option value={user.id}>Asignar a mí</option>
+                         {recruiters.map(r => (
+                           <option key={r.id} value={r.id}>{r.nombre}</option>
+                         ))}
+                       </select>
+                       <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">▼</div>
+                   </div>
                 </div>
               )}
 
-              <div className="flex gap-3 pt-4">
-                <button type="button" onClick={() => setIsAddModalOpen(false)} className="flex-1 py-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">Cancelar</button>
-                <button type="submit" className="flex-1 py-2 bg-primary text-white rounded-lg hover:bg-purple-800 transition-colors shadow-md">Registrar</button>
+              <div className="flex gap-3 pt-6">
+                <button type="button" onClick={() => setIsAddModalOpen(false)} className="flex-1 py-3 text-gray-500 hover:text-black font-medium transition-colors">Cancelar</button>
+                <button type="submit" className="flex-1 py-3 bg-black text-white rounded-xl font-bold shadow-lg shadow-black/20 hover:bg-gray-800 transition-all">Guardar</button>
               </div>
             </form>
           </div>
@@ -274,30 +267,30 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
       {/* Edit Hours Modal */}
       {isEditModalOpen && selectedEmisor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">
-            <h3 className="text-xl font-bold mb-2">Editar Horas</h3>
-            <p className="text-sm text-gray-500 mb-4">{selectedEmisor.nombre} ({selectedEmisor.bigo_id})</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl animate-scale-in">
+            <h3 className="text-xl font-bold mb-1">Actualizar Horas</h3>
+            <p className="text-sm text-gray-400 mb-6 font-medium">{selectedEmisor.nombre}</p>
             
-            <form onSubmit={handleEditHours} className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Horas Totales del Mes</label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  <input 
+            <form onSubmit={handleEditHours} className="space-y-6">
+              <div className="relative">
+                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Clock size={20} className="text-accent" />
+                 </div>
+                 <input 
                     type="number" 
                     step="0.1"
                     required 
-                    className="w-full pl-10 border border-gray-200 bg-white p-2.5 rounded-lg text-lg font-bold text-gray-900 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all shadow-sm" 
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-accent rounded-2xl text-3xl font-bold text-gray-900 outline-none transition-all text-center" 
                     value={editHours} 
                     onChange={e => setEditHours(e.target.value)} 
+                    autoFocus
                   />
-                </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
-                <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 py-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">Cancelar</button>
-                <button type="submit" className="flex-1 py-2 bg-secondary text-white rounded-lg hover:bg-gray-800 transition-colors shadow-md">Actualizar</button>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 py-3 text-gray-500 hover:text-black font-medium transition-colors">Cancelar</button>
+                <button type="submit" className="flex-1 py-3 bg-accent text-white rounded-xl font-bold shadow-lg shadow-orange-500/20 hover:bg-orange-600 transition-all">Confirmar</button>
               </div>
             </form>
           </div>
@@ -306,74 +299,57 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
       {/* Details Modal */}
       {isDetailsModalOpen && selectedEmisor && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-                <div className="bg-primary/5 p-6 flex justify-between items-start border-b border-gray-100">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-fade-in">
+            <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-in">
+                <div className="bg-black p-8 flex justify-between items-start">
                     <div>
-                        <h3 className="text-2xl font-bold text-primary">{selectedEmisor.nombre}</h3>
-                        <p className="text-gray-600 font-mono">ID: {selectedEmisor.bigo_id}</p>
+                        <h3 className="text-2xl font-bold text-white mb-1">{selectedEmisor.nombre}</h3>
+                        <p className="text-gray-400 font-mono text-sm tracking-wider">ID: {selectedEmisor.bigo_id}</p>
                     </div>
-                     <button onClick={() => setIsDetailsModalOpen(false)} className="text-gray-400 hover:text-gray-600 bg-white border border-gray-200 rounded-full p-1 shadow-sm">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    <button onClick={() => setIsDetailsModalOpen(false)} className="text-white/50 hover:text-white transition-colors bg-white/10 rounded-full p-2">
+                        <Activity size={20} />
                     </button>
                 </div>
                 
-                <div className="p-6 space-y-4">
+                <div className="p-8 space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                         <div className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
-                             <div className="flex items-center text-gray-500 mb-1 text-xs uppercase tracking-wide">
-                                 <Clock size={12} className="mr-1" /> Horas Mes
-                             </div>
-                             <p className="text-xl font-bold text-secondary">{selectedEmisor.horas_mes} hrs</p>
+                         <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-center">
+                             <p className="text-xs font-bold text-gray-400 uppercase mb-1">Total Horas</p>
+                             <p className="text-3xl font-bold text-black">{selectedEmisor.horas_mes}</p>
                          </div>
-                         <div className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
-                             <div className="flex items-center text-gray-500 mb-1 text-xs uppercase tracking-wide">
-                                 <Activity size={12} className="mr-1" /> Estado
-                             </div>
-                             <span className={`px-2 py-0.5 rounded text-sm font-semibold ${selectedEmisor.estado === 'activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                         <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-center flex flex-col items-center justify-center">
+                             <p className="text-xs font-bold text-gray-400 uppercase mb-2">Estado</p>
+                             <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${selectedEmisor.estado === 'activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                 {selectedEmisor.estado}
                              </span>
                          </div>
                     </div>
 
-                    <div className="space-y-3 pt-2">
-                        <div className="flex items-center justify-between border-b border-gray-50 pb-2">
-                            <div className="flex items-center text-gray-600">
-                                <Globe size={18} className="mr-3 text-gray-400" />
-                                <span>País</span>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors">
+                            <div className="flex items-center text-gray-500 gap-3">
+                                <Globe size={20} className="text-black" />
+                                <span className="font-medium">País</span>
                             </div>
-                            <span className="font-medium">{selectedEmisor.pais}</span>
+                            <span className="font-semibold text-gray-900">{selectedEmisor.pais}</span>
                         </div>
-                        <div className="flex items-center justify-between border-b border-gray-50 pb-2">
-                             <div className="flex items-center text-gray-600">
-                                <Calendar size={18} className="mr-3 text-gray-400" />
-                                <span>Mes de Entrada</span>
+                        <div className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors">
+                             <div className="flex items-center text-gray-500 gap-3">
+                                <Calendar size={20} className="text-primary" />
+                                <span className="font-medium">Ingreso</span>
                             </div>
-                            <span className="font-medium">{selectedEmisor.mes_entrada || 'N/A'}</span>
+                            <span className="font-semibold text-gray-900">{selectedEmisor.mes_entrada || 'N/A'}</span>
                         </div>
                         {user.rol === 'admin' && (
-                             <div className="flex items-center justify-between border-b border-gray-50 pb-2">
-                                <div className="flex items-center text-gray-600">
-                                    <UserIcon size={18} className="mr-3 text-gray-400" />
-                                    <span>Reclutador ID</span>
+                             <div className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors">
+                                <div className="flex items-center text-gray-500 gap-3">
+                                    <UserIcon size={20} className="text-accent" />
+                                    <span className="font-medium">Reclutador</span>
                                 </div>
-                                <span className="font-medium text-sm text-gray-500">{selectedEmisor.reclutador_id}</span>
+                                <span className="font-semibold text-gray-900 text-xs font-mono bg-gray-100 px-2 py-1 rounded">{selectedEmisor.reclutador_id}</span>
                             </div>
                         )}
-                         <div className="flex items-center justify-between pb-2">
-                             <div className="flex items-center text-gray-600">
-                                <Calendar size={18} className="mr-3 text-gray-400" />
-                                <span>Registrado</span>
-                            </div>
-                            <span className="font-medium text-sm">{new Date(selectedEmisor.fecha_registro).toLocaleDateString()}</span>
-                        </div>
                     </div>
-                </div>
-                
-                <div className="bg-gray-50 p-4 text-center border-t border-gray-100">
-                    <button onClick={() => setIsDetailsModalOpen(false)} className="text-gray-500 font-medium hover:text-gray-800 transition-colors">
-                        Cerrar
-                    </button>
                 </div>
             </div>
           </div>

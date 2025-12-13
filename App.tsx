@@ -70,7 +70,7 @@ const App: React.FC = () => {
             <Route path="/" element={<Dashboard user={user} />} />
             <Route path="/emisores" element={<Emisores user={user} />} />
             {user.rol === 'admin' ? (
-              <Route path="/reclutadores" element={<Reclutadores />} />
+              <Route path="/reclutadores" element={<Reclutadores user={user} />} />
             ) : (
                <Route path="/reclutadores" element={<Navigate to="/" />} />
             )}
