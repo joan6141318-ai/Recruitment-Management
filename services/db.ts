@@ -1,6 +1,5 @@
 import { User, Emisor, HistorialHoras, SystemMetadata } from '../types';
 import { db } from './firebase'; 
-import firebase from 'firebase/app';
 
 export const dataService = {
   getMetadata: async (): Promise<SystemMetadata> => {
@@ -38,15 +37,15 @@ export const dataService = {
 
   getEmisores: async (currentUser: User): Promise<Emisor[]> => {
     const emisoresRef = db.collection('emisores');
-    let query;
+    let q;
 
     if (currentUser.rol === 'admin') {
-      query = emisoresRef;
+      q = emisoresRef;
     } else {
-      query = emisoresRef.where('reclutador_id', '==', currentUser.id);
+      q = emisoresRef.where('reclutador_id', '==', currentUser.id);
     }
 
-    const querySnapshot = await query.get();
+    const querySnapshot = await q.get();
     return querySnapshot.docs.map(docSnap => ({
       id: docSnap.id,
       ...docSnap.data()
@@ -97,13 +96,13 @@ export const dataService = {
 
   getHistory: async (emisorId?: string): Promise<HistorialHoras[]> => {
     const historyRef = db.collection('historial');
-    let query;
+    let q;
     if (emisorId) {
-      query = historyRef.where('emisor_id', '==', emisorId);
+      q = historyRef.where('emisor_id', '==', emisorId);
     } else {
-      query = historyRef;
+      q = historyRef;
     }
-    const querySnapshot = await query.get();
+    const querySnapshot = await q.get();
     return querySnapshot.docs.map(docSnap => ({
       id: docSnap.id,
       ...docSnap.data()

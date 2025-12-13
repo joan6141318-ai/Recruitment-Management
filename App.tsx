@@ -9,6 +9,7 @@ import { User } from './types';
 import { authService } from './services/auth'; 
 import { auth } from './services/firebase';
 import { Moon } from 'lucide-react';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const SplashScreen = () => (
   <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
@@ -29,11 +30,10 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Listener de sesión de Firebase (Namespaced/Compat)
+    // Listener de sesión de Firebase (v8 / Compat)
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          // Intentamos obtener el perfil. Si falla por permisos, user será null.
           const profile = await authService.getUserProfile(firebaseUser.uid, firebaseUser.email || '');
           setUser(profile);
         } catch (error) {

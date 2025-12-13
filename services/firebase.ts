@@ -15,10 +15,8 @@ const firebaseConfig = {
   appId: "1:177005324608:web:7d871a4fb159e669f6b2a5"
 };
 
-// Inicialización Namespaced (v8 / Compat)
-const app = !firebase.apps.length 
-  ? firebase.initializeApp(firebaseConfig) 
-  : firebase.app();
+// Inicialización (v8 / Compat)
+const app = !firebase.apps.length ? firebase.initializeApp(firebaseConfig) : firebase.app();
 
 // Exportación de servicios
 export const auth = app.auth();

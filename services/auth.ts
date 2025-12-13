@@ -13,11 +13,11 @@ export const authService = {
     if (!password) throw new Error("Contraseña requerida");
     
     try {
-      // 1. Autenticar con Firebase Auth (Namespaced)
+      // 1. Autenticar con Firebase Auth (v8)
       const userCredential = await auth.signInWithEmailAndPassword(email, password);
       const fbUser = userCredential.user;
       
-      if (!fbUser) throw new Error("Usuario no encontrado");
+      if (!fbUser) throw new Error("Error en autenticación");
 
       // 2. Obtener datos del perfil de Firestore
       return await authService.getUserProfile(fbUser.uid, fbUser.email || email);
@@ -32,11 +32,11 @@ export const authService = {
     if (!password) throw new Error("Contraseña requerida");
     
     try {
-      // 1. Crear usuario en Firebase Auth (Namespaced)
+      // 1. Crear usuario en Firebase Auth (v8)
       const userCredential = await auth.createUserWithEmailAndPassword(email, password);
       const fbUser = userCredential.user;
 
-      if (!fbUser) throw new Error("Error en registro");
+      if (!fbUser) throw new Error("Error en creación de usuario");
 
       // 2. Actualizar Display Name en Auth
       if (nombre) {
