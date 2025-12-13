@@ -164,6 +164,10 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
                 <RefreshCw size={12} />
                 <span>Actualizar Sistema</span>
              </button>
+             
+             <div className="text-center mt-2">
+               <span className="text-[9px] font-black text-gray-200 uppercase tracking-widest">v1.2</span>
+             </div>
           </div>
       </aside>
 
