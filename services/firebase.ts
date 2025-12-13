@@ -1,28 +1,24 @@
-import firebase from 'firebase/app';
-import 'firebase/auth';
-import 'firebase/firestore';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import 'firebase/compat/firestore';
 
 // ------------------------------------------------------------------
 // CONFIGURACIÓN DE FIREBASE
+// Credenciales proporcionadas para el proyecto "gestor-reclutamiento"
 // ------------------------------------------------------------------
 const firebaseConfig = {
-  // Reemplaza esto con tus credenciales reales de Firebase Console -> Project Settings
-  apiKey: "TU_API_KEY_AQUI", 
-  authDomain: "TU_PROYECTO.firebaseapp.com",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_PROYECTO.firebasestorage.app",
-  messagingSenderId: "TU_SENDER_ID",
-  appId: "TU_APP_ID"
+  apiKey: "AIzaSyAQKOMqF1JZGTfPQwH3GjAt0hhQOKrk1DY",
+  authDomain: "gestor-reclutamiento.firebaseapp.com",
+  databaseURL: "https://gestor-reclutamiento-default-rtdb.firebaseio.com",
+  projectId: "gestor-reclutamiento",
+  storageBucket: "gestor-reclutamiento.firebasestorage.app",
+  messagingSenderId: "177005324608",
+  appId: "1:177005324608:web:7d871a4fb159e669f6b2a5"
 };
 
-// Inicialización segura (Singleton pattern para v8)
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+// Inicialización de la aplicación (Compat)
+const app = firebase.initializeApp(firebaseConfig);
 
-// Exportación de servicios (v8/Compat instances)
-export const auth = firebase.auth();
-export const db = firebase.firestore();
-
-// Export firebase default for usage in other files if needed
-export default firebase;
+// Exportación de servicios
+export const auth = app.auth();
+export const db = app.firestore();

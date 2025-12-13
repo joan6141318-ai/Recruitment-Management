@@ -1,3 +1,15 @@
+import { 
+  doc, 
+  getDoc, 
+  setDoc, 
+  updateDoc, 
+  collection, 
+  query, 
+  where, 
+  getDocs,
+  deleteDoc,
+  addDoc
+} from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { User, Role } from '../types';
 
@@ -13,11 +25,11 @@ export const authService = {
     if (!password) throw new Error("Contraseña requerida");
     
     try {
-      // 1. Autenticar con Firebase Auth (v8)
+      // 1. Autenticar con Firebase Auth (Compat)
       const userCredential = await auth.signInWithEmailAndPassword(email, password);
       const fbUser = userCredential.user;
       
-      if (!fbUser) throw new Error("Error obteniendo usuario");
+      if (!fbUser) throw new Error("Error al iniciar sesión");
 
       // 2. Obtener datos del perfil de Firestore
       return await authService.getUserProfile(fbUser.uid, fbUser.email || email);
@@ -32,13 +44,13 @@ export const authService = {
     if (!password) throw new Error("Contraseña requerida");
     
     try {
-      // 1. Crear usuario en Firebase Auth (v8)
+      // 1. Crear usuario en Firebase Auth (Compat)
       const userCredential = await auth.createUserWithEmailAndPassword(email, password);
       const fbUser = userCredential.user;
 
-      if (!fbUser) throw new Error("Error creando usuario");
+      if (!fbUser) throw new Error("Error al registrar usuario");
 
-      // 2. Actualizar Display Name en Auth
+      // 2. Actualizar Display Name en Auth (Compat instance method)
       if (nombre) {
         await fbUser.updateProfile({ displayName: nombre });
       }
@@ -58,15 +70,14 @@ export const authService = {
   // Obtener Perfil
   getUserProfile: async (uid: string, email: string): Promise<User> => {
     try {
-      // v8 Firestore syntax
-      const userDocRef = db.collection('users').doc(uid);
-      const userDocSnap = await userDocRef.get();
+      const userDocRef = doc(db, 'users', uid);
+      const userDocSnap = await getDoc(userDocRef);
 
-      if (userDocSnap.exists) {
-        const data = userDocSnap.data() as User; // Cast for v8 data()
+      if (userDocSnap.exists()) {
+        const data = userDocSnap.data();
         // Verificación de seguridad de rol Admin
         if (ADMIN_EMAILS.includes(email.toLowerCase()) && data.rol !== 'admin') {
-           await userDocRef.update({ rol: 'admin' });
+           await updateDoc(userDocRef, { rol: 'admin' });
            data.rol = 'admin';
         }
         return { id: uid, ...data } as User;
@@ -99,18 +110,18 @@ export const authService = {
 
     // Verificar si existía una invitación previa
     try {
-      const usersRef = db.collection('users');
-      const q = usersRef.where('correo', '==', normalizedEmail);
-      const querySnapshot = await q.get();
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('correo', '==', normalizedEmail));
+      const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
         // Si había invitación, la borramos y usamos sus datos si es necesario
         const existingDoc = querySnapshot.docs[0];
-        await existingDoc.ref.delete();
+        await deleteDoc(doc(db, 'users', existingDoc.id));
       }
 
       // Guardar el documento definitivo en la colección 'users' con el ID del usuario
-      await db.collection('users').doc(uid).set(userData);
+      await setDoc(doc(db, 'users', uid), userData);
 
       return { id: uid, ...userData } as User;
     } catch (error: any) {
@@ -125,9 +136,9 @@ export const authService = {
   // Crear invitación (Solo Admin)
   createRecruiterInvite: async (nombre: string, correo: string): Promise<User> => {
     const normalizedEmail = correo.trim().toLowerCase();
-    const usersRef = db.collection('users');
-    const q = usersRef.where('correo', '==', normalizedEmail);
-    const snap = await q.get();
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('correo', '==', normalizedEmail));
+    const snap = await getDocs(q);
     
     if (!snap.empty) {
       throw new Error("El usuario ya existe");
@@ -141,7 +152,7 @@ export const authService = {
       invited_by_admin: true
     };
     
-    const docRef = await usersRef.add(newUserPayload);
+    const docRef = await addDoc(usersRef, newUserPayload);
     return { id: docRef.id, ...newUserPayload } as User;
   }
 };
