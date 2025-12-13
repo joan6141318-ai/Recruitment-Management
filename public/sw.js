@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agencia-moon-v4';
+const CACHE_NAME = 'agencia-moon-v5';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -31,12 +31,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Estrategia para Firestore/API: Network Only
+  // SEGURIDAD Y DATOS:
+  // Nunca cachear peticiones a Firebase o Firestore. Siempre ir a la red para datos frescos y seguros.
   if (url.pathname.includes('firestore') || url.hostname.includes('firebase') || url.hostname.includes('googleapis')) {
     return;
   }
 
-  // Estrategia Stale-While-Revalidate para todo lo demás
+  // UI Y ASSETS (PWA):
+  // Estrategia Stale-While-Revalidate: Sirve rápido lo que tiene y actualiza en segundo plano.
   event.respondWith(
     caches.match(event.request)
       .then((cachedResponse) => {

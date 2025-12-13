@@ -31,7 +31,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
   );
 
   return (
-    // CORRECCIÓN: h-[100dvh] asegura que ocupe el 100% real de la pantalla móvil, descontando las barras del navegador.
+    // FIX: h-[100dvh] usa la altura dinámica del viewport para evitar problemas con la barra de URL en móviles
     <div className="h-[100dvh] bg-gray-50 flex flex-col md:flex-row overflow-hidden">
       
       {/* Mobile Header */}

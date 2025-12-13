@@ -10,11 +10,11 @@ import {
   addDoc, 
   query, 
   where,
-  getDoc,
-  Timestamp
+  getDoc
 } from 'firebase/firestore';
 
 // --- FIREBASE CONFIGURATION ---
+// Credenciales de conexión directa para el cliente web.
 const firebaseConfig = {
   apiKey: "AIzaSyAQKOMqF1JZGTfPQwH3GjAt0hhQOKrk1DY",
   authDomain: "gestor-reclutamiento.firebaseapp.com",
@@ -24,15 +24,12 @@ const firebaseConfig = {
   appId: "1:177005324608:web:7d871a4fb159e669f6b2a5"
 };
 
-// Initialize Firebase
+// Inicialización controlada de Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Diagnóstico de conexión (Solo visible en consola para desarrolladores)
-console.log(`[Firebase] Inicializado proyecto: ${firebaseConfig.projectId}`);
-
-// --- CONFIGURACIÓN DE ACCESO ---
-// LISTA DE ADMINISTRADORES AUTORIZADOS
+// --- CONFIGURACIÓN DE ACCESO Y SEGURIDAD ---
+// Solo estos correos pueden elevarse a Admin automáticamente
 const ADMIN_EMAILS = [
   'joan6141318@gmail.com',
   'elianaloor86@gmail.com'
@@ -40,87 +37,82 @@ const ADMIN_EMAILS = [
 
 // --- SERVICES ---
 
-// 1. Auth Service (Firestore Based)
 export const authService = {
   login: async (email: string, password?: string): Promise<User | null> => {
-    const normalizedEmail = email.trim().toLowerCase();
-    
-    // Validación básica de que existe un intento de contraseña
-    if (!password || password.length < 4) return null;
-
-    // Determinar si este correo DEBERÍA ser admin (Estricto: Solo los de la lista)
-    const shouldBeAdmin = ADMIN_EMAILS.includes(normalizedEmail);
-
-    // 1. Check if user exists in Firestore
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('correo', '==', normalizedEmail));
-    
     try {
-      const querySnapshot = await getDocs(q);
+        const normalizedEmail = email.trim().toLowerCase();
+        
+        // Validación local básica
+        if (!password || password.length < 4) return null;
 
-      if (!querySnapshot.empty) {
-        // --- USUARIO EXISTENTE ---
-        const userDoc = querySnapshot.docs[0];
-        const userData = userDoc.data() as User;
-        const userId = userDoc.id;
+        const shouldBeAdmin = ADMIN_EMAILS.includes(normalizedEmail);
 
-        // Auto-corregir rol si está en la lista blanca pero en BD es reclutador
-        if (shouldBeAdmin && userData.rol !== 'admin') {
-           await updateDoc(doc(db, 'users', userId), { rol: 'admin' });
-           userData.rol = 'admin';
+        // Consulta segura a Firestore
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('correo', '==', normalizedEmail));
+        
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+            // Usuario encontrado
+            const userDoc = querySnapshot.docs[0];
+            const userData = userDoc.data() as User;
+            const userId = userDoc.id;
+
+            // Corrección de integridad: Si debe ser admin, forzar el rol en BD
+            if (shouldBeAdmin && userData.rol !== 'admin') {
+                await updateDoc(doc(db, 'users', userId), { rol: 'admin' });
+                userData.rol = 'admin';
+            }
+
+            return { ...userData, id: userId };
+        } else {
+            // Registro automático (Fallback seguro)
+            const newRole: Role = shouldBeAdmin ? 'admin' : 'reclutador';
+            const newUser: User = {
+                id: '',
+                nombre: normalizedEmail.split('@')[0],
+                correo: normalizedEmail,
+                rol: newRole
+            };
+            
+            const docRef = await addDoc(usersRef, newUser);
+            return { ...newUser, id: docRef.id };
+        }
+    } catch (error) {
+      console.error("[Auth Error] Fallo en la conexión con la base de datos:", error);
+      throw new Error("Error de conexión. Verifique su red.");
+    }
+  },
+  
+  registerUser: async (nombre: string, correo: string, rol: Role): Promise<User> => {
+    try {
+        const normalizedEmail = correo.trim().toLowerCase();
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('correo', '==', normalizedEmail));
+        const snap = await getDocs(q);
+        
+        if (!snap.empty) {
+            throw new Error("El usuario ya existe");
         }
 
-        return { ...userData, id: userId };
-
-      } else {
-        // --- USUARIO NUEVO (REGISTRO AUTOMÁTICO) ---
-        
-        const newRole: Role = shouldBeAdmin ? 'admin' : 'reclutador';
-
         const newUser: User = {
-          id: '', // Set by Firestore
-          nombre: normalizedEmail.split('@')[0], // Default name from email
-          correo: normalizedEmail,
-          rol: newRole
+            id: '',
+            nombre,
+            correo: normalizedEmail,
+            rol
         };
         
         const docRef = await addDoc(usersRef, newUser);
         return { ...newUser, id: docRef.id };
-      }
     } catch (error) {
-      console.error("Error crítico de conexión con Firebase:", error);
-      throw error; // Propagate error to UI
+        console.error("[Register Error]", error);
+        throw error;
     }
-  },
-  
-  // Register a user explicitly (Admin panel)
-  registerUser: async (nombre: string, correo: string, rol: Role): Promise<User> => {
-    const normalizedEmail = correo.trim().toLowerCase();
-    
-    // Check if exists first to avoid duplicates
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('correo', '==', normalizedEmail));
-    const snap = await getDocs(q);
-    
-    if (!snap.empty) {
-        throw new Error("El usuario ya existe");
-    }
-
-    const newUser: User = {
-      id: '',
-      nombre,
-      correo: normalizedEmail,
-      rol
-    };
-    
-    const docRef = await addDoc(usersRef, newUser);
-    return { ...newUser, id: docRef.id };
   }
 };
 
-// 2. Data Service
 export const dataService = {
-  // Get Metadata
   getMetadata: async (): Promise<SystemMetadata> => {
     try {
       const docRef = doc(db, 'system', 'metadata');
@@ -129,24 +121,22 @@ export const dataService = {
       if (docSnap.exists()) {
         return docSnap.data() as SystemMetadata;
       } else {
-        // Initialize if doesn't exist
         const initialData = { lastUpdated: new Date().toISOString().split('T')[0] };
         await setDoc(docRef, initialData);
         return initialData;
       }
     } catch (e) {
-      console.error("Error fetching metadata", e);
+      console.error("[Metadata Error]", e);
+      // Fallback seguro en caso de error de red
       return { lastUpdated: new Date().toISOString().split('T')[0] };
     }
   },
 
-  // Update Metadata (Admin)
   updateMetadata: async (newDate: string): Promise<void> => {
     const docRef = doc(db, 'system', 'metadata');
     await setDoc(docRef, { lastUpdated: newDate }, { merge: true });
   },
 
-  // Get Users (Recruiters)
   getRecruiters: async (): Promise<User[]> => {
     const usersRef = collection(db, 'users');
     const q = query(usersRef, where('rol', '==', 'reclutador'));
@@ -158,7 +148,6 @@ export const dataService = {
     } as User));
   },
 
-  // Get Emisores (filtered by role logic)
   getEmisores: async (currentUser: User): Promise<Emisor[]> => {
     const emisoresRef = collection(db, 'emisores');
     let q;
@@ -176,7 +165,6 @@ export const dataService = {
     } as Emisor));
   },
 
-  // Add Emisor
   addEmisor: async (emisorData: Omit<Emisor, 'id' | 'fecha_registro' | 'horas_mes' | 'estado'>, currentUser: User): Promise<Emisor> => {
     const newEmisor = {
       ...emisorData,
@@ -189,7 +177,6 @@ export const dataService = {
     return { ...newEmisor, id: docRef.id } as Emisor;
   },
 
-  // Update Hours (Admin Only)
   updateHours: async (emisorId: string, newHours: number, adminId: string): Promise<void> => {
     const emisorRef = doc(db, 'emisores', emisorId);
     
@@ -213,7 +200,6 @@ export const dataService = {
     });
   },
 
-  // Toggle Status (Admin Only)
   toggleStatus: async (emisorId: string): Promise<void> => {
     const emisorRef = doc(db, 'emisores', emisorId);
     const emisorSnap = await getDoc(emisorRef);
@@ -225,7 +211,6 @@ export const dataService = {
     }
   },
 
-  // Get History
   getHistory: async (emisorId?: string): Promise<HistorialHoras[]> => {
     const historyRef = collection(db, 'historial');
     let q;
