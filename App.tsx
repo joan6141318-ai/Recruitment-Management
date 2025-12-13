@@ -13,15 +13,17 @@ import { Moon } from 'lucide-react';
 const SplashScreen = () => (
   <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
     <div className="mb-8 relative">
-       <div className="w-24 h-24 bg-black rounded-3xl flex items-center justify-center shadow-2xl rotate-3 animate-[spin_3s_ease-in-out_infinite]">
-          <Moon size={40} className="text-white fill-current -rotate-3" />
+       <div className="w-24 h-24 bg-black rounded-3xl flex items-center justify-center shadow-2xl rotate-6 animate-[spin_2s_ease-in-out_infinite]">
+          <Moon size={40} className="text-white fill-current -rotate-6" />
        </div>
     </div>
     
-    {/* TEXTO CORREGIDO: AGENCIA MOON */}
-    <h1 className="text-3xl font-black tracking-tighter text-black animate-pulse uppercase">
-      AGENCIA MOON
-    </h1>
+    <div className="text-center">
+        <span className="block text-sm font-bold text-gray-400 tracking-[0.4em] mb-2 uppercase animate-pulse">Cargando</span>
+        <h1 className="text-4xl font-black tracking-tight text-black">
+          Agencia Moon
+        </h1>
+    </div>
   </div>
 );
 

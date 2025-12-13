@@ -1,8 +1,10 @@
-const CACHE_NAME = 'agencia-moon-v3';
+
+const CACHE_NAME = 'agencia-moon-v10-balanced-colors'; // NUEVA VERSIÓN
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
+  './',
+  './index.html',
+  './manifest.json',
+  './icon.svg',
   'https://cdn.tailwindcss.com'
 ];
 
@@ -20,6 +22,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
+            console.log('Borrando caché viejo:', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -31,18 +34,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Estrategia para Firestore/API: Network Only (No cachear datos en tiempo real)
-  if (url.pathname.includes('firestore') || url.hostname.includes('firebase')) {
+  if (url.pathname.includes('firestore') || url.hostname.includes('firebase') || url.hostname.includes('googleapis')) {
     return;
   }
 
-  // Estrategia para Assets estáticos (JS, CSS, Imágenes): Stale-While-Revalidate
-  // Esto permite que la app funcione offline cacheando lo que Vite genera
   event.respondWith(
     caches.match(event.request)
       .then((cachedResponse) => {
         const fetchPromise = fetch(event.request).then((networkResponse) => {
-          // Solo cachear respuestas válidas y seguras
           if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
@@ -51,8 +50,6 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         });
-        
-        // Devolver caché si existe, si no, esperar a la red
         return cachedResponse || fetchPromise;
       })
   );

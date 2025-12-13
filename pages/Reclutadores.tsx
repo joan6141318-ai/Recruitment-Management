@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { User } from '../types';
 import { dataService } from '../services/db';
 import { authService } from '../services/auth';
-import { Plus, TrendingUp, Calendar, ArrowRight, Award, UserPlus } from 'lucide-react';
+import { Plus, TrendingUp, Calendar, ArrowRight, Award, UserPlus, X } from 'lucide-react';
 
 interface ReclutadoresProps {
   user: User;
@@ -84,9 +84,10 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
             <span>{monthName}</span>
           </div>
         </div>
+        {/* BOTÓN NARANJA (Identidad de sección Equipo) */}
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-black hover:bg-primary text-white px-6 py-4 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-xl active:scale-95"
+          className="bg-accent hover:bg-black text-white px-6 py-4 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-glow-accent active:scale-95"
         >
           <UserPlus size={20} />
           <span className="font-bold text-sm uppercase tracking-wide">Nuevo Miembro</span>
@@ -146,8 +147,10 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
 
        {/* Modal */}
        {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/90 backdrop-blur-xl animate-fade-in">
-          <div className="bg-white w-full max-w-md p-10 rounded-[2.5rem] shadow-2xl border border-gray-100 animate-pop-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/90 backdrop-blur-xl animate-pop-in">
+          <div className="bg-white w-full max-w-md p-10 rounded-[2.5rem] shadow-2xl border border-gray-100 relative">
+             <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 p-2 bg-gray-50 rounded-full hover:bg-black hover:text-white transition-colors"><X size={20}/></button>
+
             <h3 className="text-3xl font-black text-black mb-2 uppercase">Invitar</h3>
             <p className="text-gray-400 mb-8 font-bold text-xs uppercase tracking-widest">Añade un nuevo reclutador</p>
             
@@ -157,7 +160,7 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
                 <input 
                     required 
                     className="w-full bg-background border-2 border-transparent focus:border-black focus:bg-white px-5 py-4 rounded-2xl font-bold text-black outline-none transition-all uppercase" 
-                    placeholder="NOMBRE"
+                    placeholder="Nombre"
                     value={newName} 
                     onChange={e => setNewName(e.target.value)} 
                 />
@@ -168,7 +171,7 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
                     type="email"
                     required 
                     className="w-full bg-background border-2 border-transparent focus:border-black focus:bg-white px-5 py-4 rounded-2xl font-bold text-black outline-none transition-all" 
-                    placeholder="CORREO"
+                    placeholder="Correo"
                     value={newEmail} 
                     onChange={e => setNewEmail(e.target.value)} 
                 />
@@ -178,14 +181,14 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
                 <p className="text-red-500 text-xs font-bold bg-red-50 p-3 rounded-xl">{error}</p>
               )}
 
-              <div className="flex gap-4 pt-4">
-                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 font-bold text-xs uppercase tracking-widest text-gray-400 hover:text-black">Cancelar</button>
+              <div className="pt-4">
+                 {/* BOTÓN NEGRO PARA COMMIT */}
                  <button 
                     type="submit" 
                     disabled={loading} 
-                    className="flex-1 bg-black text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-primary transition-colors flex justify-center items-center gap-2 shadow-lg"
+                    className="w-full bg-black text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-accent transition-colors flex justify-center items-center gap-2 shadow-lg"
                  >
-                    {loading ? '...' : 'Crear'} <ArrowRight size={16} />
+                    {loading ? '...' : 'Crear Cuenta'} <ArrowRight size={16} />
                  </button>
               </div>
             </form>
