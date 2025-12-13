@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { authService } from '../services/db';
 import { User } from '../types';
-import { Lock, Mail, Moon } from 'lucide-react';
+import { ArrowRight, Moon } from 'lucide-react';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -23,77 +23,72 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       if (user) {
         onLogin(user);
       } else {
-        // Mensaje genérico por seguridad
-        setError('Credenciales incorrectas. Verifique su correo y contraseña.');
+        setError('Credenciales incorrectas');
         setLoading(false);
       }
     } catch (err) {
-      setError('Error al conectar con el sistema. Intente más tarde.');
+      setError('Error de conexión');
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white w-full max-w-md p-8 rounded-2xl shadow-xl border border-gray-100">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/5 rounded-full mb-4 animate-pulse">
-             <Moon size={32} className="text-primary fill-current" />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6 animate-fade-in">
+      <div className="w-full max-w-sm">
+        {/* Header Minimalista */}
+        <div className="mb-12">
+          <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center mb-6 shadow-glow">
+             <Moon size={24} className="text-white fill-current" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Agencia <span className="text-secondary">Moon</span></h1>
-          <p className="text-gray-500">Plataforma de Gestión</p>
+          <h1 className="text-4xl font-bold text-black tracking-tight mb-2">Bienvenido.</h1>
+          <p className="text-gray-400 text-lg">Inicia sesión en Moon.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Correo Electrónico</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="space-y-6">
+            <div className="group">
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-primary transition-colors">Correo</label>
               <input
                 type="email"
                 value={email}
-                onChange={(e) => {
-                    setEmail(e.target.value);
-                    setError('');
-                }}
-                className="w-full pl-10 pr-4 py-3 bg-white rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all shadow-sm"
-                placeholder="nombre@agencia.com"
+                onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                className="w-full pb-3 bg-transparent border-b-2 border-gray-100 text-xl font-medium text-black focus:border-black focus:outline-none transition-all placeholder-gray-200"
+                placeholder="usuario@moon.com"
                 required
               />
             </div>
-          </div>
 
-          <div>
-             <label className="block text-sm font-medium text-gray-700 mb-2">
-               Contraseña
-             </label>
-             <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                <input
+            <div className="group">
+               <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-primary transition-colors">Contraseña</label>
+               <input
                   type="password"
                   value={password}
-                  onChange={(e) => {
-                      setPassword(e.target.value);
-                      setError('');
-                  }}
-                  className="w-full pl-10 pr-4 py-3 bg-white rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all shadow-sm"
+                  onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                  className="w-full pb-3 bg-transparent border-b-2 border-gray-100 text-xl font-medium text-black focus:border-black focus:outline-none transition-all placeholder-gray-200"
                   placeholder="••••••••"
                 />
-             </div>
+            </div>
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg text-center animate-pulse border border-red-100">
+            <p className="text-danger text-sm font-medium animate-slide-up flex items-center">
+              <span className="w-1.5 h-1.5 bg-danger rounded-full mr-2"></span>
               {error}
-            </div>
+            </p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary hover:bg-purple-800 text-white font-semibold py-3 rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-70"
+            className="w-full bg-black text-white h-14 rounded-xl font-semibold text-lg hover:bg-gray-900 focus:ring-4 focus:ring-gray-200 transition-all flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed group shadow-soft"
           >
-            {loading ? 'Verificando...' : 'Iniciar Sesión'}
+            {loading ? (
+              <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            ) : (
+              <>
+                Entrar <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
+              </>
+            )}
           </button>
         </form>
       </div>

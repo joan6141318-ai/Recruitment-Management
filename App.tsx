@@ -6,26 +6,20 @@ import Dashboard from './pages/Dashboard';
 import Emisores from './pages/Emisores';
 import Reclutadores from './pages/Reclutadores';
 import { User } from './types';
-import { authService } from './services/db'; // Importamos authService para re-validar
+import { authService } from './services/db'; 
 import { Moon } from 'lucide-react';
 
 const SplashScreen = () => (
-  <div className="fixed inset-0 bg-primary z-50 flex flex-col items-center justify-center text-white">
-    <div className="animate-bounce-slow mb-6">
-       <div className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg border border-white/10">
-          <Moon size={48} className="text-white fill-current" />
+  <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+    <div className="mb-8 relative">
+       <div className="w-24 h-24 bg-black rounded-3xl flex items-center justify-center shadow-2xl rotate-3 animate-[spin_3s_ease-in-out_infinite]">
+          <Moon size={40} className="text-white fill-current -rotate-3" />
        </div>
     </div>
     
-    <h1 className="text-3xl font-bold tracking-tight animate-fade-in drop-shadow-sm">
-      Agencia <span className="text-white/90">Moon</span>
+    <h1 className="text-2xl font-bold tracking-[0.2em] text-black animate-pulse">
+      MOON
     </h1>
-    
-    <div className="mt-10 flex space-x-2">
-      <div className="w-2.5 h-2.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
-      <div className="w-2.5 h-2.5 bg-white/70 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-      <div className="w-2.5 h-2.5 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-    </div>
   </div>
 );
 
@@ -37,28 +31,21 @@ const App: React.FC = () => {
     const initApp = async () => {
       const storedUser = localStorage.getItem('agencia_user');
       
-      // Splash screen delay for UX
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
-          
-          // SEGURIDAD: Re-validar contra la base de datos para asegurar que el usuario sigue activo y con el rol correcto
-          // Esto evita vulnerabilidades de manipulación de LocalStorage
           const freshUser = await authService.login(parsedUser.correo, 'revalidate_session');
           
           if (freshUser) {
             setUser(freshUser);
             localStorage.setItem('agencia_user', JSON.stringify(freshUser));
           } else {
-            // Si el usuario fue borrado de la BD, cerrar sesión local
-            console.warn("Sesión inválida o usuario eliminado");
             localStorage.removeItem('agencia_user');
           }
         } catch (error) {
-          // En caso de error de red (offline), confiamos temporalmente en el caché local (PWA Behavior)
-          console.log("Modo Offline: Usando credenciales cacheadas");
+          console.log("Modo Offline");
           setUser(JSON.parse(storedUser));
         }
       }
@@ -72,11 +59,7 @@ const App: React.FC = () => {
     setLoading(true);
     setUser(newUser);
     localStorage.setItem('agencia_user', JSON.stringify(newUser));
-    
-    // Quick transition
-    setTimeout(() => {
-      setLoading(false);
-    }, 800);
+    setTimeout(() => setLoading(false), 800);
   };
 
   const handleLogout = () => {
@@ -95,14 +78,11 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<Dashboard user={user} />} />
             <Route path="/emisores" element={<Emisores user={user} />} />
-            
-            {/* Admin Protected Routes */}
             {user.rol === 'admin' ? (
               <Route path="/reclutadores" element={<Reclutadores />} />
             ) : (
                <Route path="/reclutadores" element={<Navigate to="/" />} />
             )}
-            
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Layout>
