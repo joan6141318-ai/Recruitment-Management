@@ -28,77 +28,69 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Helper for current month
-const getCurrentMonth = () => new Date().toISOString().slice(0, 7); // YYYY-MM
+// Diagnóstico de conexión (Solo visible en consola para desarrolladores)
+console.log(`[Firebase] Inicializado proyecto: ${firebaseConfig.projectId}`);
 
-// Admin whitelist for auto-creation/login
-const ADMIN_EMAILS = ['Joan6141318@gmail.com', 'elianaloor86@gmail.com'];
+// --- CONFIGURACIÓN DE ACCESO ---
+// LISTA DE ADMINISTRADORES AUTORIZADOS
+const ADMIN_EMAILS = [
+  'joan6141318@gmail.com',
+  'elianaloor86@gmail.com'
+];
 
 // --- SERVICES ---
 
 // 1. Auth Service (Firestore Based)
 export const authService = {
   login: async (email: string, password?: string): Promise<User | null> => {
-    const normalizedEmail = email.trim().toLowerCase(); // Normalize email
-    const cleanPassword = password?.trim();
+    const normalizedEmail = email.trim().toLowerCase();
     
+    // Validación básica de que existe un intento de contraseña
+    if (!password || password.length < 4) return null;
+
+    // Determinar si este correo DEBERÍA ser admin (Estricto: Solo los de la lista)
+    const shouldBeAdmin = ADMIN_EMAILS.includes(normalizedEmail);
+
     // 1. Check if user exists in Firestore
     const usersRef = collection(db, 'users');
     const q = query(usersRef, where('correo', '==', normalizedEmail));
-    const querySnapshot = await getDocs(q);
+    
+    try {
+      const querySnapshot = await getDocs(q);
 
-    if (!querySnapshot.empty) {
-      // User exists
-      const userDoc = querySnapshot.docs[0];
-      const userData = userDoc.data() as User;
-      
-      // Admin: Access allowed immediately
-      if (userData.rol === 'admin') {
-        return { ...userData, id: userDoc.id };
-      }
-      
-      // Recruiter: Must match Master Password
-      if (userData.rol === 'reclutador') {
-        if (cleanPassword === 'Moon2026') {
-          return { ...userData, id: userDoc.id };
-        } else {
-          return null; // Wrong password
+      if (!querySnapshot.empty) {
+        // --- USUARIO EXISTENTE ---
+        const userDoc = querySnapshot.docs[0];
+        const userData = userDoc.data() as User;
+        const userId = userDoc.id;
+
+        // Auto-corregir rol si está en la lista blanca pero en BD es reclutador
+        if (shouldBeAdmin && userData.rol !== 'admin') {
+           await updateDoc(doc(db, 'users', userId), { rol: 'admin' });
+           userData.rol = 'admin';
         }
-      }
-    } else {
-      // User does NOT exist. Logic for Auto-Registration.
 
-      // A. Is it a whitelisted Admin?
-      // Since emails can be case sensitive in input, we checked normalized above. 
-      // We check if the input matches our whitelist (case-insensitive check).
-      const isAdminEmail = ADMIN_EMAILS.map(e => e.toLowerCase()).includes(normalizedEmail);
-      
-      if (isAdminEmail) {
+        return { ...userData, id: userId };
+
+      } else {
+        // --- USUARIO NUEVO (REGISTRO AUTOMÁTICO) ---
+        
+        const newRole: Role = shouldBeAdmin ? 'admin' : 'reclutador';
+
         const newUser: User = {
-          id: '', // Will be set by Firestore ID or ignored
-          nombre: normalizedEmail.split('@')[0],
+          id: '', // Set by Firestore
+          nombre: normalizedEmail.split('@')[0], // Default name from email
           correo: normalizedEmail,
-          rol: 'admin'
+          rol: newRole
         };
-        // Create in DB
+        
         const docRef = await addDoc(usersRef, newUser);
         return { ...newUser, id: docRef.id };
       }
-
-      // B. Is it a Recruiter with Master Key?
-      if (cleanPassword === 'Moon2026') {
-         const newUser: User = {
-           id: '',
-           nombre: normalizedEmail.split('@')[0], // Default name
-           correo: normalizedEmail,
-           rol: 'reclutador'
-         };
-         const docRef = await addDoc(usersRef, newUser);
-         return { ...newUser, id: docRef.id };
-      }
+    } catch (error) {
+      console.error("Error crítico de conexión con Firebase:", error);
+      throw error; // Propagate error to UI
     }
-
-    return null;
   },
   
   // Register a user explicitly (Admin panel)
