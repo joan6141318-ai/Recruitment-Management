@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    
+    <!-- CACHE CONTROL: Forzar actualización -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
     <title>Agencia Moon</title>
     
     <!-- PWA / Mobile Capable -->
@@ -24,7 +30,7 @@
           extend: {
             colors: {
               primary: '#7C3AED', // Morado
-              accent: '#F97316', // NARANJA PURO (Orange-500)
+              accent: '#F97316', // NARANJA PURO
               black: '#09090B', // Negro
               surface: '#FFFFFF', 
               background: '#F8FAFC', 
@@ -34,10 +40,11 @@
             },
             boxShadow: {
               'card': '0 0 0 1px rgba(0,0,0,0.03), 0 4px 20px -2px rgba(0,0,0,0.05)',
-              'glow-accent': '0 0 30px -5px rgba(249, 115, 22, 0.4)', // Resplandor Naranja
+              'glow-accent': '0 0 30px -5px rgba(249, 115, 22, 0.4)',
+              'glow-primary': '0 0 30px -5px rgba(124, 58, 237, 0.4)',
             },
             animation: {
-              'pop-in': 'popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards', // Más rápido y con rebote
+              'pop-in': 'popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards', 
               'slide-up': 'slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
             },
             keyframes: {

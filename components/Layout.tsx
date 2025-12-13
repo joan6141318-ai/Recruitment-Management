@@ -102,6 +102,10 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
                 <LogOut size={16} className="group-hover:-translate-x-1 transition-transform"/>
                 <span>Cerrar Sesión</span>
              </button>
+             
+             <div className="text-center mt-4">
+               <span className="text-[9px] font-black text-gray-200 uppercase tracking-widest">v1.1 System</span>
+             </div>
           </div>
       </aside>
 
