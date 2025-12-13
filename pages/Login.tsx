@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { authService } from '../services/db';
+import { authService } from '../services/auth';
 import { User } from '../types';
 import { ArrowRight, Moon, Lock, Mail, User as UserIcon } from 'lucide-react';
 

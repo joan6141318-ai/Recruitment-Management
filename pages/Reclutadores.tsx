@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User } from '../types';
-import { dataService, authService } from '../services/db';
+import { dataService } from '../services/db';
+import { authService } from '../services/auth';
 import { Plus, Mail, User as UserIcon } from 'lucide-react';
 
 const Reclutadores: React.FC = () => {

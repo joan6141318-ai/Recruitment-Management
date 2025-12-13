@@ -6,9 +6,10 @@ import Dashboard from './pages/Dashboard';
 import Emisores from './pages/Emisores';
 import Reclutadores from './pages/Reclutadores';
 import { User } from './types';
-import { authService, auth } from './services/db'; 
+import { authService } from './services/auth'; 
+import { auth } from './services/firebase';
 import { Moon } from 'lucide-react';
-import { onAuthStateChanged } from 'firebase/auth';
+import * as firebaseAuth from 'firebase/auth';
 
 const SplashScreen = () => (
   <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
@@ -30,7 +31,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // Escucha real de Firebase Auth
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = firebaseAuth.onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
           // Si hay usuario en Auth, traemos sus datos de negocio de Firestore
