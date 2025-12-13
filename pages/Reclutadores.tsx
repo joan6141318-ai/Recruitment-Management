@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { User } from '../types';
 import { dataService, authService } from '../services/db';
-import { Plus, Mail, User as UserIcon } from 'lucide-react';
+import { Plus, Mail, User as UserIcon, Lock } from 'lucide-react';
 
 const Reclutadores: React.FC = () => {
   const [recruiters, setRecruiters] = useState<User[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
     loadData();
@@ -20,10 +21,12 @@ const Reclutadores: React.FC = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    await authService.registerUser(newName, newEmail, 'reclutador');
+    // Registramos con contraseña
+    await authService.registerUser(newName, newEmail, 'reclutador', newPassword);
     setIsModalOpen(false);
     setNewName('');
     setNewEmail('');
+    setNewPassword('');
     loadData();
   };
 
@@ -80,6 +83,13 @@ const Reclutadores: React.FC = () => {
                 <div className="relative">
                   <Mail size={16} className="absolute left-3 top-3.5 text-gray-400" />
                   <input type="email" required className={inputClass} value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="correo@ejemplo.com" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Contraseña Temporal</label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-3.5 text-gray-400" />
+                  <input type="text" required className={inputClass} value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Asignar clave" />
                 </div>
               </div>
 

@@ -34,59 +34,84 @@ const ADMIN_EMAILS = [
 ];
 
 export const authService = {
-  // Login soporta un modo 'revalidate_session' para comprobaciones automáticas de seguridad
   login: async (email: string, password?: string): Promise<User | null> => {
     try {
         const normalizedEmail = email.trim().toLowerCase();
         
-        // Validación de password solo si no es una revalidación de sesión
-        if (password !== 'revalidate_session') {
-           if (!password || password.length < 4) return null;
-        }
+        // Validación básica
+        if (!password) return null;
+        if (password !== 'revalidate_session' && password.length < 4) return null;
 
-        const shouldBeAdmin = ADMIN_EMAILS.includes(normalizedEmail);
         const usersRef = collection(db, 'users');
         const q = query(usersRef, where('correo', '==', normalizedEmail));
-        
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
-            // Usuario existe
             const userDoc = querySnapshot.docs[0];
-            const userData = userDoc.data() as User;
+            const userData = userDoc.data();
             const userId = userDoc.id;
 
-            // Integridad: Forzar rol de admin si está en la lista blanca
-            if (shouldBeAdmin && userData.rol !== 'admin') {
-                await updateDoc(doc(db, 'users', userId), { rol: 'admin' });
-                userData.rol = 'admin';
+            // SEGURIDAD: Verificar contraseña
+            // Si es 'revalidate_session', confiamos en la sesión local (previamente validada).
+            // Si es login normal, comparamos la contraseña almacenada.
+            if (password !== 'revalidate_session') {
+                // Si el usuario en BD tiene contraseña, la verificamos
+                if (userData.password && userData.password !== password) {
+                    console.warn("Contraseña incorrecta");
+                    return null;
+                }
+                // Si el usuario en BD NO tiene contraseña (usuario legacy), se la asignamos ahora para protegerlo
+                if (!userData.password) {
+                    await updateDoc(doc(db, 'users', userId), { password: password });
+                }
             }
 
-            return { ...userData, id: userId };
+            // Integridad: Forzar rol de admin si está en la lista blanca
+            let currentRole = userData.rol;
+            if (ADMIN_EMAILS.includes(normalizedEmail) && currentRole !== 'admin') {
+                await updateDoc(doc(db, 'users', userId), { rol: 'admin' });
+                currentRole = 'admin';
+            }
+
+            return { 
+                id: userId,
+                nombre: userData.nombre,
+                correo: userData.correo,
+                rol: currentRole
+            } as User;
         } else {
-            // Si es revalidación de sesión y no existe, devolver null (bloquear acceso)
+            // Si es revalidación y no existe, adios.
             if (password === 'revalidate_session') return null;
 
-            // Auto-registro controlado para nuevos usuarios
+            // Auto-registro: Para nuevos usuarios, GUARDAMOS LA CONTRASEÑA
+            const shouldBeAdmin = ADMIN_EMAILS.includes(normalizedEmail);
             const newRole: Role = shouldBeAdmin ? 'admin' : 'reclutador';
-            const newUser: User = {
-                id: '',
+            
+            const newUserPayload = {
                 nombre: normalizedEmail.split('@')[0],
                 correo: normalizedEmail,
-                rol: newRole
+                password: password, // Guardamos la contraseña para futuros logins
+                rol: newRole,
+                fecha_registro: new Date().toISOString()
             };
             
-            const docRef = await addDoc(usersRef, newUser);
-            return { ...newUser, id: docRef.id };
+            const docRef = await addDoc(usersRef, newUserPayload);
+            
+            return { 
+                id: docRef.id,
+                nombre: newUserPayload.nombre,
+                correo: newUserPayload.correo,
+                rol: newUserPayload.rol
+            } as User;
         }
     } catch (error) {
       console.error("[Auth Error]", error);
-      // Propagar error para que la UI sepa que hubo fallo de red
       throw new Error("Error de conexión"); 
     }
   },
   
-  registerUser: async (nombre: string, correo: string, rol: Role): Promise<User> => {
+  // Ahora permite registrar con contraseña
+  registerUser: async (nombre: string, correo: string, rol: Role, password?: string): Promise<User> => {
     try {
         const normalizedEmail = correo.trim().toLowerCase();
         const usersRef = collection(db, 'users');
@@ -97,15 +122,21 @@ export const authService = {
             throw new Error("El usuario ya existe");
         }
 
-        const newUser: User = {
-            id: '',
+        const newUserPayload = {
             nombre,
             correo: normalizedEmail,
-            rol
+            rol,
+            password: password || '123456', // Contraseña por defecto si no se provee (Admin debería avisar al usuario)
+            fecha_registro: new Date().toISOString()
         };
         
-        const docRef = await addDoc(usersRef, newUser);
-        return { ...newUser, id: docRef.id };
+        const docRef = await addDoc(usersRef, newUserPayload);
+        return { 
+            id: docRef.id, 
+            nombre: newUserPayload.nombre, 
+            correo: newUserPayload.correo, 
+            rol: newUserPayload.rol 
+        } as User;
     } catch (error) {
         console.error("[Register Error]", error);
         throw error;
@@ -127,7 +158,6 @@ export const dataService = {
         return initialData;
       }
     } catch (e) {
-      // Fallback offline seguro
       return { lastUpdated: new Date().toISOString().split('T')[0] };
     }
   },
@@ -179,18 +209,12 @@ export const dataService = {
 
   updateHours: async (emisorId: string, newHours: number, adminId: string): Promise<void> => {
     const emisorRef = doc(db, 'emisores', emisorId);
-    
-    // Get current hours for history
     const emisorSnap = await getDoc(emisorRef);
     let oldHours = 0;
     if (emisorSnap.exists()) {
         oldHours = emisorSnap.data().horas_mes || 0;
     }
-
-    // Update
     await updateDoc(emisorRef, { horas_mes: newHours });
-
-    // Log history
     await addDoc(collection(db, 'historial'), {
         emisor_id: emisorId,
         horas_anteriores: oldHours,
@@ -213,14 +237,7 @@ export const dataService = {
 
   getHistory: async (emisorId?: string): Promise<HistorialHoras[]> => {
     const historyRef = collection(db, 'historial');
-    let q;
-    
-    if (emisorId) {
-        q = query(historyRef, where('emisor_id', '==', emisorId));
-    } else {
-        q = query(historyRef);
-    }
-    
+    let q = emisorId ? query(historyRef, where('emisor_id', '==', emisorId)) : query(historyRef);
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
