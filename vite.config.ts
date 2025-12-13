@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: './', // CRITICO: Esto asegura que Vite genere rutas relativas
   build: {
     outDir: 'dist',
     sourcemap: false

@@ -1,16 +1,16 @@
 {
   "name": "Agencia Moon Manager",
   "short_name": "Agencia Moon",
-  "start_url": "/",
-  "id": "/",
+  "start_url": ".",
+  "id": "agencia-moon-manager",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
   "orientation": "portrait",
-  "scope": "/",
+  "scope": ".",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "icon.svg",
       "sizes": "192x192 512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"

@@ -1,9 +1,9 @@
-const CACHE_NAME = 'agencia-moon-v6'; // Incrementado para forzar actualización
+const CACHE_NAME = 'agencia-moon-v7'; // Incrementado
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon.svg',
+  './',
+  './index.html',
+  './manifest.json',
+  './icon.svg',
   'https://cdn.tailwindcss.com'
 ];
 
