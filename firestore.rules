@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Función auxiliar para verificar autenticación
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Reglas para la colección de usuarios
+    match /users/{userId} {
+      // Permite leer/escribir si estás autenticado. 
+      // Necesario para:
+      // 1. Leer tu propio perfil.
+      // 2. Buscar invitaciones por correo (query de colección).
+      // 3. Admin leyendo lista de usuarios.
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Reglas para emisores
+    match /emisores/{emisorId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Reglas para historial
+    match /historial/{historialId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Reglas para metadatos del sistema
+    match /system/{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}

@@ -1,10 +1,9 @@
-import firebase from 'firebase/compat/app';
-import 'firebase/compat/auth';
-import 'firebase/compat/firestore';
+import firebase from 'firebase/app';
+import 'firebase/auth';
+import 'firebase/firestore';
 
 // ------------------------------------------------------------------
 // CONFIGURACIÓN DE FIREBASE
-// Credenciales proporcionadas para el proyecto "gestor-reclutamiento"
 // ------------------------------------------------------------------
 const firebaseConfig = {
   apiKey: "AIzaSyAQKOMqF1JZGTfPQwH3GjAt0hhQOKrk1DY",
@@ -16,9 +15,12 @@ const firebaseConfig = {
   appId: "1:177005324608:web:7d871a4fb159e669f6b2a5"
 };
 
-// Inicialización de la aplicación (Compat)
-const app = firebase.initializeApp(firebaseConfig);
+// Inicialización Namespaced (v8 / Compat)
+const app = !firebase.apps.length 
+  ? firebase.initializeApp(firebaseConfig) 
+  : firebase.app();
 
 // Exportación de servicios
 export const auth = app.auth();
 export const db = app.firestore();
+export default app;
