@@ -7,14 +7,6 @@ interface LoginProps {
   onLogin: (user: User) => void;
 }
 
-const BrandLogo = ({ className = "w-12 h-12" }) => (
-  <svg viewBox="0 0 100 100" className={className} fill="none">
-     <rect width="100" height="100" rx="22" className="fill-black"/>
-     <path d="M72 26C65.8 20.8 58 18 50 18C32.3269 18 18 32.3269 18 50C18 67.6731 32.3269 82 50 82C67.6731 82 82 67.6731 82 50C82 46.5 81.4 43.1 80.3 39.9" stroke="white" strokeWidth="10" strokeLinecap="round"/>
-     <circle cx="78" cy="26" r="8" className="fill-primary"/>
-  </svg>
-);
-
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
@@ -54,8 +46,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         
         {/* HEADER */}
         <div className="flex flex-col items-center mb-10">
-            <div className="mb-6 shadow-2xl shadow-purple-200/50 rounded-[25px]">
-                <BrandLogo className="w-20 h-20" />
+            <div className="mb-6 shadow-2xl shadow-purple-200/50 rounded-full">
+                <img src="/icon.svg" alt="Agencia Moon" className="w-20 h-20 object-contain rounded-full bg-black" />
             </div>
             
             <h1 className="text-2xl font-black text-gray-900 tracking-tight">Agencia Moon</h1>

@@ -10,19 +10,10 @@ import { authService } from './services/auth';
 import { auth } from './services/firebase';
 import { onAuthStateChanged } from 'firebase/auth'; 
 
-// Logo Original Restaurado
-const BrandLogo = ({ className = "w-12 h-12" }) => (
-  <svg viewBox="0 0 100 100" className={className} fill="none">
-     <rect width="100" height="100" rx="22" className="fill-black"/>
-     <path d="M72 26C65.8 20.8 58 18 50 18C32.3269 18 18 32.3269 18 50C18 67.6731 32.3269 82 50 82C67.6731 82 82 67.6731 82 50C82 46.5 81.4 43.1 80.3 39.9" stroke="white" strokeWidth="10" strokeLinecap="round"/>
-     <circle cx="78" cy="26" r="8" className="fill-primary"/>
-  </svg>
-);
-
 const SplashScreen = () => (
   <div className="fixed inset-0 bg-[#FAFAFA] z-50 flex flex-col items-center justify-center">
-    <div className="mb-8 animate-pulse shadow-2xl shadow-gray-200 rounded-[30px]">
-       <BrandLogo className="w-24 h-24" />
+    <div className="mb-8 animate-pulse shadow-2xl shadow-gray-200 rounded-full">
+       <img src="/icon.svg" alt="Loading..." className="w-24 h-24 object-contain rounded-full bg-black" />
     </div>
     <div className="flex gap-2 items-center">
         <div className="w-1.5 h-1.5 bg-black rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>

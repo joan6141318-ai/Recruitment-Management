@@ -9,15 +9,6 @@ interface LayoutProps {
   onLogout: () => void;
 }
 
-// Logo Original Restaurado
-const BrandLogo = ({ className = "w-8 h-8" }) => (
-  <svg viewBox="0 0 100 100" className={className} fill="none">
-     <rect width="100" height="100" rx="22" className="fill-black"/>
-     <path d="M72 26C65.8 20.8 58 18 50 18C32.3269 18 18 32.3269 18 50C18 67.6731 32.3269 82 50 82C67.6731 82 82 67.6731 82 50C82 46.5 81.4 43.1 80.3 39.9" stroke="white" strokeWidth="10" strokeLinecap="round"/>
-     <circle cx="78" cy="26" r="8" className="fill-primary"/>
-  </svg>
-);
-
 const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -70,7 +61,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
       <div className="flex flex-col h-full">
           <div className="h-24 flex items-center px-6 border-b border-gray-50">
              <div className="flex items-center gap-3">
-                 <BrandLogo className="w-10 h-10" />
+                 <img src="/icon.svg" alt="Moon" className="w-10 h-10 object-contain rounded-full bg-black" />
                  <div>
                     <h1 className="font-bold text-lg text-black uppercase tracking-widest leading-none">AGENCIA MOON</h1>
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Gestor de Reclutamiento</p>
@@ -112,7 +103,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
       {/* MOBILE HEADER CON HAMBURGUESA */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md border-b border-gray-100 px-5 h-[60px] flex justify-between items-center z-40 shadow-sm">
           <div className="flex items-center gap-3">
-              <BrandLogo className="w-8 h-8" />
+              <img src="/icon.svg" alt="Moon" className="w-8 h-8 object-contain rounded-full bg-black" />
               <span className="font-bold text-base text-black uppercase tracking-widest">MOON</span>
           </div>
           <button 
