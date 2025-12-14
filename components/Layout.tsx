@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { User } from '../types';
-import { LogOut, Users, Radio, LayoutDashboard, Menu, X, ChevronRight, Moon } from 'lucide-react';
+import { LogOut, Users, Radio, LayoutDashboard, Menu, X, Moon } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 interface LayoutProps {
@@ -16,14 +15,14 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Items de navegación definidos una vez para reusar
+  // Items de navegación
   const navItems = [
       { to: "/", icon: LayoutDashboard, label: "Panel Principal" },
       { to: "/emisores", icon: Radio, label: "Emisores" },
       ...(user.rol === 'admin' ? [{ to: "/reclutadores", icon: Users, label: "Equipo" }] : [])
   ];
 
-  // Componente Link Navbar Inferior
+  // Link Navbar Inferior
   const BottomNavItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => {
     const active = isActive(to);
     return (
@@ -44,7 +43,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
   return (
     <div className="min-h-screen bg-background font-sans text-black pb-24">
       
-      {/* 1. HEADER - Minimalista con toque Morado */}
+      {/* 1. HEADER */}
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-gray-100 px-5 py-3 flex justify-between items-center shadow-sm">
           <button 
             onClick={() => setIsSidebarOpen(true)} 
@@ -63,7 +62,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
           </div>
       </header>
 
-      {/* 2. SIDEBAR - Menú Completo + Perfil */}
+      {/* 2. SIDEBAR (MENÚ HAMBURGUESA) */}
       {isSidebarOpen && (
           <div className="fixed inset-0 z-50 flex">
               <div 
@@ -87,13 +86,13 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
                        <span className={`inline-block px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide ${
                            user.rol === 'admin' ? 'bg-black text-white' : 'bg-primary text-white'
                        }`}>
-                           {user.rol}
+                           {user.rol === 'admin' ? 'Administrador' : 'Reclutador'}
                        </span>
                   </div>
                   
-                  {/* Menú de Navegación Lateral */}
+                  {/* Navegación Lateral */}
                   <div className="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
-                      <p className="px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Menú</p>
+                      <p className="px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Menú Principal</p>
                       {navItems.map((item) => (
                           <Link 
                             key={item.to}
@@ -107,7 +106,6 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
                           >
                               <item.icon size={22} strokeWidth={isActive(item.to) ? 2.5 : 2} />
                               <span className="text-sm">{item.label}</span>
-                              {isActive(item.to) && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary"></div>}
                           </Link>
                       ))}
                   </div>
@@ -131,7 +129,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
           {children}
       </main>
 
-      {/* 4. BOTTOM NAVIGATION - Diseño Limpio */}
+      {/* 4. BOTTOM NAVIGATION */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-40 pb-safe pt-2 px-6 flex justify-between items-center h-[80px] shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
           {navItems.map(item => (
               <BottomNavItem key={item.to} to={item.to} icon={item.icon} label={item.label} />

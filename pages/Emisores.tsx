@@ -1,12 +1,13 @@
-
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
-import { Search, Plus, X, Globe, Calendar, Hash, Clock, Save } from 'lucide-react';
+import { Search, Plus, X, Globe, Calendar, Hash, Clock, Save, TrendingUp } from 'lucide-react';
 
 interface EmisoresProps {
   user: User;
 }
+
+const GOAL_HOURS = 44;
 
 const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   const [emisores, setEmisores] = useState<Emisor[]>([]);
@@ -60,24 +61,44 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       loadData();
   };
 
+  // Clasificación solicitada: Productivo, Regular, Malo
   const getStatusBadge = (hours: number) => {
-      if (hours >= 44) return { bg: 'bg-black', text: 'text-white', label: 'Meta 44h', border: 'border-black' };
-      if (hours >= 20) return { bg: 'bg-primaryLight', text: 'text-primary', label: 'Activo >20h', border: 'border-primaryLight' };
-      return { bg: 'bg-accentLight', text: 'text-accent', label: 'Riesgo', border: 'border-accentLight' };
+      if (hours >= GOAL_HOURS) {
+          return { 
+              bg: 'bg-green-100', text: 'text-green-800', 
+              label: 'PRODUCTIVO', 
+              bar: 'bg-green-500',
+              icon: '🚀'
+          };
+      }
+      if (hours >= 20) {
+          return { 
+              bg: 'bg-purple-100', text: 'text-purple-800', 
+              label: 'REGULAR', 
+              bar: 'bg-primary',
+              icon: '⚡'
+          };
+      }
+      return { 
+          bg: 'bg-orange-100', text: 'text-orange-800', 
+          label: 'BAJO / RIESGO', 
+          bar: 'bg-accent',
+          icon: '⚠️'
+      };
   };
 
   return (
     <div className="pb-8">
-      {/* TOOLS */}
+      {/* HEADER TOOLS */}
       <div className="sticky top-0 bg-background z-20 py-4 space-y-4">
           <div className="flex justify-between items-center">
               <div>
                   <h2 className="text-2xl font-black text-black tracking-tight">Emisores</h2>
-                  <p className="text-xs text-gray-500 font-medium">Gestión de talento y horas</p>
+                  <p className="text-xs text-gray-500 font-medium">Gestión y Productividad</p>
               </div>
               <button 
                  onClick={() => setIsAddOpen(true)}
-                 className="bg-black text-white w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-all"
+                 className="bg-black text-white w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-all hover:bg-gray-800"
               >
                   <Plus size={24} />
               </button>
@@ -87,48 +108,68 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
               <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
               <input 
                  className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold focus:border-primary focus:ring-4 focus:ring-primaryLight outline-none shadow-sm transition-all text-black placeholder-gray-400"
-                 placeholder="Buscar nombre o ID..."
+                 placeholder="Buscar por nombre o Bigo ID..."
                  value={searchTerm}
                  onChange={e => setSearchTerm(e.target.value)}
               />
           </div>
       </div>
 
-      {/* LISTA */}
+      {/* LISTA DE EMISORES */}
       <div className="space-y-4">
           {filtered.length === 0 && (
               <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-gray-200">
                   <p className="text-gray-400 text-sm font-medium">No se encontraron emisores</p>
               </div>
           )}
+          
           {filtered.map(emisor => {
               const badge = getStatusBadge(emisor.horas_mes);
+              const progress = Math.min((emisor.horas_mes / GOAL_HOURS) * 100, 100);
+              
               return (
                   <div 
                     key={emisor.id} 
                     onClick={() => { setSelected(emisor); setEditHours(emisor.horas_mes.toString()); setIsDetailOpen(true); }}
-                    className="group bg-white p-5 rounded-3xl border border-gray-100 shadow-card active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden"
+                    className="group bg-white p-5 rounded-3xl border border-gray-100 shadow-card active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden hover:border-gray-300"
                   >
-                      {/* Accent Bar */}
-                      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${emisor.horas_mes >= 44 ? 'bg-black' : (emisor.horas_mes >= 20 ? 'bg-primary' : 'bg-accent')}`}></div>
+                      {/* Borde izquierdo indicativo */}
+                      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${badge.bar}`}></div>
 
-                      <div className="flex justify-between items-start pl-3">
+                      <div className="flex justify-between items-start pl-3 mb-4">
                           <div>
                               <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="font-black text-black text-base capitalize">{emisor.nombre}</h3>
-                                  {emisor.horas_mes >= 44 && <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>}
+                                  <h3 className="font-black text-black text-lg capitalize">{emisor.nombre}</h3>
                               </div>
-                              <div className="flex items-center gap-2">
-                                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wide ${badge.bg} ${badge.text}`}>
-                                      {badge.label}
-                                  </span>
-                                  <span className="text-xs text-gray-400 font-mono font-medium">#{emisor.bigo_id}</span>
-                              </div>
+                              <span className="text-xs text-gray-400 font-mono font-bold">ID: {emisor.bigo_id}</span>
                           </div>
-                          <div className="text-right">
-                              <span className="text-2xl font-black text-black tracking-tight">{emisor.horas_mes}</span>
-                              <span className="text-[10px] text-gray-400 font-bold uppercase block">Horas</span>
+                          
+                          {/* Badge de Estado Visualmente Atractivo */}
+                          <div className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 ${badge.bg}`}>
+                              <span className="text-xs">{badge.icon}</span>
+                              <span className={`text-[10px] font-black uppercase tracking-wide ${badge.text}`}>
+                                  {badge.label}
+                              </span>
                           </div>
+                      </div>
+
+                      {/* Sección de Horas y Progreso */}
+                      <div className="pl-3">
+                           <div className="flex justify-between items-end mb-2">
+                               <span className="text-xs font-bold text-gray-400 uppercase">Avance Mensual</span>
+                               <div className="text-right">
+                                  <span className="text-2xl font-black text-black tracking-tight">{emisor.horas_mes}</span>
+                                  <span className="text-xs text-gray-400 font-bold ml-1">/ {GOAL_HOURS}h</span>
+                               </div>
+                           </div>
+                           
+                           {/* Barra de Progreso */}
+                           <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                               <div 
+                                  className={`h-full rounded-full transition-all duration-500 ${badge.bar}`} 
+                                  style={{ width: `${progress}%` }}
+                               ></div>
+                           </div>
                       </div>
                   </div>
               );
@@ -137,7 +178,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
       {/* MODAL DETALLE / EDICIÓN */}
       {isDetailOpen && selected && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm sm:p-4">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4 animate-pop-in">
               <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-slide-up max-h-[90vh] overflow-y-auto">
                   
                   {/* Header Modal */}
@@ -161,50 +202,46 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                           <div className="flex items-center gap-2 mb-1 text-gray-400"><Calendar size={14} /><span className="text-[10px] font-bold uppercase">Registro</span></div>
                           <p className="font-bold text-black text-sm">{selected.mes_entrada}</p>
                       </div>
-                      <div className="col-span-2 bg-gray-50 p-4 rounded-2xl flex justify-between items-center">
-                          <div className="flex items-center gap-2 text-gray-400"><Hash size={14} /><span className="text-[10px] font-bold uppercase">Bigo ID</span></div>
-                          <p className="font-mono font-black text-black text-lg">{selected.bigo_id}</p>
-                      </div>
                   </div>
 
-                  {/* SECCION CRITICA: EDICIÓN DE HORAS */}
-                  <div className="bg-white border-2 border-gray-100 rounded-3xl p-5 shadow-sm">
+                  {/* SECCION CRITICA: EDICIÓN DE HORAS CORREGIDA */}
+                  <div className="bg-white border-2 border-gray-100 rounded-3xl p-6 shadow-sm">
                       <div className="flex items-center justify-between mb-4">
                           <span className="text-sm font-black text-black uppercase flex items-center gap-2">
-                              <Clock size={16} className="text-primary" /> Horas Transmisión
+                              <TrendingUp size={18} className="text-primary" /> Productividad
                           </span>
                           {user.rol !== 'admin' && (
-                              <span className="text-xs font-bold text-gray-400">Solo lectura</span>
+                              <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">Solo lectura</span>
                           )}
                       </div>
 
                       {user.rol === 'admin' ? (
                           <div className="space-y-4">
-                              {/* INPUT GIGANTE */}
+                              {/* INPUT GIGANTE Y CLARO */}
                               <div className="relative">
                                   <input 
                                     type="number" 
                                     inputMode="decimal"
                                     value={editHours} 
                                     onChange={e => setEditHours(e.target.value)} 
-                                    className="w-full bg-gray-50 border-2 border-gray-200 rounded-2xl py-6 text-center font-black text-5xl text-black focus:bg-white focus:border-primary focus:ring-4 focus:ring-primaryLight outline-none transition-all placeholder-gray-300"
+                                    className="w-full bg-gray-50 border-2 border-gray-200 rounded-2xl py-6 text-center font-black text-6xl text-black focus:bg-white focus:border-black focus:ring-0 outline-none transition-all placeholder-gray-300"
                                     placeholder="0"
                                   />
-                                  <span className="absolute right-6 bottom-6 text-sm font-bold text-gray-400">HRS</span>
+                                  <span className="absolute right-4 bottom-4 text-xs font-black text-gray-400 uppercase tracking-widest">Horas</span>
                               </div>
                               
-                              {/* BOTON GUARDAR CLARO Y SEPARADO */}
+                              {/* BOTON GUARDAR GRANDE Y SEPARADO */}
                               <button 
                                 onClick={handleUpdateHours} 
-                                className="w-full bg-black text-white py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-gray-900 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg"
+                                className="w-full bg-black text-white py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-gray-900 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-xl shadow-gray-200 mt-2"
                               >
-                                  <Save size={18} /> Guardar Cambios
+                                  <Save size={20} /> Guardar Horas
                               </button>
                           </div>
                       ) : (
-                          <div className="bg-black text-white py-8 rounded-2xl text-center">
-                              <span className="text-5xl font-black tracking-tighter">{selected.horas_mes}</span>
-                              <span className="text-sm font-bold text-gray-400 ml-2">HRS</span>
+                          <div className="text-center py-4">
+                              <span className="text-6xl font-black tracking-tighter text-black">{selected.horas_mes}</span>
+                              <span className="text-sm font-bold text-gray-400 block mt-1 uppercase tracking-widest">Horas Totales</span>
                           </div>
                       )}
                   </div>
@@ -224,20 +261,20 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                    <form onSubmit={handleAdd} className="space-y-4">
                        <div className="space-y-1">
                            <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">Nombre</label>
-                           <input required value={newNombre} onChange={e => setNewNombre(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:border-primary focus:ring-2 focus:ring-primaryLight outline-none transition-all" />
+                           <input required value={newNombre} onChange={e => setNewNombre(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:border-black focus:ring-0 outline-none transition-all" />
                        </div>
                        <div className="space-y-1">
                            <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">Bigo ID</label>
-                           <input required value={newBigo} onChange={e => setNewBigo(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:border-primary focus:ring-2 focus:ring-primaryLight outline-none transition-all" />
+                           <input required value={newBigo} onChange={e => setNewBigo(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:border-black focus:ring-0 outline-none transition-all" />
                        </div>
                        <div className="grid grid-cols-2 gap-3">
                            <div>
                                <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">País</label>
-                               <input required value={newPais} onChange={e => setNewPais(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:border-primary outline-none" />
+                               <input required value={newPais} onChange={e => setNewPais(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:border-black outline-none" />
                            </div>
                            <div>
                                <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">Ingreso</label>
-                               <input required type="month" value={newMes} onChange={e => setNewMes(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-2 py-3 text-sm font-bold focus:border-primary outline-none" />
+                               <input required type="month" value={newMes} onChange={e => setNewMes(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-2 py-3 text-sm font-bold focus:border-black outline-none" />
                            </div>
                        </div>
                        
