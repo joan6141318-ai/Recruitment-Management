@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Users, Clock, TrendingUp, AlertCircle, CheckCircle2, Target } from 'lucide-react';
+import { Users, Clock, TrendingUp, AlertCircle, CheckCircle2, Target, Calendar, Edit2, X } from 'lucide-react';
 
 interface DashboardProps {
   user: User;
@@ -11,23 +11,42 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [emisores, setEmisores] = useState<Emisor[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Estado para la fecha
+  const [lastUpdatedDate, setLastUpdatedDate] = useState<string>('');
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [newDateInput, setNewDateInput] = useState('');
 
   // Objetivos Dinámicos: 30 para Admin (Equipo), 15 para Reclutador individual
   const MONTHLY_EMISOR_GOAL = user.rol === 'admin' ? 30 : 15;
   const PRODUCTIVITY_HOURS_GOAL = 20;
 
   useEffect(() => {
-    // Usar suscripción en tiempo real en lugar de getEmisores
+    // 1. Obtener fecha
+    const loadMetadata = async () => {
+        const meta = await dataService.getMetadata();
+        setLastUpdatedDate(meta.lastUpdated);
+        setNewDateInput(meta.lastUpdated);
+    };
+    loadMetadata();
+
+    // 2. Suscripción en tiempo real
     const unsubscribe = dataService.subscribeToEmisores(user, (data) => {
       setEmisores(data);
       setLoading(false);
     });
 
-    // Limpiar suscripción al desmontar
     return () => unsubscribe();
   }, [user]);
 
-  // CORRECCIÓN: Filtrado case-insensitive para asegurar que no salga 0 si dice 'Activo' o 'activo'
+  const handleUpdateDate = async (e: React.FormEvent) => {
+      e.preventDefault();
+      await dataService.updateMetadata(newDateInput);
+      setLastUpdatedDate(newDateInput);
+      setShowDateModal(false);
+  };
+
+  // CORRECCIÓN: Filtrado case-insensitive
   const activeEmisores = emisores.filter(e => 
     e.estado && e.estado.toLowerCase() === 'activo'
   );
@@ -38,7 +57,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   // Lógica de Meta Mensual
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   const newEmisoresThisMonth = emisores.filter(e => 
-    // Usamos mes_entrada (input manual) o fecha_registro como fallback
     (e.mes_entrada && e.mes_entrada === currentMonth) || 
     (e.fecha_registro && e.fecha_registro.startsWith(currentMonth))
   );
@@ -70,21 +88,32 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   return (
     <div className="space-y-6 animate-slide-up">
       
-      {/* Title */}
+      {/* Title & Header con Fecha */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-2">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Rendimiento en Vivo</h2>
             <p className="text-gray-500 text-sm mt-1">Resumen general y metas del mes.</p>
           </div>
-          <div className="text-right">
-              <span className="text-xs font-bold text-primary bg-purple-50 px-3 py-1 rounded-full uppercase tracking-wide">
-                  {new Date().toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
-              </span>
+          
+          <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 rounded-full shadow-sm">
+                  <Calendar size={14} className="text-gray-400"/>
+                  <span className="text-xs font-bold text-gray-500 uppercase">Información al día: <span className="text-black">{lastUpdatedDate || '...'}</span></span>
+              </div>
+              
+              {user.rol === 'admin' && (
+                  <button 
+                    onClick={() => setShowDateModal(true)}
+                    className="p-1.5 bg-black text-white rounded-full hover:bg-gray-800 transition-colors shadow-sm"
+                    title="Editar fecha"
+                  >
+                      <Edit2 size={12} />
+                  </button>
+              )}
           </div>
       </div>
 
-      {/* --- SECCIÓN META MENSUAL (RECLUTADOR/ADMIN) --- */}
-      {/* DISEÑO CAMBIADO: Gris Claro con Margen Blanco */}
+      {/* --- SECCIÓN META MENSUAL (Diseño Original: Gris Claro) --- */}
       <div className="bg-gray-100 text-gray-900 p-6 rounded-3xl shadow-xl shadow-gray-200/50 border-[6px] border-white relative overflow-hidden">
           
           <div className="relative z-10">
@@ -218,6 +247,34 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
              </div>
           </div>
       </div>
+
+      {/* MODAL CAMBIAR FECHA (SOLO ADMIN) */}
+      {showDateModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowDateModal(false)}></div>
+           <div className="bg-white rounded-2xl w-full max-w-xs p-6 shadow-2xl relative z-10 animate-pop-in">
+              <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold text-gray-900">Actualizar Fecha</h3>
+                  <button onClick={() => setShowDateModal(false)}><X size={20} className="text-gray-400 hover:text-black"/></button>
+              </div>
+              <form onSubmit={handleUpdateDate} className="space-y-4">
+                 <div>
+                    <label className="text-xs font-bold text-gray-500 block mb-1 uppercase">Fecha de Corte</label>
+                    <input 
+                        required 
+                        type="date"
+                        className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm font-medium outline-none focus:border-black" 
+                        value={newDateInput} 
+                        onChange={e => setNewDateInput(e.target.value)} 
+                    />
+                 </div>
+                 <button className="w-full bg-black text-white py-3 rounded-xl text-sm font-bold hover:bg-gray-800 transition-colors">
+                     Guardar Fecha
+                 </button>
+              </form>
+           </div>
+        </div>
+      )}
     </div>
   );
 };
