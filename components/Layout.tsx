@@ -10,12 +10,12 @@ interface LayoutProps {
   onLogout: () => void;
 }
 
-// Logo Componentizado para consistencia
+// NUEVO LOGO: "Orbital Focus"
 const BrandLogo = ({ className = "w-8 h-8" }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none">
-     <rect width="100" height="100" rx="20" className="fill-black"/>
-     <path d="M68 28C62.5 22.5 55 20 48 20C32.536 20 20 32.536 20 48C20 63.464 32.536 76 48 76C55.5 76 63 73 68 68C60 68 52 62 52 48C52 34 60 28 68 28Z" className="fill-white"/>
-     <circle cx="72" cy="28" r="6" className="fill-primary"/>
+     <rect width="100" height="100" rx="22" className="fill-black"/>
+     <path d="M72 26C65.8 20.8 58 18 50 18C32.3269 18 18 32.3269 18 50C18 67.6731 32.3269 82 50 82C67.6731 82 82 67.6731 82 50C82 46.5 81.4 43.1 80.3 39.9" stroke="white" strokeWidth="10" strokeLinecap="round"/>
+     <circle cx="78" cy="26" r="8" className="fill-primary"/>
   </svg>
 );
 
