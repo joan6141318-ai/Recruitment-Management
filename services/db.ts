@@ -8,7 +8,6 @@ import {
   setDoc, 
   addDoc, 
   updateDoc, 
-  deleteDoc,
   query, 
   where,
   writeBatch,
@@ -16,7 +15,6 @@ import {
 } from 'firebase/firestore';
 
 export const dataService = {
-  // --- METADATOS DEL SISTEMA (FECHA ACTUALIZACIÓN) ---
   getMetadata: async (): Promise<SystemMetadata> => {
     try {
       const docRef = doc(db, 'system', 'metadata');
@@ -39,7 +37,6 @@ export const dataService = {
     await setDoc(docRef, { lastUpdated: newDate }, { merge: true });
   },
 
-  // --- USUARIOS ---
   updateUserName: async (userId: string, newName: string): Promise<void> => {
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, { nombre: newName });
@@ -60,23 +57,26 @@ export const dataService = {
         return {
             id: docSnap.id,
             ...data,
-            activo: data.activo !== undefined ? data.activo : true 
+            activo: data.activo !== undefined ? data.activo : true // Default to true if missing
         } as User;
     });
   },
 
-  // --- EMISORES ---
+  // MODIFICADO: Acepta un targetRecruiterId opcional para filtros de Admin
   getEmisores: async (currentUser: User, targetRecruiterId?: string): Promise<Emisor[]> => {
     const emisoresRef = collection(db, 'emisores');
     let q;
 
     if (currentUser.rol === 'admin') {
+      // Si es Admin y pide un reclutador específico, filtramos
       if (targetRecruiterId) {
         q = query(emisoresRef, where('reclutador_id', '==', targetRecruiterId));
       } else {
+        // Si no, trae todo
         q = query(emisoresRef);
       }
     } else {
+      // Si es Reclutador, SIEMPRE solo los suyos, ignorando el target
       q = query(emisoresRef, where('reclutador_id', '==', currentUser.id));
     }
 
@@ -87,6 +87,7 @@ export const dataService = {
     } as Emisor));
   },
 
+  // NUEVO: Suscripción en tiempo real para el Dashboard
   subscribeToEmisores: (currentUser: User, callback: (emisores: Emisor[]) => void): () => void => {
     const emisoresRef = collection(db, 'emisores');
     let q;
@@ -97,6 +98,7 @@ export const dataService = {
       q = query(emisoresRef, where('reclutador_id', '==', currentUser.id));
     }
 
+    // onSnapshot devuelve la función para desuscribirse
     return onSnapshot(q, (snapshot) => {
       const emisores = snapshot.docs.map(docSnap => ({
         id: docSnap.id,
@@ -120,9 +122,12 @@ export const dataService = {
 
   updateHours: async (emisorId: string, newHours: number, adminId: string): Promise<void> => {
     const batch = writeBatch(db);
-    const emisorRef = doc(db, 'emisores', emisorId);
-    const historialRef = doc(collection(db, 'historial')); 
     
+    // Referencias
+    const emisorRef = doc(db, 'emisores', emisorId);
+    const historialRef = doc(collection(db, 'historial')); // ID automático para historial
+    
+    // Obtener datos actuales para el historial (lectura antes de escritura)
     const emisorSnap = await getDoc(emisorRef);
     let oldHours = 0;
     if (emisorSnap.exists()) {
@@ -130,8 +135,10 @@ export const dataService = {
         oldHours = data ? data.horas_mes : 0;
     }
 
+    // 1. Actualizar Horas
     batch.update(emisorRef, { horas_mes: newHours });
 
+    // 2. Crear registro Historial
     batch.set(historialRef, {
         emisor_id: emisorId,
         horas_anteriores: oldHours,
@@ -140,6 +147,7 @@ export const dataService = {
         modificado_por: adminId
     });
 
+    // Ejecutar ambas operaciones atómicamente
     await batch.commit();
   },
 
@@ -153,12 +161,6 @@ export const dataService = {
       const newStatus = currentStatus === 'activo' ? 'pausado' : 'activo';
       await updateDoc(emisorRef, { estado: newStatus });
     }
-  },
-  
-  // NUEVO: Eliminar Emisor
-  deleteEmisor: async (emisorId: string): Promise<void> => {
-    const emisorRef = doc(db, 'emisores', emisorId);
-    await deleteDoc(emisorRef);
   },
 
   getHistory: async (emisorId?: string): Promise<HistorialHoras[]> => {

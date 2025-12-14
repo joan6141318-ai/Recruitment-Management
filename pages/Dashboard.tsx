@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Users, Clock, TrendingUp, AlertCircle, CheckCircle2, Target, Calendar, Edit2, X } from 'lucide-react';
+import { Users, Clock, TrendingUp, AlertCircle, CheckCircle2, Target } from 'lucide-react';
 
 interface DashboardProps {
   user: User;
@@ -11,41 +11,23 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [emisores, setEmisores] = useState<Emisor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [lastUpdatedDate, setLastUpdatedDate] = useState<string>('');
-  
-  // Estado para el modal de actualizar fecha (Solo Admin)
-  const [showDateModal, setShowDateModal] = useState(false);
-  const [newDateInput, setNewDateInput] = useState('');
 
-  // Objetivos Dinámicos: 30 para Admin, 15 para Reclutador
+  // Objetivos Dinámicos: 30 para Admin (Equipo), 15 para Reclutador individual
   const MONTHLY_EMISOR_GOAL = user.rol === 'admin' ? 30 : 15;
   const PRODUCTIVITY_HOURS_GOAL = 20;
 
   useEffect(() => {
-    // 1. Cargar Fecha de Actualización
-    const loadMetadata = async () => {
-        const meta = await dataService.getMetadata();
-        setLastUpdatedDate(meta.lastUpdated);
-        setNewDateInput(meta.lastUpdated);
-    };
-    loadMetadata();
-
-    // 2. Suscripción a datos
+    // Usar suscripción en tiempo real en lugar de getEmisores
     const unsubscribe = dataService.subscribeToEmisores(user, (data) => {
       setEmisores(data);
       setLoading(false);
     });
 
+    // Limpiar suscripción al desmontar
     return () => unsubscribe();
   }, [user]);
 
-  const handleUpdateDate = async (e: React.FormEvent) => {
-      e.preventDefault();
-      await dataService.updateMetadata(newDateInput);
-      setLastUpdatedDate(newDateInput);
-      setShowDateModal(false);
-  };
-
+  // CORRECCIÓN: Filtrado case-insensitive para asegurar que no salga 0 si dice 'Activo' o 'activo'
   const activeEmisores = emisores.filter(e => 
     e.estado && e.estado.toLowerCase() === 'activo'
   );
@@ -53,13 +35,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const totalHours = emisores.reduce((acc, curr) => acc + curr.horas_mes, 0);
   const avgHours = activeEmisores.length > 0 ? totalHours / activeEmisores.length : 0;
   
-  const currentMonth = new Date().toISOString().slice(0, 7);
+  // Lógica de Meta Mensual
+  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   const newEmisoresThisMonth = emisores.filter(e => 
+    // Usamos mes_entrada (input manual) o fecha_registro como fallback
     (e.mes_entrada && e.mes_entrada === currentMonth) || 
     (e.fecha_registro && e.fecha_registro.startsWith(currentMonth))
   );
   const monthlyProgress = Math.min((newEmisoresThisMonth.length / MONTHLY_EMISOR_GOAL) * 100, 100);
   
+  // Chart Data: Top 5 Emisores
   const chartData = [...emisores]
     .sort((a, b) => b.horas_mes - a.horas_mes)
     .slice(0, 5)
@@ -68,7 +53,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   if (loading) return <div className="p-10 text-center text-sm text-gray-400">Sincronizando métricas...</div>;
 
   const StatCard = ({ title, value, sub, icon: Icon, color, iconColor }: any) => (
-      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start mb-4">
               <div>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{title}</p>
@@ -85,57 +70,53 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   return (
     <div className="space-y-6 animate-slide-up">
       
-      {/* Title & Update Date */}
+      {/* Title */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-2">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Rendimiento en Vivo</h2>
             <p className="text-gray-500 text-sm mt-1">Resumen general y metas del mes.</p>
           </div>
-          <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 rounded-full shadow-sm">
-                  <Calendar size={14} className="text-gray-400"/>
-                  <span className="text-xs font-bold text-gray-500 uppercase">Datos al: <span className="text-black">{lastUpdatedDate || '...'}</span></span>
-              </div>
-              {user.rol === 'admin' && (
-                  <button 
-                    onClick={() => setShowDateModal(true)}
-                    className="p-1.5 bg-black text-white rounded-full hover:bg-gray-800 transition-colors"
-                  >
-                      <Edit2 size={12} />
-                  </button>
-              )}
+          <div className="text-right">
+              <span className="text-xs font-bold text-primary bg-purple-50 px-3 py-1 rounded-full uppercase tracking-wide">
+                  {new Date().toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
+              </span>
           </div>
       </div>
 
-      {/* --- SECCIÓN META MENSUAL (Diseño Clásico/Anterior) --- */}
-      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
-          <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-50 rounded-xl">
-                    <Target size={24} className="text-primary" />
-                  </div>
-                  <div>
-                      <h3 className="text-lg font-bold text-gray-900">Meta de Reclutamiento</h3>
-                      <p className="text-xs text-gray-500 font-medium">Objetivo: {MONTHLY_EMISOR_GOAL} Nuevos Emisores</p>
-                  </div>
-              </div>
-              <div className="text-right">
-                  <span className="text-3xl font-black text-primary">{newEmisoresThisMonth.length}</span>
-                  <span className="text-sm text-gray-400 font-bold"> / {MONTHLY_EMISOR_GOAL}</span>
-              </div>
-          </div>
-
-          <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden mb-2">
-              <div 
-                  className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
-                  style={{width: `${monthlyProgress}%`}}
-              >
-              </div>
-          </div>
+      {/* --- SECCIÓN META MENSUAL (RECLUTADOR/ADMIN) --- */}
+      {/* DISEÑO CAMBIADO: Gris Claro con Margen Blanco */}
+      <div className="bg-gray-100 text-gray-900 p-6 rounded-3xl shadow-xl shadow-gray-200/50 border-[6px] border-white relative overflow-hidden">
           
-          <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
-              <span>Progreso Actual</span>
-              <span>{Math.round(monthlyProgress)}% Completado</span>
+          <div className="relative z-10">
+              <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center gap-3">
+                      <div className="p-2 bg-white rounded-xl shadow-sm">
+                        <Target size={24} className="text-primary" />
+                      </div>
+                      <div>
+                          <h3 className="text-lg font-bold text-black">Meta de Reclutamiento</h3>
+                          <p className="text-xs text-gray-500 font-medium">Objetivo: {MONTHLY_EMISOR_GOAL} Nuevos Emisores</p>
+                      </div>
+                  </div>
+                  <div className="text-right">
+                      <span className="text-3xl font-black text-primary">{newEmisoresThisMonth.length}</span>
+                      <span className="text-sm text-gray-400 font-bold"> / {MONTHLY_EMISOR_GOAL}</span>
+                  </div>
+              </div>
+
+              {/* Barra de Progreso */}
+              <div className="w-full bg-white h-4 rounded-full overflow-hidden mb-2 border border-gray-200 shadow-inner">
+                  <div 
+                      className="h-full rounded-full bg-gradient-to-r from-primary to-purple-400 transition-all duration-700 ease-out relative"
+                      style={{width: `${monthlyProgress}%`}}
+                  >
+                  </div>
+              </div>
+              
+              <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  <span>Progreso Actual</span>
+                  <span>{Math.round(monthlyProgress)}% Completado</span>
+              </div>
           </div>
       </div>
 
@@ -237,34 +218,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
              </div>
           </div>
       </div>
-
-      {/* MODAL CAMBIAR FECHA (SOLO ADMIN) */}
-      {showDateModal && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowDateModal(false)}></div>
-           <div className="bg-white rounded-2xl w-full max-w-xs p-6 shadow-2xl relative z-10 animate-pop-in">
-              <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold text-gray-900">Actualizar Fecha</h3>
-                  <button onClick={() => setShowDateModal(false)}><X size={20} className="text-gray-400 hover:text-black"/></button>
-              </div>
-              <form onSubmit={handleUpdateDate} className="space-y-4">
-                 <div>
-                    <label className="text-xs font-bold text-gray-500 block mb-1 uppercase">Fecha de Corte</label>
-                    <input 
-                        required 
-                        type="date"
-                        className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm font-medium outline-none focus:border-black" 
-                        value={newDateInput} 
-                        onChange={e => setNewDateInput(e.target.value)} 
-                    />
-                 </div>
-                 <button className="w-full bg-black text-white py-3 rounded-xl text-sm font-bold hover:bg-gray-800 transition-colors">
-                     Guardar Fecha
-                 </button>
-              </form>
-           </div>
-        </div>
-      )}
     </div>
   );
 };
