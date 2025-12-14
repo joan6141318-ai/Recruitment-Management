@@ -73,7 +73,8 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
                  <BrandLogo className="w-10 h-10" />
                  <div>
                     <h1 className="font-bold text-lg text-black uppercase tracking-widest leading-none">AGENCIA MOON</h1>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Gestor RRHH</p>
+                    {/* CORRECCIÓN: Título restaurado */}
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Gestor de Reclutamiento</p>
                  </div>
              </div>
           </div>

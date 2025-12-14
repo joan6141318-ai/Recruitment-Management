@@ -58,9 +58,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 <BrandLogo className="w-20 h-20" />
             </div>
             
-            {/* TÍTULO CORREGIDO: Sin espacios extraños, sin saltos de línea. Sólido y profesional. */}
             <h1 className="text-2xl font-black text-gray-900 tracking-tight">Agencia Moon</h1>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-2">Plataforma de Gestión</p>
+            {/* CORRECCIÓN: Título restaurado */}
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-2">Gestor de Reclutamiento</p>
         </div>
 
         <div className="bg-white p-8 rounded-3xl shadow-xl shadow-gray-100 border border-white relative overflow-hidden">
