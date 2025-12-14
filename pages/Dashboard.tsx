@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Users, Clock, TrendingUp, AlertCircle, CheckCircle2, Target, ArrowUpRight } from 'lucide-react';
+import { Users, Clock, TrendingUp, AlertCircle, CheckCircle2, Target, ArrowUpRight, Calendar, Edit2, X } from 'lucide-react';
 
 interface DashboardProps {
   user: User;
@@ -11,13 +11,26 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [emisores, setEmisores] = useState<Emisor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdatedDate, setLastUpdatedDate] = useState<string>('');
+  
+  // Estado para el modal de actualizar fecha (Solo Admin)
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [newDateInput, setNewDateInput] = useState('');
 
   // Objetivos Dinámicos: 30 para Admin (Equipo), 15 para Reclutador individual
   const MONTHLY_EMISOR_GOAL = user.rol === 'admin' ? 30 : 15;
   const PRODUCTIVITY_HOURS_GOAL = 20;
 
   useEffect(() => {
-    // Usar suscripción en tiempo real en lugar de getEmisores
+    // 1. Obtener Metadatos (Fecha Actualización)
+    const loadMetadata = async () => {
+        const meta = await dataService.getMetadata();
+        setLastUpdatedDate(meta.lastUpdated);
+        setNewDateInput(meta.lastUpdated);
+    };
+    loadMetadata();
+
+    // 2. Usar suscripción en tiempo real
     const unsubscribe = dataService.subscribeToEmisores(user, (data) => {
       setEmisores(data);
       setLoading(false);
@@ -26,6 +39,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     // Limpiar suscripción al desmontar
     return () => unsubscribe();
   }, [user]);
+
+  const handleUpdateDate = async (e: React.FormEvent) => {
+      e.preventDefault();
+      await dataService.updateMetadata(newDateInput);
+      setLastUpdatedDate(newDateInput);
+      setShowDateModal(false);
+  };
 
   // CORRECCIÓN: Filtrado case-insensitive
   const activeEmisores = emisores.filter(e => 
@@ -69,7 +89,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   return (
     <div className="space-y-8 animate-slide-up">
       
-      {/* Header: Saludo Personalizado */}
+      {/* Header: Saludo Personalizado y Fecha de Actualización */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h2 className="text-3xl font-black text-black tracking-tight">
@@ -77,10 +97,23 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             </h2>
             <p className="text-gray-400 text-sm mt-1 font-medium">Aquí está el resumen de tu rendimiento hoy.</p>
           </div>
-          <div className="text-right">
-              <span className="text-xs font-bold text-black border border-gray-200 bg-white px-4 py-2 rounded-full uppercase tracking-wide shadow-sm">
-                  {new Date().toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
-              </span>
+          
+          <div className="text-right flex items-center justify-end gap-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-black border border-gray-200 bg-white px-4 py-2 rounded-full uppercase tracking-wide shadow-sm">
+                  <span className="text-gray-400">Información al:</span>
+                  <span>{lastUpdatedDate || '...'}</span>
+              </div>
+              
+              {/* Botón de Edición para Admin */}
+              {user.rol === 'admin' && (
+                  <button 
+                    onClick={() => setShowDateModal(true)}
+                    className="p-2 bg-black text-white rounded-full hover:bg-gray-800 transition-colors shadow-lg"
+                    title="Actualizar Fecha de Información"
+                  >
+                      <Edit2 size={14} />
+                  </button>
+              )}
           </div>
       </div>
 
@@ -222,6 +255,37 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
              </div>
           </div>
       </div>
+
+      {/* MODAL CAMBIAR FECHA (SOLO ADMIN) */}
+      {showDateModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowDateModal(false)}></div>
+           <div className="bg-white rounded-3xl w-full max-w-xs p-6 shadow-2xl relative z-10 animate-pop-in">
+              <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-black text-black">Actualizar Fecha</h3>
+                  <button onClick={() => setShowDateModal(false)}><X size={20} className="text-gray-400 hover:text-black"/></button>
+              </div>
+              <form onSubmit={handleUpdateDate} className="space-y-4">
+                 <div>
+                    <label className="text-xs font-bold text-gray-400 block mb-1 uppercase">Fecha de Corte</label>
+                    <div className="relative">
+                        <Calendar size={18} className="absolute left-3 top-3 text-gray-400" />
+                        <input 
+                            required 
+                            type="date"
+                            className="w-full bg-gray-50 border-none pl-10 pr-4 py-3 rounded-xl text-sm font-bold text-black outline-none focus:ring-2 focus:ring-black" 
+                            value={newDateInput} 
+                            onChange={e => setNewDateInput(e.target.value)} 
+                        />
+                    </div>
+                 </div>
+                 <button className="w-full bg-black text-white py-3 rounded-xl text-sm font-bold hover:bg-gray-900 transition-colors shadow-lg">
+                     Guardar Fecha
+                 </button>
+              </form>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

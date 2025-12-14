@@ -8,6 +8,7 @@ import {
   setDoc, 
   addDoc, 
   updateDoc, 
+  deleteDoc,
   query, 
   where,
   writeBatch,
@@ -161,6 +162,11 @@ export const dataService = {
       const newStatus = currentStatus === 'activo' ? 'pausado' : 'activo';
       await updateDoc(emisorRef, { estado: newStatus });
     }
+  },
+  
+  deleteEmisor: async (emisorId: string): Promise<void> => {
+    const emisorRef = doc(db, 'emisores', emisorId);
+    await deleteDoc(emisorRef);
   },
 
   getHistory: async (emisorId?: string): Promise<HistorialHoras[]> => {

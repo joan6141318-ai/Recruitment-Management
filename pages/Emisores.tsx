@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
-import { Search, Plus, MapPin, Calendar, Clock, Edit3, X, User as UserIcon, AlertTriangle, CheckCircle, Trophy, FilterX } from 'lucide-react';
+import { Search, Plus, MapPin, Calendar, Clock, Edit3, X, User as UserIcon, AlertTriangle, CheckCircle, Trophy, FilterX, Trash2 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 interface EmisoresProps {
@@ -73,6 +73,13 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
     setShowDetailModal(false);
     loadData();
   };
+  
+  const handleDeleteEmisor = async (emisorId: string) => {
+      if(!confirm("¿Estás seguro de ELIMINAR este emisor permanentemente? Esta acción no se puede deshacer.")) return;
+      await dataService.deleteEmisor(emisorId);
+      setShowDetailModal(false);
+      loadData();
+  };
 
   const openEmisorDetail = (emisor: Emisor) => {
       setSelectedEmisor(emisor);
@@ -86,24 +93,24 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   };
 
   // Helper para estado
-  const getStatusInfo = (hours: number) => {
+  const getStatusInfo = (hours: number, state?: string) => {
+      if (state === 'pausado') return { label: 'Inactivo', color: 'text-gray-400', bg: 'bg-gray-100', icon: X, barColor: 'bg-gray-300' };
       if (hours >= 44) return { label: 'Meta Cumplida', color: 'text-green-600', bg: 'bg-green-100', icon: Trophy, barColor: 'bg-green-500' };
       if (hours >= 20) return { label: 'Productivo', color: 'text-primary', bg: 'bg-purple-100', icon: CheckCircle, barColor: 'bg-primary' };
       return { label: 'Riesgo', color: 'text-accent', bg: 'bg-orange-100', icon: AlertTriangle, barColor: 'bg-accent' };
   };
 
   // Circular Progress Component
-  const CircularProgress = ({ value, max = 44, size = 120, strokeWidth = 8 }: any) => {
+  const CircularProgress = ({ value, max = 44, size = 120, strokeWidth = 8, state = 'activo' }: any) => {
       const radius = (size - strokeWidth) / 2;
       const circumference = radius * 2 * Math.PI;
       const progress = Math.min(value / max, 1);
       const dash = circumference * progress;
       
-      const { barColor } = getStatusInfo(value);
-      // Extraemos el color hexadecimal aproximado para el SVG stroke
       let strokeColor = "#F97316"; // Naranja (Riesgo)
       if(value >= 20) strokeColor = "#7C3AED"; // Morado (Productivo)
       if(value >= 44) strokeColor = "#16A34A"; // Verde (Meta)
+      if(state === 'pausado') strokeColor = "#D1D5DB"; // Gris (Inactivo)
 
       return (
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
@@ -116,7 +123,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                 strokeLinecap="round"
                 transform={`rotate(-90 ${size/2} ${size/2})`}
             />
-            <text x="50%" y="50%" dy=".3em" textAnchor="middle" className="text-3xl font-black fill-gray-900">{value}</text>
+            <text x="50%" y="50%" dy=".3em" textAnchor="middle" className={`text-3xl font-black ${state === 'pausado' ? 'fill-gray-400' : 'fill-gray-900'}`}>{value}</text>
         </svg>
       );
   };
@@ -166,44 +173,56 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
         {loading ? <div className="col-span-full text-center py-20 text-gray-400">Cargando base de datos...</div> : 
          filtered.length === 0 ? <div className="col-span-full text-center py-20 text-gray-400">No se encontraron emisores.</div> :
          filtered.map((emisor) => {
-            const status = getStatusInfo(emisor.horas_mes);
+            const status = getStatusInfo(emisor.horas_mes, emisor.estado);
             const StatusIcon = status.icon;
 
             return (
                 <div 
                     key={emisor.id} 
-                    onClick={() => openEmisorDetail(emisor)}
-                    className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all cursor-pointer relative group"
+                    className={`bg-white rounded-2xl p-5 border shadow-sm transition-all relative group ${emisor.estado === 'pausado' ? 'border-gray-100 opacity-70 hover:opacity-100' : 'border-gray-100 hover:shadow-md hover:border-gray-200'}`}
                 >
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-center gap-3 overflow-hidden">
-                            <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-sm font-bold text-gray-600">
-                                {emisor.nombre.charAt(0)}
+                    <div className="cursor-pointer" onClick={() => openEmisorDetail(emisor)}>
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${emisor.estado === 'pausado' ? 'bg-gray-100 text-gray-400' : 'bg-gray-50 text-gray-600 border border-gray-100'}`}>
+                                    {emisor.nombre.charAt(0)}
+                                </div>
+                                <div className="min-w-0">
+                                    <h3 className={`font-bold text-sm truncate ${emisor.estado === 'pausado' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{emisor.nombre}</h3>
+                                    <p className="text-xs text-gray-400 font-mono">ID: {emisor.bigo_id}</p>
+                                </div>
                             </div>
-                            <div className="min-w-0">
-                                <h3 className="font-bold text-gray-900 text-sm truncate">{emisor.nombre}</h3>
-                                <p className="text-xs text-gray-400 font-mono">ID: {emisor.bigo_id}</p>
+                            {/* Status Indicator */}
+                            <div className={`p-1.5 rounded-full ${status.bg}`}>
+                                <StatusIcon size={14} className={status.color} />
                             </div>
                         </div>
-                        {/* Status Indicator */}
-                        <div className={`p-1.5 rounded-full ${status.bg}`}>
-                            <StatusIcon size={14} className={status.color} />
-                        </div>
-                    </div>
 
-                    {/* Progress Bar & Status Text */}
-                    <div className="mt-4">
-                        <div className="flex justify-between text-xs mb-1.5 font-bold">
-                            <span className={status.color}>{status.label}</span>
-                            <span className="text-gray-900">{emisor.horas_mes} / 44h</span>
-                        </div>
-                        <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                            <div 
-                                className={`h-full rounded-full ${status.barColor}`} 
-                                style={{width: `${Math.min((emisor.horas_mes/44)*100, 100)}%`}}
-                            ></div>
+                        {/* Progress Bar & Status Text */}
+                        <div className="mt-4">
+                            <div className="flex justify-between text-xs mb-1.5 font-bold">
+                                <span className={status.color}>{status.label}</span>
+                                <span className="text-gray-900">{emisor.horas_mes} / 44h</span>
+                            </div>
+                            <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                                <div 
+                                    className={`h-full rounded-full ${status.barColor}`} 
+                                    style={{width: `${Math.min((emisor.horas_mes/44)*100, 100)}%`}}
+                                ></div>
+                            </div>
                         </div>
                     </div>
+                    
+                    {/* Botón de Eliminar Rápido (Solo Admin e Inactivo) */}
+                    {isAdmin && emisor.estado === 'pausado' && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); handleDeleteEmisor(emisor.id); }}
+                            className="absolute -top-2 -right-2 bg-red-50 text-red-500 p-2 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity border border-red-100 hover:bg-red-500 hover:text-white"
+                            title="Eliminar Emisor Inactivo"
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                    )}
                 </div>
             );
          })
@@ -211,7 +230,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       </div>
 
       {/* --- MODAL FICHA INFORMATIVA (DETAILS) --- */}
-      {/* SOLUCIÓN FONDO MOCHA: fixed w-screen h-screen z-[70] para cubrir TODO */}
       {showDetailModal && selectedEmisor && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
               <div 
@@ -228,6 +246,10 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                           <div className="flex items-center gap-2 mt-1 text-gray-500">
                              <UserIcon size={12} />
                              <span className="text-xs font-mono font-medium">{selectedEmisor.bigo_id}</span>
+                             {/* Badge de Estado en Header */}
+                             {selectedEmisor.estado === 'pausado' && (
+                                 <span className="bg-gray-200 text-gray-500 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ml-1">Inactivo</span>
+                             )}
                           </div>
                       </div>
                       <button onClick={() => setShowDetailModal(false)} className="bg-white p-2 rounded-full shadow-sm text-gray-400 hover:text-black">
@@ -240,7 +262,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                       {!isEditingMode ? (
                           <>
                             <div className="mb-6 scale-110">
-                                <CircularProgress value={selectedEmisor.horas_mes} />
+                                <CircularProgress value={selectedEmisor.horas_mes} state={selectedEmisor.estado} />
                             </div>
                             
                             <div className="grid grid-cols-2 gap-4 w-full mb-8">
@@ -256,14 +278,39 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                 </div>
                             </div>
 
-                            {/* ADMIN SIEMPRE PUEDE EDITAR, incluso en vista filtrada */}
+                            {/* Acciones de Admin */}
                             {isAdmin && (
-                                <button 
-                                    onClick={() => setIsEditingMode(true)}
-                                    className="w-full py-3 bg-black text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-gray-900 transition-colors"
-                                >
-                                    <Edit3 size={16} /> Modificar Horas
-                                </button>
+                                <div className="w-full space-y-3">
+                                    <button 
+                                        onClick={() => setIsEditingMode(true)}
+                                        className="w-full py-3 bg-black text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-gray-900 transition-colors"
+                                    >
+                                        <Edit3 size={16} /> Modificar Horas
+                                    </button>
+                                    
+                                    {/* Botón Eliminar si está inactivo */}
+                                    {selectedEmisor.estado === 'pausado' && (
+                                        <button 
+                                            onClick={() => handleDeleteEmisor(selectedEmisor.id)}
+                                            className="w-full py-3 border-2 border-red-50 text-red-500 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-50 transition-colors"
+                                        >
+                                            <Trash2 size={16} /> Eliminar Definitivamente
+                                        </button>
+                                    )}
+                                    
+                                    {/* Toggle Estado (Activar/Pausar) */}
+                                    <button 
+                                        onClick={async () => {
+                                            await dataService.toggleStatus(selectedEmisor.id);
+                                            // Actualizar localmente o cerrar modal
+                                            setShowDetailModal(false);
+                                            loadData();
+                                        }}
+                                        className="w-full py-2 text-xs font-bold text-gray-400 hover:text-black underline"
+                                    >
+                                        {selectedEmisor.estado === 'activo' ? 'Marcar como Inactivo' : 'Reactivar Emisor'}
+                                    </button>
+                                </div>
                             )}
                           </>
                       ) : (
