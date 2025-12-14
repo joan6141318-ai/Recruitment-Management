@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
-import { Search, Plus, MoreVertical, X, Clock, MapPin, Calendar } from 'lucide-react';
+import { Search, Plus, MoreVertical, X, Lock } from 'lucide-react';
 
 interface EmisoresProps {
   user: User;
@@ -25,6 +25,8 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   const [newEmisorCountry, setNewEmisorCountry] = useState('');
   const [newEmisorMonth, setNewEmisorMonth] = useState('');
   const [editHours, setEditHours] = useState<string | number>('');
+
+  const isAdmin = user.rol === 'admin';
 
   useEffect(() => { loadData(); }, [user]);
 
@@ -58,163 +60,162 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
   const handleEditHours = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedEmisor) return;
+    if (!selectedEmisor || !isAdmin) return; // DOBLE SEGURIDAD
     await dataService.updateHours(selectedEmisor.id, Number(editHours), user.id);
     setIsEditModalOpen(false); loadData();
   };
 
   const toggleStatus = async (emisor: Emisor, e: React.MouseEvent) => {
      e.stopPropagation();
-     if(user.rol !== 'admin') return;
+     if(!isAdmin) return;
      await dataService.toggleStatus(emisor.id);
      loadData();
   }
 
+  const openEditModal = (emisor: Emisor) => {
+      if (!isAdmin) return; // Reclutador no puede abrir modal
+      setSelectedEmisor(emisor);
+      setEditHours(emisor.horas_mes);
+      setIsEditModalOpen(true);
+  };
+
   return (
     <div className="pb-10 space-y-6">
       
-      {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100 sticky top-0 z-20">
+      {/* Header Tools */}
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
          <div className="relative w-full md:w-96">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input 
                 type="text" 
-                placeholder="Buscar por Nombre o ID..." 
-                className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-black outline-none transition-all"
+                placeholder="Buscar emisor..." 
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:border-black focus:ring-0 outline-none transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
          </div>
          <div className="flex gap-2 w-full md:w-auto">
-             <div className="flex bg-gray-100 p-1 rounded-xl">
-                 <button onClick={() => setStatusFilter('all')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${statusFilter === 'all' ? 'bg-white shadow-sm text-black' : 'text-gray-500'}`}>Todos</button>
-                 <button onClick={() => setStatusFilter('activo')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${statusFilter === 'activo' ? 'bg-white shadow-sm text-green-600' : 'text-gray-500'}`}>Activos</button>
-             </div>
+             <select 
+                value={statusFilter} 
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium outline-none"
+             >
+                 <option value="all">Todos</option>
+                 <option value="activo">Activos</option>
+                 <option value="pausado">Pausados</option>
+             </select>
+             
              <button 
                 onClick={() => setIsAddModalOpen(true)}
-                className="bg-black text-white px-5 py-2 rounded-xl flex items-center gap-2 font-bold text-sm shadow-lg hover:bg-gray-900 transition-colors ml-auto"
+                className="bg-black text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm hover:bg-gray-800 transition-colors ml-auto"
             >
                 <Plus size={18} /> <span className="hidden sm:inline">Nuevo</span>
             </button>
          </div>
       </div>
 
-      {/* Modern Card Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-        {loading ? <div className="col-span-full text-center py-20 text-gray-400">Cargando emisores...</div> : 
+      {/* Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {loading ? <div className="col-span-full text-center py-10 text-gray-400 text-sm">Cargando...</div> : 
          filtered.map((emisor) => {
             const hours = emisor.horas_mes;
-            const progress = Math.min((hours/44)*100, 100);
             
-            // Modern Status Logic
-            let progressColor = 'bg-gray-900';
-            if (emisor.estado === 'activo') {
-                if (hours >= 44) progressColor = 'bg-green-500';
-                else if (hours >= 20) progressColor = 'bg-blue-500';
-                else progressColor = 'bg-orange-500';
-            }
-
             return (
               <div 
                   key={emisor.id} 
-                  onClick={() => { setSelectedEmisor(emisor); setEditHours(emisor.horas_mes); setIsEditModalOpen(true); }}
-                  className={`bg-white rounded-2xl p-5 relative cursor-pointer group hover:-translate-y-1 transition-all duration-300 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] border border-gray-100 ${emisor.estado === 'pausado' ? 'opacity-60 grayscale' : ''}`}
+                  onClick={() => openEditModal(emisor)}
+                  className={`
+                    bg-white border border-gray-200 rounded-xl p-5 relative transition-all shadow-sm
+                    ${isAdmin ? 'cursor-pointer hover:border-gray-400' : 'cursor-default'}
+                    ${emisor.estado === 'pausado' ? 'opacity-60 bg-gray-50' : ''}
+                  `}
               >
-                  <div className="flex justify-between items-start mb-4">
-                      <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-sm font-bold text-gray-500 border border-gray-100">
-                          {emisor.nombre.charAt(0).toUpperCase()}
+                  <div className="flex justify-between items-start mb-3">
+                      <div>
+                          <h3 className="font-bold text-gray-900 text-sm uppercase truncate w-40">{emisor.nombre}</h3>
+                          <p className="text-xs text-gray-500 font-mono">ID: {emisor.bigo_id}</p>
                       </div>
-                      {user.rol === 'admin' && (
-                          <button 
-                            onClick={(e) => toggleStatus(emisor, e)}
-                            className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 transition-colors"
-                          >
-                              <MoreVertical size={16} />
-                          </button>
-                      )}
-                  </div>
-
-                  <div>
-                      <h3 className="font-bold text-gray-900 text-base capitalize truncate pr-4">{emisor.nombre.toLowerCase()}</h3>
-                      <p className="text-xs text-gray-400 font-medium font-mono mt-0.5 flex items-center gap-1">
-                        ID: {emisor.bigo_id}
-                      </p>
-                  </div>
-
-                  <div className="mt-5 mb-2 flex items-end gap-1">
-                      <span className="text-3xl font-black text-gray-900 leading-none">{hours}</span>
-                      <span className="text-xs font-bold text-gray-400 mb-1">/ 44h</span>
+                      <div className="text-right">
+                          <span className={`block text-xl font-bold ${hours >= 44 ? 'text-green-600' : 'text-black'}`}>{hours}</span>
+                          <span className="text-[10px] text-gray-400 uppercase font-bold">Horas</span>
+                      </div>
                   </div>
                   
-                  <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                      <div className={`h-full ${progressColor} transition-all duration-500`} style={{width: `${progress}%`}}></div>
+                  {/* Barra de progreso sobria */}
+                  <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden mb-3">
+                      <div 
+                        className={`h-full ${hours >= 44 ? 'bg-green-600' : hours >= 20 ? 'bg-black' : 'bg-gray-400'}`} 
+                        style={{width: `${Math.min((hours/44)*100, 100)}%`}}
+                      ></div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-gray-50 flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-wide">
-                      <span className="flex items-center gap-1"><MapPin size={10}/> {emisor.pais || 'N/A'}</span>
-                      <span className="flex items-center gap-1"><Calendar size={10}/> {emisor.mes_entrada || 'N/A'}</span>
+                  <div className="flex justify-between items-center text-[10px] text-gray-400 font-medium uppercase tracking-wide">
+                      <span>{emisor.pais}</span>
+                      {!isAdmin && <Lock size={12} className="text-gray-300" />}
                   </div>
+
+                  {isAdmin && (
+                      <button 
+                        onClick={(e) => toggleStatus(emisor, e)}
+                        className="absolute top-4 right-4 text-gray-300 hover:text-black transition-colors"
+                      >
+                          <MoreVertical size={16} />
+                      </button>
+                  )}
               </div>
             );
           })
         }
       </div>
 
-      {/* Modal Agregar - Clean Design */}
+      {/* Modal Agregar */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm transition-opacity">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl animate-pop-in">
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-gray-900">Registrar Emisor</h3>
-                <button onClick={() => setIsAddModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full"><X size={20} className="text-gray-500" /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl">
+            <div className="flex justify-between items-center mb-5">
+                <h3 className="text-base font-bold text-black uppercase tracking-wide">Nuevo Emisor</h3>
+                <button onClick={() => setIsAddModalOpen(false)}><X size={20} className="text-gray-400" /></button>
             </div>
             <form onSubmit={handleAdd} className="space-y-4">
                <div>
-                   <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">Nombre Completo</label>
-                   <input required className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm outline-none focus:border-primary focus:bg-white transition-colors font-medium" value={newEmisorName} onChange={e => setNewEmisorName(e.target.value)} placeholder="Ej. Ana García" />
+                   <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Nombre</label>
+                   <input required className="w-full border border-gray-300 p-2.5 rounded-lg text-sm outline-none focus:border-black" value={newEmisorName} onChange={e => setNewEmisorName(e.target.value)} />
                </div>
-               <div className="grid grid-cols-2 gap-4">
+               <div className="grid grid-cols-2 gap-3">
                    <div>
-                       <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">ID Bigo</label>
-                       <input required className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm outline-none focus:border-primary focus:bg-white transition-colors font-medium" value={newEmisorBigo} onChange={e => setNewEmisorBigo(e.target.value)} />
+                       <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">ID Bigo</label>
+                       <input required className="w-full border border-gray-300 p-2.5 rounded-lg text-sm outline-none focus:border-black" value={newEmisorBigo} onChange={e => setNewEmisorBigo(e.target.value)} />
                    </div>
                    <div>
-                       <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">Ingreso</label>
-                       <input required type="month" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm outline-none focus:border-primary focus:bg-white transition-colors font-medium" value={newEmisorMonth} onChange={e => setNewEmisorMonth(e.target.value)} />
+                       <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Mes</label>
+                       <input required type="month" className="w-full border border-gray-300 p-2.5 rounded-lg text-sm outline-none focus:border-black" value={newEmisorMonth} onChange={e => setNewEmisorMonth(e.target.value)} />
                    </div>
                </div>
                <div>
-                   <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">País</label>
-                   <input required className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm outline-none focus:border-primary focus:bg-white transition-colors font-medium" value={newEmisorCountry} onChange={e => setNewEmisorCountry(e.target.value)} placeholder="Ej. Colombia" />
+                   <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">País</label>
+                   <input required className="w-full border border-gray-300 p-2.5 rounded-lg text-sm outline-none focus:border-black" value={newEmisorCountry} onChange={e => setNewEmisorCountry(e.target.value)} />
                </div>
-               <button type="submit" className="w-full py-3.5 bg-black text-white rounded-xl font-bold text-sm hover:bg-gray-800 transition-transform active:scale-95 mt-4">Guardar Registro</button>
+               <button type="submit" className="w-full py-3 bg-black text-white rounded-lg font-bold text-xs uppercase tracking-wider mt-2">Guardar</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Modal Editar Horas - Clean Typography */}
-      {isEditModalOpen && selectedEmisor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl w-full max-w-[300px] p-8 shadow-2xl text-center animate-pop-in">
-                <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4 text-primary">
-                    <Clock size={24} />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 truncate mb-1">{selectedEmisor.nombre}</h3>
-                <p className="text-xs text-gray-400 font-medium mb-6">Actualizar horas del mes</p>
+      {/* Modal Editar Horas (SOLO ADMIN PUEDE VER ESTO) */}
+      {isEditModalOpen && selectedEmisor && isAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-xl w-full max-w-[280px] p-6 shadow-2xl text-center">
+                <h3 className="text-sm font-bold text-gray-900 mb-1">{selectedEmisor.nombre}</h3>
+                <p className="text-[10px] text-gray-500 uppercase mb-6">Modificar Horas</p>
                 <form onSubmit={handleEditHours}>
-                    <div className="relative w-full mb-6">
-                        <input 
-                            type="number" step="0.1" autoFocus
-                            className="w-full text-center text-5xl font-black text-gray-900 border-none outline-none bg-transparent placeholder-gray-200"
-                            placeholder="0"
-                            value={editHours} onChange={e => setEditHours(e.target.value)}
-                        />
-                        <span className="block text-xs font-bold text-gray-400 uppercase mt-2">Horas</span>
-                    </div>
-                    <div className="flex gap-3">
-                        <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-200 transition-colors">Cancelar</button>
-                        <button type="submit" className="flex-1 py-3 bg-black text-white rounded-xl text-sm font-bold hover:bg-gray-800 transition-colors shadow-lg shadow-purple-500/20">Guardar</button>
+                    <input 
+                        type="number" step="0.1" autoFocus
+                        className="w-full text-center text-4xl font-bold text-black border-b border-gray-200 focus:border-black outline-none pb-2 bg-transparent"
+                        value={editHours} onChange={e => setEditHours(e.target.value)}
+                    />
+                    <div className="flex gap-2 mt-6">
+                        <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold uppercase">Cancelar</button>
+                        <button type="submit" className="flex-1 py-2.5 bg-black text-white rounded-lg text-xs font-bold uppercase">Guardar</button>
                     </div>
                 </form>
             </div>
