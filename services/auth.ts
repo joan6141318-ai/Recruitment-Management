@@ -74,7 +74,8 @@ export const authService = {
 
       if (userDocSnap.exists()) {
         const data = userDocSnap.data();
-        return { id: uid, ...data } as User;
+        // Ensure activo is present (default to true if missing in DB for legacy reasons)
+        return { id: uid, activo: true, ...data } as User;
       } else {
         // Recuperación automática: si el usuario está en Auth pero no en DB
         return await authService.createUserProfile(uid, email, email.split('@')[0]);
@@ -96,6 +97,7 @@ export const authService = {
       nombre,
       correo: normalizedEmail,
       rol: role,
+      activo: true, // User is active by default
       fecha_registro: new Date().toISOString()
     };
 
@@ -139,6 +141,7 @@ export const authService = {
       nombre,
       correo: normalizedEmail,
       rol: 'reclutador' as Role,
+      activo: true, // Invited user is active by default
       fecha_registro: new Date().toISOString(),
       invited_by_admin: true
     };

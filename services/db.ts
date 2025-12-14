@@ -41,15 +41,24 @@ export const dataService = {
     await updateDoc(userRef, { nombre: newName });
   },
 
+  toggleUserAccess: async (userId: string, currentStatus: boolean): Promise<void> => {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, { activo: !currentStatus });
+  },
+
   getRecruiters: async (): Promise<User[]> => {
     const usersRef = collection(db, 'users');
     const q = query(usersRef, where('rol', '==', 'reclutador'));
     const querySnapshot = await getDocs(q);
     
-    return querySnapshot.docs.map(docSnap => ({
-      id: docSnap.id,
-      ...docSnap.data()
-    } as User));
+    return querySnapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        return {
+            id: docSnap.id,
+            ...data,
+            activo: data.activo !== undefined ? data.activo : true // Default to true if missing
+        } as User;
+    });
   },
 
   getEmisores: async (currentUser: User): Promise<Emisor[]> => {

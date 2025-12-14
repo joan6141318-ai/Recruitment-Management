@@ -8,18 +8,26 @@ import Reclutadores from './pages/Reclutadores';
 import { User } from './types';
 import { authService } from './services/auth'; 
 import { auth } from './services/firebase';
-import { onAuthStateChanged } from 'firebase/auth'; // Import modular
-import { Moon } from 'lucide-react';
+import { onAuthStateChanged } from 'firebase/auth'; 
+
+const BrandLogo = ({ className = "w-12 h-12" }) => (
+  <svg viewBox="0 0 100 100" className={className} fill="none">
+     <rect width="100" height="100" rx="25" className="fill-black"/>
+     <path d="M68 28C62.5 22.5 55 20 48 20C32.536 20 20 32.536 20 48C20 63.464 32.536 76 48 76C55.5 76 63 73 68 68C60 68 52 62 52 48C52 34 60 28 68 28Z" className="fill-white"/>
+     <circle cx="72" cy="28" r="6" className="fill-primary"/>
+  </svg>
+);
 
 const SplashScreen = () => (
-  <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
-    <div className="mb-6">
-       <div className="w-20 h-20 bg-black rounded-xl flex items-center justify-center shadow-lg">
-          <Moon size={32} className="text-white fill-white" />
-       </div>
+  <div className="fixed inset-0 bg-[#FAFAFA] z-50 flex flex-col items-center justify-center">
+    <div className="mb-8 animate-pulse shadow-2xl shadow-gray-200 rounded-[30px]">
+       <BrandLogo className="w-24 h-24" />
     </div>
-    <h1 className="text-2xl font-bold text-black tracking-tight">Agencia Moon</h1>
-    <p className="text-xs text-gray-400 mt-2 font-medium uppercase tracking-widest">Cargando...</p>
+    <div className="flex gap-2 items-center">
+        <div className="w-1.5 h-1.5 bg-black rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+        <div className="w-1.5 h-1.5 bg-black rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+        <div className="w-1.5 h-1.5 bg-black rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+    </div>
   </div>
 );
 
@@ -28,7 +36,6 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Listener de sesión de Firebase Modular (v9+)
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {

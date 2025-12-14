@@ -5,6 +5,7 @@ export interface User {
   nombre: string;
   correo: string;
   rol: Role;
+  activo: boolean; // Control de acceso
 }
 
 export type EstadoEmisor = 'activo' | 'pausado';
