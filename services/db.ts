@@ -9,7 +9,8 @@ import {
   addDoc, 
   updateDoc, 
   query, 
-  where 
+  where,
+  writeBatch 
 } from 'firebase/firestore';
 
 export const dataService = {
@@ -35,7 +36,6 @@ export const dataService = {
     await setDoc(docRef, { lastUpdated: newDate }, { merge: true });
   },
 
-  // NUEVA FUNCIÓN PARA CORREGIR NOMBRE
   updateUserName: async (userId: string, newName: string): Promise<void> => {
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, { nombre: newName });
@@ -82,22 +82,34 @@ export const dataService = {
   },
 
   updateHours: async (emisorId: string, newHours: number, adminId: string): Promise<void> => {
+    const batch = writeBatch(db);
+    
+    // Referencias
     const emisorRef = doc(db, 'emisores', emisorId);
+    const historialRef = doc(collection(db, 'historial')); // ID automático para historial
+    
+    // Obtener datos actuales para el historial (lectura antes de escritura)
     const emisorSnap = await getDoc(emisorRef);
     let oldHours = 0;
     if (emisorSnap.exists()) {
         const data = emisorSnap.data();
         oldHours = data ? data.horas_mes : 0;
     }
-    await updateDoc(emisorRef, { horas_mes: newHours });
-    
-    await addDoc(collection(db, 'historial'), {
+
+    // 1. Actualizar Horas
+    batch.update(emisorRef, { horas_mes: newHours });
+
+    // 2. Crear registro Historial
+    batch.set(historialRef, {
         emisor_id: emisorId,
         horas_anteriores: oldHours,
         horas_nuevas: newHours,
         fecha: new Date().toISOString(),
         modificado_por: adminId
     });
+
+    // Ejecutar ambas operaciones atómicamente
+    await batch.commit();
   },
 
   toggleStatus: async (emisorId: string): Promise<void> => {

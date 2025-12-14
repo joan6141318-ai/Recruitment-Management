@@ -52,8 +52,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const currentDay = currentDate.getDate();
   const monthProgress = currentDay / daysInMonth;
 
-  // 1. Meta Reclutamiento (15)
-  const currentMonthISO = currentDate.toISOString().slice(0, 7);
+  // 1. Meta Reclutamiento (15) - CORREGIDO: Uso de Fecha Local para YYYY-MM
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+  const currentMonthISO = `${currentYear}-${currentMonth}`;
+  
   const newEmisores = emisores.filter(e => e.mes_entrada === currentMonthISO);
   const recruitmentCount = newEmisores.length;
   const recruitmentPercent = Math.min((recruitmentCount / GOAL_RECRUITMENT) * 100, 100);

@@ -22,7 +22,9 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
   const [newEmail, setNewEmail] = useState('');
   
   const now = new Date();
-  const currentMonthISO = now.toISOString().slice(0, 7);
+  const currentYear = now.getFullYear();
+  const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+  const currentMonthISO = `${currentYear}-${currentMonth}`; // Fix UTC issue
   const monthName = now.toLocaleString('es-ES', { month: 'long' });
 
   useEffect(() => {
