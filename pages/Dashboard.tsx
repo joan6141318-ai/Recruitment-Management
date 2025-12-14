@@ -56,6 +56,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       }
   };
 
+  // Helper para mostrar mes bonito
+  const getFormattedMonth = (isoString: string) => {
+      if(!isoString) return 'Seleccionar';
+      const [year, month] = isoString.split('-');
+      const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+      // Parse int para quitar ceros a la izquierda y restar 1 para el index
+      return `${months[parseInt(month) - 1]} ${year}`;
+  };
+
   // CORRECCIÓN: Filtrado case-insensitive
   const activeEmisores = emisores.filter(e => 
     e.estado && e.estado.toLowerCase() === 'activo'
@@ -145,7 +154,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             </div>
         </div>
 
-        {/* --- SECCIÓN META MENSUAL (Diseño Original: Gris Claro) --- */}
+        {/* --- SECCIÓN META MENSUAL --- */}
         <div className="bg-gray-100 text-gray-900 p-6 rounded-3xl shadow-xl shadow-gray-200/50 border-[6px] border-white relative overflow-hidden">
             
             <div className="relative z-10">
@@ -181,42 +190,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             </div>
         </div>
 
-        {/* KPI Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard 
-              title="Emisores Activos" 
-              value={activeEmisores.length} 
-              sub="Cartera Total" 
-              icon={Users} 
-              color="bg-purple-50" 
-              iconColor="text-primary"
-            />
-            <StatCard 
-              title="Horas Totales" 
-              value={totalHours.toFixed(0)} 
-              sub="Acumulado del mes" 
-              icon={Clock} 
-              color="bg-orange-50" 
-              iconColor="text-accent"
-            />
-            <StatCard 
-              title="Promedio / Emisor" 
-              value={avgHours.toFixed(1)} 
-              sub="Horas por persona" 
-              icon={TrendingUp} 
-              color="bg-purple-50" 
-              iconColor="text-primary"
-            />
-            <StatCard 
-              title="Productivos" 
-              value={`${Math.round((activeEmisores.filter(e => e.horas_mes >= PRODUCTIVITY_HOURS_GOAL).length / (activeEmisores.length || 1)) * 100)}%`} 
-              sub="Emisores > 20 Horas" 
-              icon={CheckCircle2} 
-              color="bg-green-50" 
-              iconColor="text-green-600"
-            />
-        </div>
-        
         {/* --- GESTIÓN MENSUAL (SOLO ADMIN) --- */}
         {user.rol === 'admin' && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -225,7 +198,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                     onClick={() => setShowManagement(!showManagement)}
                 >
                     <div className="flex items-center gap-3">
-                        <div className="bg-black text-white p-2 rounded-lg">
+                        {/* Icono Morado */}
+                        <div className="bg-primary text-white p-2 rounded-lg">
                             <FolderOpen size={18} />
                         </div>
                         <div>
@@ -241,13 +215,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                         <div className="bg-gray-50 p-4 rounded-xl mb-4 flex items-center justify-between gap-4 border border-gray-100">
                              <div>
                                 <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Seleccionar Mes</label>
-                                <input 
-                                    type="month" 
-                                    className="bg-white px-3 py-2 rounded-lg border border-gray-200 text-sm font-bold outline-none focus:border-black"
-                                    value={managementMonth}
-                                    onChange={(e) => setManagementMonth(e.target.value)}
-                                />
+                                
+                                {/* SELECTOR DE MES PERSONALIZADO */}
+                                <div className="relative">
+                                     <div className="bg-white px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-900 shadow-sm flex items-center gap-2 min-w-[160px] hover:border-black transition-colors">
+                                        <Calendar size={16} className="text-primary"/>
+                                        <span className="capitalize">{getFormattedMonth(managementMonth)}</span>
+                                     </div>
+                                     <input 
+                                        type="month" 
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                        value={managementMonth}
+                                        onChange={(e) => setManagementMonth(e.target.value)}
+                                     />
+                                </div>
                              </div>
+                             
                              <div className="text-right">
                                  <p className="text-2xl font-black text-gray-900">{emisoresInSelectedMonth.length}</p>
                                  <p className="text-[10px] font-bold text-gray-400 uppercase">Ingresos Totales</p>
@@ -286,6 +269,42 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                 )}
             </div>
         )}
+
+        {/* KPI Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard 
+              title="Emisores Activos" 
+              value={activeEmisores.length} 
+              sub="Cartera Total" 
+              icon={Users} 
+              color="bg-purple-50" 
+              iconColor="text-primary"
+            />
+            <StatCard 
+              title="Horas Totales" 
+              value={totalHours.toFixed(0)} 
+              sub="Acumulado del mes" 
+              icon={Clock} 
+              color="bg-orange-50" 
+              iconColor="text-accent"
+            />
+            <StatCard 
+              title="Promedio / Emisor" 
+              value={avgHours.toFixed(1)} 
+              sub="Horas por persona" 
+              icon={TrendingUp} 
+              color="bg-purple-50" 
+              iconColor="text-primary"
+            />
+            <StatCard 
+              title="Productivos" 
+              value={`${Math.round((activeEmisores.filter(e => e.horas_mes >= PRODUCTIVITY_HOURS_GOAL).length / (activeEmisores.length || 1)) * 100)}%`} 
+              sub="Emisores > 20 Horas" 
+              icon={CheckCircle2} 
+              color="bg-green-50" 
+              iconColor="text-green-600"
+            />
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
