@@ -179,6 +179,11 @@ export const dataService = {
     }
   },
 
+  toggleShared: async (emisorId: string, currentStatus?: boolean): Promise<void> => {
+    const emisorRef = doc(db, 'emisores', emisorId);
+    await updateDoc(emisorRef, { es_compartido: !currentStatus });
+  },
+
   deleteEmisor: async (emisorId: string): Promise<void> => {
     const emisorRef = doc(db, 'emisores', emisorId);
     await deleteDoc(emisorRef);

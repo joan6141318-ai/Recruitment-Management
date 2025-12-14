@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
-import { Search, Plus, MapPin, Calendar, Clock, Edit3, X, User as UserIcon, AlertTriangle, CheckCircle, Trophy, FilterX, Trash2, Globe, Shield } from 'lucide-react';
+import { Search, Plus, MapPin, Calendar, Clock, Edit3, X, User as UserIcon, AlertTriangle, CheckCircle, Trophy, FilterX, Trash2, Globe, Shield, Lock } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 interface EmisoresProps {
@@ -308,6 +308,23 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                     {/* Botones de Admin para gestión */}
                                     {isAdmin && (
                                         <>
+                                            {/* BOTÓN NUEVO: VISIBILIDAD */}
+                                            <button 
+                                                onClick={async () => {
+                                                    await dataService.toggleShared(selectedEmisor.id, selectedEmisor.es_compartido);
+                                                    setShowDetailModal(false);
+                                                    loadData();
+                                                }}
+                                                className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 border transition-colors ${
+                                                    selectedEmisor.es_compartido 
+                                                    ? 'border-purple-200 text-primary bg-purple-50 hover:bg-purple-100' 
+                                                    : 'border-gray-200 text-gray-700 bg-white hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                {selectedEmisor.es_compartido ? <Globe size={16} /> : <Lock size={16} />}
+                                                {selectedEmisor.es_compartido ? 'Público (Visible Todos)' : 'Privado (Solo Admin)'}
+                                            </button>
+
                                             <button 
                                                 onClick={async () => {
                                                     await dataService.toggleStatus(selectedEmisor.id);
