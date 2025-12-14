@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
-import { Search, Plus, MoreVertical } from 'lucide-react';
+import { Search, Plus, MoreVertical, X } from 'lucide-react';
 
 interface EmisoresProps {
   user: User;
 }
-
-const GOAL_MIN = 20;
 
 const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   const [emisores, setEmisores] = useState<Emisor[]>([]);
@@ -16,18 +14,17 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'activo' | 'pausado'>('all');
   const [loading, setLoading] = useState(true);
 
-  // Modals & Form States
+  // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEmisor, setSelectedEmisor] = useState<Emisor | null>(null);
   
+  // Forms
   const [newEmisorName, setNewEmisorName] = useState('');
   const [newEmisorBigo, setNewEmisorBigo] = useState('');
   const [newEmisorCountry, setNewEmisorCountry] = useState('');
   const [newEmisorMonth, setNewEmisorMonth] = useState('');
   const [editHours, setEditHours] = useState<string | number>('');
-
-  const [currentDate] = useState(new Date());
 
   useEffect(() => { loadData(); }, [user]);
 
@@ -73,76 +70,70 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
      loadData();
   }
 
-  const openEdit = (emisor: Emisor) => {
-    setSelectedEmisor(emisor);
-    setEditHours(emisor.horas_mes);
-    setIsEditModalOpen(true);
-  };
-
-  // Pace Logic
-  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-  const currentDay = currentDate.getDate();
-  const paceMin = (GOAL_MIN / daysInMonth) * currentDay;
-
   return (
-    <div>
-      {/* Header Tools */}
-      <div className="flex gap-2 mb-4 sticky top-0 bg-gray-50 pt-2 pb-2 z-10">
+    <div className="pb-10">
+      {/* Header Tools - Compact */}
+      <div className="flex gap-2 mb-3 sticky top-0 bg-gray-50 py-2 z-10">
         <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             <input 
                 type="text" 
-                placeholder="Buscar emisor..." 
-                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-black shadow-sm"
+                placeholder="Buscar (Nombre o ID)..." 
+                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:border-black shadow-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
         </div>
         <button 
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-black text-white px-4 rounded-xl flex items-center justify-center shadow-md active:scale-95 transition-transform"
+            className="bg-black text-white px-4 rounded-lg flex items-center justify-center shadow-sm active:bg-gray-800"
         >
-            <Plus size={20} />
+            <Plus size={18} />
         </button>
       </div>
 
-      {/* Card Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {loading ? <p className="text-center text-sm text-gray-400 mt-10">Cargando...</p> : 
+      {/* Grid Denso */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        {loading ? <p className="text-center text-xs text-gray-400 mt-10">Cargando...</p> : 
          filtered.map((emisor) => {
             const hours = emisor.horas_mes;
-            let statusColor = 'bg-gray-100 text-gray-500';
+            let borderClass = 'border-l-4 border-l-gray-300';
             
-            // Logic Colors
+            // Visual Color Indicator (Left Border)
             if (emisor.estado === 'activo') {
-                if (hours >= GOAL_MIN && hours < 44) statusColor = 'bg-blue-100 text-blue-700';
-                else if (hours >= 44) statusColor = 'bg-green-100 text-green-700';
-                else if (hours < paceMin) statusColor = 'bg-red-100 text-red-700';
-                else statusColor = 'bg-yellow-100 text-yellow-700';
+                if (hours >= 44) borderClass = 'border-l-4 border-l-green-500';
+                else if (hours >= 20) borderClass = 'border-l-4 border-l-blue-500';
+                else borderClass = 'border-l-4 border-l-orange-500';
             }
 
             return (
               <div 
                   key={emisor.id} 
-                  onClick={() => openEdit(emisor)}
-                  className={`bg-white border border-gray-200 rounded-xl p-4 relative active:scale-[0.99] transition-transform ${emisor.estado === 'pausado' ? 'opacity-60' : ''}`}
+                  onClick={() => { setSelectedEmisor(emisor); setEditHours(emisor.horas_mes); setIsEditModalOpen(true); }}
+                  className={`bg-white border border-gray-200 rounded-md p-3 relative cursor-pointer active:bg-gray-50 ${borderClass} shadow-sm`}
               >
                   <div className="flex justify-between items-start">
-                      <div>
-                          <h3 className="font-bold text-gray-900 capitalize text-sm">{emisor.nombre.toLowerCase()}</h3>
-                          <p className="text-[10px] text-gray-400 font-mono mt-0.5">{emisor.bigo_id}</p>
+                      <div className="overflow-hidden">
+                          <h3 className="font-bold text-gray-900 text-xs uppercase truncate w-40">{emisor.nombre}</h3>
+                          <p className="text-[10px] text-gray-500 font-mono">ID: {emisor.bigo_id}</p>
                       </div>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${statusColor}`}>
-                          {hours.toFixed(1)} h
-                      </span>
+                      <div className="text-right">
+                          <span className="block text-lg font-bold text-gray-900 leading-none">{hours}</span>
+                          <span className="text-[9px] text-gray-400">horas</span>
+                      </div>
+                  </div>
+                  
+                  {/* Progress Bar Simple */}
+                  <div className="mt-2 w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                      <div className={`h-full ${hours >= 44 ? 'bg-green-500' : 'bg-gray-800'}`} style={{width: `${Math.min((hours/44)*100, 100)}%`}}></div>
                   </div>
 
                   {user.rol === 'admin' && (
                       <button 
                         onClick={(e) => toggleStatus(emisor, e)}
-                        className="absolute bottom-3 right-3 text-gray-300 p-2 -mr-2 -mb-2"
+                        className="absolute bottom-2 right-2 text-gray-300 hover:text-black p-1"
                       >
-                          <MoreVertical size={16} />
+                          <MoreVertical size={14} />
                       </button>
                   )}
               </div>
@@ -151,42 +142,58 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
         }
       </div>
 
-      {/* Modals (Manteniendo funcionalidad) */}
+      {/* MODAL AGREGAR - Standard Utility */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">
-            <h3 className="text-lg font-bold mb-4">Nuevo Emisor</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-lg w-full max-w-sm p-5 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-bold uppercase">Nuevo Emisor</h3>
+                <button onClick={() => setIsAddModalOpen(false)}><X size={18} className="text-gray-400" /></button>
+            </div>
             <form onSubmit={handleAdd} className="space-y-3">
-               <input required placeholder="Nombre Completo" className="w-full border border-gray-300 p-3 rounded-xl text-sm outline-none focus:border-black" value={newEmisorName} onChange={e => setNewEmisorName(e.target.value)} />
-               <div className="flex gap-3">
-                   <input required placeholder="ID Bigo" className="w-full border border-gray-300 p-3 rounded-xl text-sm outline-none focus:border-black" value={newEmisorBigo} onChange={e => setNewEmisorBigo(e.target.value)} />
-                   <input required type="month" className="w-full border border-gray-300 p-3 rounded-xl text-sm outline-none focus:border-black" value={newEmisorMonth} onChange={e => setNewEmisorMonth(e.target.value)} />
+               <div>
+                   <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Nombre</label>
+                   <input required className="w-full border border-gray-300 p-2 rounded text-sm outline-none focus:border-black" value={newEmisorName} onChange={e => setNewEmisorName(e.target.value)} />
                </div>
-               <input required placeholder="País" className="w-full border border-gray-300 p-3 rounded-xl text-sm outline-none focus:border-black" value={newEmisorCountry} onChange={e => setNewEmisorCountry(e.target.value)} />
-               
-               <div className="flex gap-3 pt-2">
-                   <button type="button" onClick={() => setIsAddModalOpen(false)} className="flex-1 py-3 bg-gray-100 rounded-xl font-bold text-sm">Cancelar</button>
-                   <button type="submit" className="flex-1 py-3 bg-black text-white rounded-xl font-bold text-sm">Guardar</button>
+               <div className="grid grid-cols-2 gap-3">
+                   <div>
+                       <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">ID Bigo</label>
+                       <input required className="w-full border border-gray-300 p-2 rounded text-sm outline-none focus:border-black" value={newEmisorBigo} onChange={e => setNewEmisorBigo(e.target.value)} />
+                   </div>
+                   <div>
+                       <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Mes Ingreso</label>
+                       <input required type="month" className="w-full border border-gray-300 p-2 rounded text-sm outline-none focus:border-black" value={newEmisorMonth} onChange={e => setNewEmisorMonth(e.target.value)} />
+                   </div>
                </div>
+               <div>
+                   <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">País</label>
+                   <input required className="w-full border border-gray-300 p-2 rounded text-sm outline-none focus:border-black" value={newEmisorCountry} onChange={e => setNewEmisorCountry(e.target.value)} />
+               </div>
+               <button type="submit" className="w-full py-2.5 bg-black text-white rounded font-bold text-xs uppercase mt-2">Guardar Registro</button>
             </form>
           </div>
         </div>
       )}
 
+      {/* MODAL EDITAR HORAS - Standard Utility */}
       {isEditModalOpen && selectedEmisor && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-[280px] p-6 shadow-2xl text-center">
-                <p className="text-xs text-gray-400 mb-2 font-bold uppercase">Actualizar Horas</p>
-                <h3 className="text-base font-bold text-gray-900 mb-6 truncate">{selectedEmisor.nombre}</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-lg w-full max-w-[260px] p-5 shadow-2xl text-center">
+                <h3 className="text-sm font-bold text-gray-900 truncate mb-1">{selectedEmisor.nombre}</h3>
+                <p className="text-[10px] text-gray-400 uppercase mb-4">Editar Horas</p>
                 <form onSubmit={handleEditHours}>
-                    <input 
-                        type="number" step="0.1" autoFocus
-                        className="w-full text-center text-5xl font-black text-black border-b-2 border-gray-100 focus:border-black outline-none pb-2 mb-6 bg-transparent"
-                        value={editHours} onChange={e => setEditHours(e.target.value)}
-                    />
-                    <button type="submit" className="w-full py-3 bg-black text-white rounded-xl font-bold text-sm">Confirmar</button>
+                    <div className="relative w-32 mx-auto">
+                        <input 
+                            type="number" step="0.1" autoFocus
+                            className="w-full text-center text-3xl font-bold text-black border-b border-gray-300 focus:border-black outline-none pb-1 bg-transparent"
+                            value={editHours} onChange={e => setEditHours(e.target.value)}
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-5">
+                        <button type="button" onClick={() => setIsEditModalOpen(false)} className="py-2 bg-gray-100 text-gray-600 rounded text-xs font-bold">Cancelar</button>
+                        <button type="submit" className="py-2 bg-black text-white rounded text-xs font-bold">Guardar</button>
+                    </div>
                 </form>
-                <button onClick={() => setIsEditModalOpen(false)} className="mt-4 text-xs text-gray-400 font-bold px-4 py-2">Cancelar</button>
             </div>
         </div>
       )}
