@@ -12,17 +12,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [emisores, setEmisores] = useState<Emisor[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Objetivos
-  const MONTHLY_EMISOR_GOAL = 15;
+  // Objetivos Dinámicos: 30 para Admin (Equipo), 15 para Reclutador individual
+  const MONTHLY_EMISOR_GOAL = user.rol === 'admin' ? 30 : 15;
   const PRODUCTIVITY_HOURS_GOAL = 20;
 
   useEffect(() => {
-    const fetchData = async () => {
-      const data = await dataService.getEmisores(user);
+    // Usar suscripción en tiempo real en lugar de getEmisores
+    const unsubscribe = dataService.subscribeToEmisores(user, (data) => {
       setEmisores(data);
       setLoading(false);
-    };
-    fetchData();
+    });
+
+    // Limpiar suscripción al desmontar
+    return () => unsubscribe();
   }, [user]);
 
   // CORRECCIÓN: Filtrado case-insensitive para asegurar que no salga 0 si dice 'Activo' o 'activo'
@@ -33,7 +35,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const totalHours = emisores.reduce((acc, curr) => acc + curr.horas_mes, 0);
   const avgHours = activeEmisores.length > 0 ? totalHours / activeEmisores.length : 0;
   
-  // Lógica de Meta Mensual (15 Emisores)
+  // Lógica de Meta Mensual
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   const newEmisoresThisMonth = emisores.filter(e => 
     // Usamos mes_entrada (input manual) o fecha_registro como fallback
@@ -48,7 +50,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     .slice(0, 5)
     .map(e => ({ name: e.nombre.split(' ')[0], hours: e.horas_mes }));
 
-  if (loading) return <div className="p-10 text-center text-sm text-gray-400">Cargando métricas...</div>;
+  if (loading) return <div className="p-10 text-center text-sm text-gray-400">Sincronizando métricas...</div>;
 
   const StatCard = ({ title, value, sub, icon: Icon, color, iconColor }: any) => (
       <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
@@ -71,7 +73,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       {/* Title */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-2">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Rendimiento</h2>
+            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Rendimiento en Vivo</h2>
             <p className="text-gray-500 text-sm mt-1">Resumen general y metas del mes.</p>
           </div>
           <div className="text-right">
@@ -81,35 +83,33 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           </div>
       </div>
 
-      {/* --- SECCIÓN META MENSUAL (RECLUTADOR) --- */}
-      <div className="bg-black text-white p-6 rounded-2xl shadow-xl shadow-gray-200 relative overflow-hidden">
-          {/* Decoración de fondo */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600 rounded-full blur-[60px] opacity-30 -mr-10 -mt-10"></div>
+      {/* --- SECCIÓN META MENSUAL (RECLUTADOR/ADMIN) --- */}
+      {/* DISEÑO CAMBIADO: Gris Claro con Margen Blanco */}
+      <div className="bg-gray-100 text-gray-900 p-6 rounded-3xl shadow-xl shadow-gray-200/50 border-[6px] border-white relative overflow-hidden">
           
           <div className="relative z-10">
               <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-3">
-                      <div className="p-2 bg-white/10 rounded-xl backdrop-blur-sm">
-                        <Target size={24} className="text-purple-400" />
+                      <div className="p-2 bg-white rounded-xl shadow-sm">
+                        <Target size={24} className="text-primary" />
                       </div>
                       <div>
-                          <h3 className="text-lg font-bold">Meta de Reclutamiento</h3>
-                          <p className="text-xs text-gray-400 font-medium">Objetivo: 15 Nuevos Emisores</p>
+                          <h3 className="text-lg font-bold text-black">Meta de Reclutamiento</h3>
+                          <p className="text-xs text-gray-500 font-medium">Objetivo: {MONTHLY_EMISOR_GOAL} Nuevos Emisores</p>
                       </div>
                   </div>
                   <div className="text-right">
-                      <span className="text-3xl font-black">{newEmisoresThisMonth.length}</span>
-                      <span className="text-sm text-gray-500 font-bold"> / 15</span>
+                      <span className="text-3xl font-black text-primary">{newEmisoresThisMonth.length}</span>
+                      <span className="text-sm text-gray-400 font-bold"> / {MONTHLY_EMISOR_GOAL}</span>
                   </div>
               </div>
 
               {/* Barra de Progreso */}
-              <div className="w-full bg-gray-800 h-3 rounded-full overflow-hidden mb-2 border border-gray-700">
+              <div className="w-full bg-white h-4 rounded-full overflow-hidden mb-2 border border-gray-200 shadow-inner">
                   <div 
-                      className="h-full rounded-full bg-gradient-to-r from-purple-600 to-accent transition-all duration-700 ease-out relative"
+                      className="h-full rounded-full bg-gradient-to-r from-primary to-purple-400 transition-all duration-700 ease-out relative"
                       style={{width: `${monthlyProgress}%`}}
                   >
-                      <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
                   </div>
               </div>
               

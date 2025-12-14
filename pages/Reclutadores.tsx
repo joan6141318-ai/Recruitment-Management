@@ -21,8 +21,8 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Meta Mensual
-  const GOAL_EMISORES = 15;
+  // Meta Mensual (Para Admin, la meta global es 30, pero individualmente cada reclutador debe hacer 15)
+  const INDIVIDUAL_GOAL = 15;
 
   useEffect(() => {
     loadData();
@@ -75,7 +75,7 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Equipo de Reclutamiento</h2>
-            <p className="text-gray-500 mt-1 text-sm">Meta mensual: <span className="font-bold text-black">15 Emisores Nuevos</span></p>
+            <p className="text-gray-500 mt-1 text-sm">Meta mensual Individual: <span className="font-bold text-black">{INDIVIDUAL_GOAL} Emisores</span></p>
           </div>
           <button 
             onClick={() => setIsModalOpen(true)} 
@@ -89,8 +89,8 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
        <div className="grid grid-cols-1 gap-4">
           {loading ? <div className="text-center py-10 text-gray-400">Calculando productividad...</div> : 
            recruiters.map((rec) => {
-               const progress = Math.min((rec.emisoresCount / GOAL_EMISORES) * 100, 100);
-               const isGoalMet = rec.emisoresCount >= GOAL_EMISORES;
+               const progress = Math.min((rec.emisoresCount / INDIVIDUAL_GOAL) * 100, 100);
+               const isGoalMet = rec.emisoresCount >= INDIVIDUAL_GOAL;
 
                return (
                <div key={rec.id} className="bg-white border border-gray-100 p-5 rounded-2xl shadow-sm flex flex-col gap-6 relative overflow-hidden group">
@@ -137,7 +137,7 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
                                    </div>
                                    <div className="text-right">
                                        <span className="text-lg font-black text-gray-900">{rec.emisoresCount}</span>
-                                       <span className="text-xs text-gray-400 font-bold"> / {GOAL_EMISORES}</span>
+                                       <span className="text-xs text-gray-400 font-bold"> / {INDIVIDUAL_GOAL}</span>
                                    </div>
                                </div>
                                <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
@@ -154,7 +154,7 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
                                className="bg-black text-white px-6 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-gray-800 transition-colors md:w-auto w-full py-4 md:py-0"
                            >
                                <Database size={16} />
-                               <span>Ver Base</span>
+                               <span>Ver lista de Emisores</span>
                                <ArrowRight size={16} className="opacity-50" />
                            </button>
                        </div>

@@ -1,10 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <!-- Fondo Negro Profundo con esquinas suavizadas (la forma final la da el OS del móvil) -->
-  <rect width="512" height="512" rx="0" fill="#09090B"/>
+  <defs>
+    <clipPath id="circle">
+      <circle cx="256" cy="256" r="256" />
+    </clipPath>
+  </defs>
   
-  <!-- Círculo Morado (La Luna / Punto de enfoque) -->
-  <circle cx="390" cy="120" r="45" fill="#7C3AED"/>
-
-  <!-- Monograma M sólido y grueso para legibilidad pequeña -->
-  <path d="M112 400V160L256 304L400 160V400" stroke="white" stroke-width="55" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Fondo Redondo -->
+  <g clip-path="url(#circle)">
+    <rect width="512" height="512" fill="#09090B"/>
+    
+    <!-- Elemento decorativo sutil (Moon Glow) -->
+    <circle cx="400" cy="100" r="150" fill="#7C3AED" fill-opacity="0.2" filter="blur(40px)"/>
+    
+    <!-- Logo Central Moderno (M estilizada) -->
+    <path d="M140 380V180C140 180 200 130 256 220C312 130 372 180 372 180V380" stroke="white" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Punto de acento (Reclutamiento/Objetivo) -->
+    <circle cx="256" cy="130" r="25" fill="#7C3AED"/>
+  </g>
 </svg>

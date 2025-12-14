@@ -10,7 +10,8 @@ import {
   updateDoc, 
   query, 
   where,
-  writeBatch 
+  writeBatch,
+  onSnapshot
 } from 'firebase/firestore';
 
 export const dataService = {
@@ -84,6 +85,27 @@ export const dataService = {
       id: docSnap.id,
       ...docSnap.data()
     } as Emisor));
+  },
+
+  // NUEVO: Suscripción en tiempo real para el Dashboard
+  subscribeToEmisores: (currentUser: User, callback: (emisores: Emisor[]) => void): () => void => {
+    const emisoresRef = collection(db, 'emisores');
+    let q;
+
+    if (currentUser.rol === 'admin') {
+      q = query(emisoresRef);
+    } else {
+      q = query(emisoresRef, where('reclutador_id', '==', currentUser.id));
+    }
+
+    // onSnapshot devuelve la función para desuscribirse
+    return onSnapshot(q, (snapshot) => {
+      const emisores = snapshot.docs.map(docSnap => ({
+        id: docSnap.id,
+        ...docSnap.data()
+      } as Emisor));
+      callback(emisores);
+    });
   },
 
   addEmisor: async (emisorData: Omit<Emisor, 'id' | 'fecha_registro' | 'horas_mes' | 'estado'>, currentUser: User): Promise<Emisor> => {
