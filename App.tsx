@@ -8,17 +8,23 @@ import Reclutadores from './pages/Reclutadores';
 import { User } from './types';
 import { authService } from './services/auth'; 
 import { auth } from './services/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth'; // Import modular
 import { Moon } from 'lucide-react';
 
-// Splash Screen Minimalista y Profesional
 const SplashScreen = () => (
   <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
-      <div className="mb-6 animate-pulse">
-        <Moon size={48} className="text-primary" strokeWidth={1.5} />
-      </div>
-      <h1 className="text-xl font-bold text-gray-900 tracking-tight">Agencia Moon</h1>
-      <p className="text-xs text-gray-400 mt-2">Cargando información...</p>
+    <div className="mb-8 relative">
+       <div className="w-24 h-24 bg-black rounded-3xl flex items-center justify-center shadow-2xl rotate-6 animate-[spin_2s_ease-in-out_infinite]">
+          <Moon size={40} className="text-white fill-current -rotate-6" />
+       </div>
+    </div>
+    
+    <div className="text-center">
+        <span className="block text-sm font-bold text-gray-400 tracking-[0.4em] mb-2 uppercase animate-pulse">Cargando</span>
+        <h1 className="text-4xl font-black tracking-tight text-black">
+          Agencia Moon
+        </h1>
+    </div>
   </div>
 );
 
@@ -27,20 +33,14 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Listener de sesión de Firebase Modular (v9+)
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      // Breve delay para transición suave
-      await new Promise(resolve => setTimeout(resolve, 1200));
-      
       if (firebaseUser) {
         try {
           const profile = await authService.getUserProfile(firebaseUser.uid, firebaseUser.email || '');
-          if (profile.rol === 'banned') {
-             await authService.logout();
-             setUser(null);
-          } else {
-             setUser(profile);
-          }
+          setUser(profile);
         } catch (error) {
+          console.error("Error crítico recuperando perfil:", error);
           setUser(null);
         }
       } else {

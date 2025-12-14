@@ -1,4 +1,3 @@
-
 import { User, Emisor, HistorialHoras, SystemMetadata } from '../types';
 import { db } from './firebase'; 
 import { 
@@ -15,16 +14,18 @@ import {
 } from 'firebase/firestore';
 
 export const dataService = {
-  // --- SYSTEM ---
   getMetadata: async (): Promise<SystemMetadata> => {
     try {
       const docRef = doc(db, 'system', 'metadata');
       const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) return docSnap.data() as SystemMetadata;
       
-      const initial = { lastUpdated: new Date().toISOString().split('T')[0] };
-      await setDoc(docRef, initial);
-      return initial;
+      if (docSnap.exists()) {
+        return docSnap.data() as SystemMetadata;
+      } else {
+        const initialData = { lastUpdated: new Date().toISOString().split('T')[0] };
+        await setDoc(docRef, initialData);
+        return initialData;
+      }
     } catch (e) {
       return { lastUpdated: new Date().toISOString().split('T')[0] };
     }
@@ -35,23 +36,14 @@ export const dataService = {
     await setDoc(docRef, { lastUpdated: newDate }, { merge: true });
   },
 
-  // --- USERS ---
   updateUserName: async (userId: string, newName: string): Promise<void> => {
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, { nombre: newName });
   },
 
-  toggleUserAccess: async (userId: string, currentRole: string): Promise<void> => {
-    const userRef = doc(db, 'users', userId);
-    // Si está baneado, lo reactivamos como reclutador. Si no, lo baneamos.
-    const newRole = currentRole === 'banned' ? 'reclutador' : 'banned';
-    await updateDoc(userRef, { rol: newRole });
-  },
-
   getRecruiters: async (): Promise<User[]> => {
     const usersRef = collection(db, 'users');
-    // Traemos reclutadores y baneados para poder gestionarlos
-    const q = query(usersRef, where('rol', 'in', ['reclutador', 'banned']));
+    const q = query(usersRef, where('rol', '==', 'reclutador'));
     const querySnapshot = await getDocs(q);
     
     return querySnapshot.docs.map(docSnap => ({
@@ -60,7 +52,6 @@ export const dataService = {
     } as User));
   },
 
-  // --- EMISORES ---
   getEmisores: async (currentUser: User): Promise<Emisor[]> => {
     const emisoresRef = collection(db, 'emisores');
     let q;
@@ -92,9 +83,12 @@ export const dataService = {
 
   updateHours: async (emisorId: string, newHours: number, adminId: string): Promise<void> => {
     const batch = writeBatch(db);
-    const emisorRef = doc(db, 'emisores', emisorId);
-    const historialRef = doc(collection(db, 'historial'));
     
+    // Referencias
+    const emisorRef = doc(db, 'emisores', emisorId);
+    const historialRef = doc(collection(db, 'historial')); // ID automático para historial
+    
+    // Obtener datos actuales para el historial (lectura antes de escritura)
     const emisorSnap = await getDoc(emisorRef);
     let oldHours = 0;
     if (emisorSnap.exists()) {
@@ -102,7 +96,10 @@ export const dataService = {
         oldHours = data ? data.horas_mes : 0;
     }
 
+    // 1. Actualizar Horas
     batch.update(emisorRef, { horas_mes: newHours });
+
+    // 2. Crear registro Historial
     batch.set(historialRef, {
         emisor_id: emisorId,
         horas_anteriores: oldHours,
@@ -111,6 +108,7 @@ export const dataService = {
         modificado_por: adminId
     });
 
+    // Ejecutar ambas operaciones atómicamente
     await batch.commit();
   },
 
@@ -124,5 +122,20 @@ export const dataService = {
       const newStatus = currentStatus === 'activo' ? 'pausado' : 'activo';
       await updateDoc(emisorRef, { estado: newStatus });
     }
+  },
+
+  getHistory: async (emisorId?: string): Promise<HistorialHoras[]> => {
+    const historyRef = collection(db, 'historial');
+    let q;
+    if (emisorId) {
+      q = query(historyRef, where('emisor_id', '==', emisorId));
+    } else {
+      q = query(historyRef);
+    }
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(docSnap => ({
+      id: docSnap.id,
+      ...docSnap.data()
+    } as HistorialHoras));
   }
 };

@@ -1,12 +1,10 @@
-
-export type Role = 'admin' | 'reclutador' | 'banned';
+export type Role = 'admin' | 'reclutador';
 
 export interface User {
   id: string;
   nombre: string;
   correo: string;
   rol: Role;
-  fecha_registro?: string;
 }
 
 export type EstadoEmisor = 'activo' | 'pausado';
@@ -16,7 +14,7 @@ export interface Emisor {
   nombre: string;
   bigo_id: string;
   pais: string;
-  reclutador_id: string;
+  reclutador_id: string; // ID of the user who recruited them
   horas_mes: number;
   mes_entrada: string; // Format: YYYY-MM
   estado: EstadoEmisor;
@@ -29,9 +27,17 @@ export interface HistorialHoras {
   horas_anteriores: number;
   horas_nuevas: number;
   fecha: string;
-  modificado_por: string;
+  modificado_por: string; // User ID
 }
 
 export interface SystemMetadata {
-  lastUpdated: string; // Fecha manual puesta por admin
+  lastUpdated: string; // ISO Date string
+}
+
+// Stats for dashboard
+export interface DashboardStats {
+  totalEmisores: number;
+  activeEmisores: number;
+  totalHoras: number;
+  topRecruiter?: string;
 }
