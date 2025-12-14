@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Users, Clock, TrendingUp, AlertCircle, CheckCircle2, Target, Calendar, Edit2, X } from 'lucide-react';
+import { Users, Clock, TrendingUp, AlertCircle, CheckCircle2, Target, Calendar, Edit2, X, Trash2, ChevronDown, ChevronUp, FolderOpen } from 'lucide-react';
 
 interface DashboardProps {
   user: User;
@@ -16,6 +16,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [lastUpdatedDate, setLastUpdatedDate] = useState<string>('');
   const [showDateModal, setShowDateModal] = useState(false);
   const [newDateInput, setNewDateInput] = useState('');
+
+  // Estados para Gestión Mensual (Admin)
+  const [managementMonth, setManagementMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [showManagement, setShowManagement] = useState(false);
 
   // Objetivos Dinámicos: 30 para Admin (Equipo), 15 para Reclutador individual
   const MONTHLY_EMISOR_GOAL = user.rol === 'admin' ? 30 : 15;
@@ -46,6 +50,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       setShowDateModal(false);
   };
 
+  const handleDeleteEmisor = async (id: string) => {
+      if(confirm('¿Estás seguro de eliminar este registro permanentemente?')) {
+          await dataService.deleteEmisor(id);
+      }
+  };
+
   // CORRECCIÓN: Filtrado case-insensitive
   const activeEmisores = emisores.filter(e => 
     e.estado && e.estado.toLowerCase() === 'activo'
@@ -73,6 +83,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         // Se excluyen los "compartidos" que pertenecen a otros.
         return e.reclutador_id === user.id;
     }
+  });
+
+  // Filtro para la Gestión Mensual del Admin
+  const emisoresInSelectedMonth = emisores.filter(e => {
+      // Usamos mes_entrada como referencia principal, fallback a fecha_registro
+      return (e.mes_entrada === managementMonth) || (e.fecha_registro && e.fecha_registro.startsWith(managementMonth));
   });
 
   const monthlyProgress = Math.min((newEmisoresThisMonth.length / MONTHLY_EMISOR_GOAL) * 100, 100);
@@ -200,6 +216,76 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
               iconColor="text-green-600"
             />
         </div>
+        
+        {/* --- GESTIÓN MENSUAL (SOLO ADMIN) --- */}
+        {user.rol === 'admin' && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div 
+                    className="p-5 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors"
+                    onClick={() => setShowManagement(!showManagement)}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="bg-black text-white p-2 rounded-lg">
+                            <FolderOpen size={18} />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-gray-900 text-sm">Gestión de Altas Mensuales</h3>
+                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wide">Mantener base de datos</p>
+                        </div>
+                    </div>
+                    {showManagement ? <ChevronUp size={20} className="text-gray-400" /> : <ChevronDown size={20} className="text-gray-400" />}
+                </div>
+                
+                {showManagement && (
+                    <div className="px-5 pb-5 pt-0 animate-slide-up">
+                        <div className="bg-gray-50 p-4 rounded-xl mb-4 flex items-center justify-between gap-4 border border-gray-100">
+                             <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Seleccionar Mes</label>
+                                <input 
+                                    type="month" 
+                                    className="bg-white px-3 py-2 rounded-lg border border-gray-200 text-sm font-bold outline-none focus:border-black"
+                                    value={managementMonth}
+                                    onChange={(e) => setManagementMonth(e.target.value)}
+                                />
+                             </div>
+                             <div className="text-right">
+                                 <p className="text-2xl font-black text-gray-900">{emisoresInSelectedMonth.length}</p>
+                                 <p className="text-[10px] font-bold text-gray-400 uppercase">Ingresos Totales</p>
+                             </div>
+                        </div>
+
+                        {emisoresInSelectedMonth.length > 0 ? (
+                            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                {emisoresInSelectedMonth.map(emisor => (
+                                    <div key={emisor.id} className="flex justify-between items-center p-3 bg-white rounded-xl border border-gray-100 hover:border-gray-300 transition-colors group">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">
+                                                {emisor.nombre.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-gray-900">{emisor.nombre}</p>
+                                                <p className="text-[10px] text-gray-400">Reg: {emisor.fecha_registro?.split('T')[0]}</p>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => handleDeleteEmisor(emisor.id)}
+                                            className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Borrar Emisor"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-8 text-gray-400 text-xs">
+                                No hay emisores registrados en este periodo.
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
@@ -291,7 +377,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
               </form>
            </div>
         </div>
-      )}
+       )}
     </>
   );
 };

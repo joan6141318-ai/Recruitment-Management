@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
-import { Search, Plus, MapPin, Calendar, Clock, Edit3, X, User as UserIcon, AlertTriangle, CheckCircle, Trophy, FilterX, Trash2, Globe, Shield, Lock } from 'lucide-react';
+import { Search, Plus, MapPin, Calendar, Clock, Edit3, X, User as UserIcon, AlertTriangle, CheckCircle, Trophy, FilterX, Trash2, Globe, Shield, Lock, Activity } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 interface EmisoresProps {
@@ -131,6 +131,33 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       return { label: 'Riesgo', color: 'text-accent', bg: 'bg-orange-100', icon: AlertTriangle, barColor: 'bg-accent' };
   };
 
+  // Cálculo de Productividad para la tarjeta del Admin
+  const getProductivityStats = () => {
+      if (!filterRecruiterId) return null;
+      // Usamos 'emisores' completo porque 'filtered' puede estar afectado por el buscador
+      const targetEmisores = emisores.filter(e => e.reclutador_id === filterRecruiterId);
+      const total = targetEmisores.length;
+      if (total === 0) return { count: 0, status: 'Sin Datos', color: 'text-gray-400' };
+
+      const productiveCount = targetEmisores.filter(e => e.horas_mes >= 20).length;
+      const percentage = (productiveCount / total) * 100;
+
+      let status = 'Mala';
+      let color = 'text-accent'; // Naranja/Rojo para mala
+      
+      if (percentage >= 50) {
+          status = 'Buena';
+          color = 'text-green-600';
+      } else if (percentage >= 25) {
+          status = 'Regular';
+          color = 'text-yellow-600';
+      }
+
+      return { count: productiveCount, status, color };
+  };
+
+  const stats = getProductivityStats();
+
   const CircularProgress = ({ value, max = 44, size = 120, strokeWidth = 8, state }: any) => {
       const radius = (size - strokeWidth) / 2;
       const circumference = radius * 2 * Math.PI;
@@ -162,14 +189,41 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
     <div className="pb-20 space-y-6">
       
       {filterRecruiterId && isAdmin && (
-          <div className="bg-black text-white p-4 rounded-xl flex justify-between items-center shadow-lg">
-              <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Viendo Base de Datos de</p>
-                  <p className="font-bold text-lg">{filterRecruiterName || 'Reclutador'}</p>
+          <div className="space-y-4">
+              <div className="bg-black text-white p-4 rounded-xl flex justify-between items-center shadow-lg">
+                  <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Viendo Base de Datos de</p>
+                      <p className="font-bold text-lg">{filterRecruiterName || 'Reclutador'}</p>
+                  </div>
+                  <button onClick={clearFilter} className="bg-white/20 hover:bg-white/30 p-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
+                      <FilterX size={16} /> Ver Todo
+                  </button>
               </div>
-              <button onClick={clearFilter} className="bg-white/20 hover:bg-white/30 p-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
-                  <FilterX size={16} /> Ver Todo
-              </button>
+
+              {/* TARJETA DE PRODUCTIVIDAD (Solicitada: Gris con borde blanco) */}
+              <div className="bg-gray-100 rounded-2xl p-5 border-[4px] border-white shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+                 <div className="flex items-center gap-4">
+                     <div className="p-3 bg-white rounded-full shadow-sm text-gray-500">
+                        <Activity size={24} />
+                     </div>
+                     <div>
+                         <h3 className="font-bold text-gray-900 text-lg">Informe de Productividad</h3>
+                         <p className="text-xs text-gray-500">Análisis global de este reclutador.</p>
+                     </div>
+                 </div>
+                 
+                 <div className="flex gap-6 text-center">
+                     <div>
+                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Lograron +20H</p>
+                         <p className="text-2xl font-black text-gray-900">{stats?.count || 0}</p>
+                     </div>
+                     <div className="w-px bg-gray-300 h-10"></div>
+                     <div>
+                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Estatus</p>
+                         <p className={`text-2xl font-black ${stats?.color}`}>{stats?.status}</p>
+                     </div>
+                 </div>
+              </div>
           </div>
       )}
 
