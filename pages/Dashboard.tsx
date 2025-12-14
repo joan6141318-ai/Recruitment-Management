@@ -56,10 +56,25 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   
   // Lógica de Meta Mensual
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-  const newEmisoresThisMonth = emisores.filter(e => 
-    (e.mes_entrada && e.mes_entrada === currentMonth) || 
-    (e.fecha_registro && e.fecha_registro.startsWith(currentMonth))
-  );
+  
+  const newEmisoresThisMonth = emisores.filter(e => {
+    // 1. Verificar si corresponde al mes actual
+    const isDateMatch = (e.mes_entrada && e.mes_entrada === currentMonth) || 
+                        (e.fecha_registro && e.fecha_registro.startsWith(currentMonth));
+    
+    if (!isDateMatch) return false;
+
+    // 2. Filtrado por Rol para la Meta
+    if (user.rol === 'admin') {
+        // El admin ve el total global del mes (suyos + de otros reclutadores)
+        return true;
+    } else {
+        // El reclutador SOLO ve para su meta los que ÉL registró.
+        // Se excluyen los "compartidos" que pertenecen a otros.
+        return e.reclutador_id === user.id;
+    }
+  });
+
   const monthlyProgress = Math.min((newEmisoresThisMonth.length / MONTHLY_EMISOR_GOAL) * 100, 100);
   
   // Chart Data: Top 5 Emisores
