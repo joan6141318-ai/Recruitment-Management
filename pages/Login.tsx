@@ -55,20 +55,19 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         {/* HEADER */}
         <div className="flex flex-col items-center mb-10">
             <div className="mb-6 shadow-2xl shadow-purple-200/50 rounded-[25px]">
-                <BrandLogo className="w-24 h-24" />
+                <BrandLogo className="w-20 h-20" />
             </div>
-            {/* TIPOGRAFÍA CORREGIDA: Minimalista, Negrita, Mayúsculas, Tracking amplio */}
-            <h1 className="text-3xl font-black text-gray-900 tracking-[0.2em] uppercase leading-tight text-center">
-                AGENCIA<br/><span className="text-primary">MOON</span>
-            </h1>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-3">Gestión de Talento</p>
+            
+            {/* TÍTULO CORREGIDO: Sin espacios extraños, sin saltos de línea. Sólido y profesional. */}
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight">Agencia Moon</h1>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-2">Plataforma de Gestión</p>
         </div>
 
         <div className="bg-white p-8 rounded-3xl shadow-xl shadow-gray-100 border border-white relative overflow-hidden">
             <div className="absolute top-0 right-0 w-20 h-20 bg-purple-50 rounded-bl-full -mr-10 -mt-10"></div>
             
             <h2 className="text-sm font-bold text-gray-400 mb-6 uppercase tracking-wider text-center relative z-10">
-                {isRegistering ? 'Nueva Cuenta' : 'Iniciar Sesión'}
+                {isRegistering ? 'Nueva Cuenta' : 'Acceso Autorizado'}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
@@ -120,7 +119,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-black text-white py-4 rounded-xl font-bold text-sm hover:bg-gray-900 transition-all transform active:scale-[0.98] shadow-lg shadow-gray-200 mt-2 tracking-wide uppercase"
+                    className="w-full bg-black text-white py-4 rounded-xl font-bold text-sm hover:bg-gray-900 transition-all transform active:scale-[0.98] shadow-lg shadow-gray-200 mt-2"
                 >
                     {loading ? 'Procesando...' : (isRegistering ? 'Crear Cuenta' : 'Ingresar')}
                 </button>
@@ -130,7 +129,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <div className="mt-8 text-center">
             <button 
                 onClick={() => { setIsRegistering(!isRegistering); setError(null); }}
-                className="text-xs font-bold text-gray-400 hover:text-black transition-colors uppercase tracking-wide"
+                className="text-xs font-bold text-gray-400 hover:text-black transition-colors"
             >
                 {isRegistering ? '¿Ya tienes cuenta? Ingresa' : '¿No tienes cuenta? Regístrate'}
             </button>

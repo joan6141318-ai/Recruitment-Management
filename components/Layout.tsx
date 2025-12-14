@@ -27,7 +27,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Nav Item con colores solicitados (Morado/Naranja/Negro)
+  // Nav Item para Sidebar Desktop
   const NavItem = ({ to, icon: Icon, label, colorClass = "text-gray-400" }: { to: string, icon: any, label: string, colorClass?: string }) => {
     const active = isActive(to);
     return (
@@ -51,6 +51,19 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
         {active && <ChevronRight size={16} className="ml-auto text-gray-300" />}
       </Link>
     );
+  };
+
+  // Nav Item para Bottom Bar (Móvil)
+  const BottomNavItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => {
+      const active = isActive(to);
+      return (
+          <Link to={to} className={`flex flex-col items-center justify-center w-full py-1 ${active ? 'text-black' : 'text-gray-400'}`}>
+              <div className={`p-2 rounded-xl mb-0.5 transition-all ${active ? 'bg-black text-white shadow-lg shadow-purple-200' : 'bg-transparent'}`}>
+                <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+              </div>
+              <span className={`text-[10px] font-bold tracking-tight ${active ? 'text-black' : 'text-gray-400'}`}>{label}</span>
+          </Link>
+      )
   };
 
   const SidebarContent = () => (
@@ -97,14 +110,14 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
       </aside>
 
       {/* MOBILE HEADER CON HAMBURGUESA */}
-      <div className="md:hidden fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md border-b border-gray-100 px-5 h-[70px] flex justify-between items-center z-40 shadow-sm">
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md border-b border-gray-100 px-5 h-[60px] flex justify-between items-center z-40 shadow-sm">
           <div className="flex items-center gap-3">
               <BrandLogo className="w-8 h-8" />
               <span className="font-bold text-base text-black uppercase tracking-widest">MOON</span>
           </div>
           <button 
             onClick={() => setIsSidebarOpen(true)}
-            className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center shadow-lg shadow-purple-200 active:scale-95 transition-transform"
+            className="w-9 h-9 bg-gray-50 text-black border border-gray-100 rounded-full flex items-center justify-center active:bg-gray-100 transition-colors"
           >
              <Menu size={20} />
           </button>
@@ -132,9 +145,24 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
       )}
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 p-5 md:p-10 max-w-7xl mx-auto w-full mt-[70px] md:mt-0">
+      {/* Añadido mb-24 en móvil para evitar que la navbar tape contenido */}
+      <main className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full mt-[60px] md:mt-0 mb-24 md:mb-0">
         {children}
       </main>
+
+      {/* MOBILE BOTTOM NAVIGATION */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-4 z-50 flex justify-between items-center h-[80px] shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
+         <BottomNavItem to="/" icon={LayoutDashboard} label="Inicio" />
+         <BottomNavItem to="/emisores" icon={Radio} label="Emisores" />
+         {user.rol === 'admin' && <BottomNavItem to="/reclutadores" icon={Users} label="Equipo" />}
+         
+         <button onClick={onLogout} className="flex flex-col items-center justify-center w-full py-1 text-gray-400 group">
+             <div className="p-2 mb-0.5 rounded-xl group-active:bg-gray-100 transition-colors">
+                <LogOut size={20} />
+             </div>
+             <span className="text-[10px] font-bold">Salir</span>
+         </button>
+      </div>
 
     </div>
   );
