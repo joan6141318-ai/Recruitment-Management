@@ -35,7 +35,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
   if (loading) return <div className="p-10 text-center text-sm text-gray-400">Cargando métricas...</div>;
 
-  const StatCard = ({ title, value, sub, icon: Icon, color }: any) => (
+  const StatCard = ({ title, value, sub, icon: Icon, color, iconColor }: any) => (
       <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start mb-4">
               <div>
@@ -43,7 +43,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                   <h3 className="text-3xl font-bold text-gray-900 mt-1 tracking-tight">{value}</h3>
               </div>
               <div className={`p-2 rounded-xl ${color}`}>
-                  <Icon size={20} className="text-black/70" />
+                  <Icon size={20} className={iconColor} />
               </div>
           </div>
           <p className="text-xs text-gray-500 font-medium">{sub}</p>
@@ -59,28 +59,31 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         <p className="text-gray-500 text-sm mt-1">Métricas clave de rendimiento en tiempo real.</p>
       </div>
 
-      {/* KPI Grid */}
+      {/* KPI Grid - Iconos Morados/Naranjas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard 
             title="Emisores Activos" 
             value={activeEmisores.length} 
             sub="Total en plataforma" 
             icon={Users} 
-            color="bg-gray-100" 
+            color="bg-purple-50" 
+            iconColor="text-primary"
           />
           <StatCard 
             title="Horas Totales" 
             value={totalHours.toFixed(0)} 
             sub="Acumulado del mes" 
             icon={Clock} 
-            color="bg-purple-50" 
+            color="bg-orange-50" 
+            iconColor="text-accent"
           />
           <StatCard 
             title="Promedio / Emisor" 
             value={avgHours.toFixed(1)} 
             sub="Horas por persona" 
             icon={TrendingUp} 
-            color="bg-blue-50" 
+            color="bg-purple-50" 
+            iconColor="text-primary"
           />
           <StatCard 
             title="Cumplimiento" 
@@ -88,6 +91,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             sub="Meta > 20 Horas" 
             icon={CheckCircle2} 
             color="bg-green-50" 
+            iconColor="text-green-600"
           />
       </div>
 
@@ -112,7 +116,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                         />
                         <Bar dataKey="hours" radius={[6, 6, 6, 6]} barSize={40}>
                             {chartData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={index === 0 ? '#000000' : '#E5E7EB'} />
+                                <Cell key={`cell-${index}`} fill={index === 0 ? '#7C3AED' : '#E5E7EB'} />
                             ))}
                         </Bar>
                     </BarChart>
@@ -123,19 +127,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           {/* Alert List */}
           <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col">
              <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide flex items-center gap-2">
-                <AlertCircle size={16} className="text-red-500"/> Atención Requerida
+                <AlertCircle size={16} className="text-accent"/> Atención Requerida
              </h3>
              <div className="flex-1 overflow-y-auto pr-2 space-y-3 max-h-[250px]">
                 {activeEmisores
                     .filter(e => e.horas_mes < 10)
                     .sort((a,b) => a.horas_mes - b.horas_mes)
                     .map(emisor => (
-                    <div key={emisor.id} className="flex items-center justify-between p-3 bg-red-50/50 rounded-xl border border-red-100">
+                    <div key={emisor.id} className="flex items-center justify-between p-3 bg-orange-50/50 rounded-xl border border-orange-100">
                         <div>
                             <p className="font-bold text-xs text-gray-900">{emisor.nombre}</p>
                             <p className="text-[10px] text-gray-500 font-mono mt-0.5">ID: {emisor.bigo_id}</p>
                         </div>
-                        <span className="text-xs font-black text-red-600">{emisor.horas_mes}h</span>
+                        <span className="text-xs font-black text-accent">{emisor.horas_mes}h</span>
                     </div>
                 ))}
                 {activeEmisores.filter(e => e.horas_mes < 10).length === 0 && (

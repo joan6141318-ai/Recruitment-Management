@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
-import { Search, Plus, MapPin, Calendar, Clock, Edit3, X, User as UserIcon } from 'lucide-react';
+import { Search, Plus, MapPin, Calendar, Clock, Edit3, X, User as UserIcon, AlertTriangle, CheckCircle, Trophy } from 'lucide-react';
 
 interface EmisoresProps {
   user: User;
@@ -15,8 +15,8 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
   // Modals States
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false); // Ficha Informativa
-  const [isEditingMode, setIsEditingMode] = useState(false); // Modo Edición dentro de la ficha
+  const [showDetailModal, setShowDetailModal] = useState(false); 
+  const [isEditingMode, setIsEditingMode] = useState(false); 
   
   const [selectedEmisor, setSelectedEmisor] = useState<Emisor | null>(null);
   
@@ -61,16 +61,23 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
     e.preventDefault();
     if (!selectedEmisor || !isAdmin) return;
     await dataService.updateHours(selectedEmisor.id, Number(editHours), user.id);
-    setIsEditingMode(false); // Salir de modo edicion
-    setShowDetailModal(false); // Cerrar ficha
+    setIsEditingMode(false); 
+    setShowDetailModal(false);
     loadData();
   };
 
   const openEmisorDetail = (emisor: Emisor) => {
       setSelectedEmisor(emisor);
       setEditHours(emisor.horas_mes);
-      setIsEditingMode(false); // Resetear a modo lectura
+      setIsEditingMode(false); 
       setShowDetailModal(true);
+  };
+
+  // Helper para estado
+  const getStatusInfo = (hours: number) => {
+      if (hours >= 44) return { label: 'Meta Cumplida', color: 'text-green-600', bg: 'bg-green-100', icon: Trophy, barColor: 'bg-green-500' };
+      if (hours >= 20) return { label: 'Productivo', color: 'text-primary', bg: 'bg-purple-100', icon: CheckCircle, barColor: 'bg-primary' };
+      return { label: 'Riesgo', color: 'text-accent', bg: 'bg-orange-100', icon: AlertTriangle, barColor: 'bg-accent' };
   };
 
   // Circular Progress Component
@@ -80,22 +87,24 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       const progress = Math.min(value / max, 1);
       const dash = circumference * progress;
       
-      let color = "#000000"; // Black default
-      if(value >= 44) color = "#16A34A"; // Green
-      else if(value < 15) color = "#EF4444"; // Red
+      const { barColor } = getStatusInfo(value);
+      // Extraemos el color hexadecimal aproximado para el SVG stroke
+      let strokeColor = "#F97316"; // Naranja (Riesgo)
+      if(value >= 20) strokeColor = "#7C3AED"; // Morado (Productivo)
+      if(value >= 44) strokeColor = "#16A34A"; // Verde (Meta)
 
       return (
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
             <circle cx={size/2} cy={size/2} r={radius} stroke="#F3F4F6" strokeWidth={strokeWidth} fill="none" />
             <circle 
                 cx={size/2} cy={size/2} r={radius} 
-                stroke={color} strokeWidth={strokeWidth} fill="none"
+                stroke={strokeColor} strokeWidth={strokeWidth} fill="none"
                 strokeDasharray={circumference}
                 strokeDashoffset={circumference - dash}
                 strokeLinecap="round"
                 transform={`rotate(-90 ${size/2} ${size/2})`}
             />
-            <text x="50%" y="50%" dy=".3em" textAnchor="middle" className="text-2xl font-black fill-gray-900">{value}h</text>
+            <text x="50%" y="50%" dy=".3em" textAnchor="middle" className="text-3xl font-black fill-gray-900">{value}</text>
         </svg>
       );
   };
@@ -104,7 +113,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
     <div className="pb-20 space-y-6">
       
       {/* Header & Search */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-2 md:p-4 rounded-2xl border border-gray-100 shadow-sm sticky top-20 z-10 mx-1">
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-2 md:p-4 rounded-2xl border border-gray-100 shadow-sm sticky top-20 md:top-5 z-30 mx-1">
          <div className="relative w-full md:w-96">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input 
@@ -123,49 +132,61 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
         </button>
       </div>
 
-      {/* Modern Grid List */}
+      {/* Grid List */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {loading ? <div className="col-span-full text-center py-20 text-gray-400">Cargando...</div> : 
-         filtered.map((emisor) => (
-            <div 
-                key={emisor.id} 
-                onClick={() => openEmisorDetail(emisor)}
-                className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all cursor-pointer relative group"
-            >
-                <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-sm font-bold text-gray-600">
-                            {emisor.nombre.charAt(0)}
-                        </div>
-                        <div className="min-w-0">
-                            <h3 className="font-bold text-gray-900 text-sm truncate">{emisor.nombre}</h3>
-                            <p className="text-xs text-gray-400 font-mono">ID: {emisor.bigo_id}</p>
-                        </div>
-                    </div>
-                </div>
+         filtered.map((emisor) => {
+            const status = getStatusInfo(emisor.horas_mes);
+            const StatusIcon = status.icon;
 
-                {/* Mini Progress */}
-                <div className="mt-4">
-                    <div className="flex justify-between text-xs mb-1.5 font-bold">
-                        <span className="text-gray-400">Progreso</span>
-                        <span className="text-gray-900">{emisor.horas_mes} / 44h</span>
+            return (
+                <div 
+                    key={emisor.id} 
+                    onClick={() => openEmisorDetail(emisor)}
+                    className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all cursor-pointer relative group"
+                >
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                            <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-sm font-bold text-gray-600">
+                                {emisor.nombre.charAt(0)}
+                            </div>
+                            <div className="min-w-0">
+                                <h3 className="font-bold text-gray-900 text-sm truncate">{emisor.nombre}</h3>
+                                <p className="text-xs text-gray-400 font-mono">ID: {emisor.bigo_id}</p>
+                            </div>
+                        </div>
+                        {/* Status Indicator */}
+                        <div className={`p-1.5 rounded-full ${status.bg}`}>
+                            <StatusIcon size={14} className={status.color} />
+                        </div>
                     </div>
-                    <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                        <div 
-                            className="h-full bg-black rounded-full" 
-                            style={{width: `${Math.min((emisor.horas_mes/44)*100, 100)}%`}}
-                        ></div>
+
+                    {/* Progress Bar & Status Text */}
+                    <div className="mt-4">
+                        <div className="flex justify-between text-xs mb-1.5 font-bold">
+                            <span className={status.color}>{status.label}</span>
+                            <span className="text-gray-900">{emisor.horas_mes} / 44h</span>
+                        </div>
+                        <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                            <div 
+                                className={`h-full rounded-full ${status.barColor}`} 
+                                style={{width: `${Math.min((emisor.horas_mes/44)*100, 100)}%`}}
+                            ></div>
+                        </div>
                     </div>
                 </div>
-            </div>
-         ))
+            );
+         })
         }
       </div>
 
       {/* --- MODAL FICHA INFORMATIVA (DETAILS) --- */}
+      {/* CORRECCIÓN: z-50 -> z-[70] para asegurar que esté sobre todo */}
       {showDetailModal && selectedEmisor && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-pop-in">
-              <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl">
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowDetailModal(false)}></div>
+              <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl relative z-10 animate-pop-in">
+                  
                   {/* Header de la ficha */}
                   <div className="bg-gray-50 p-6 border-b border-gray-100 flex justify-between items-start">
                       <div>
@@ -190,12 +211,12 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                             
                             <div className="grid grid-cols-2 gap-4 w-full mb-8">
                                 <div className="bg-gray-50 p-3 rounded-2xl text-center">
-                                    <MapPin size={16} className="mx-auto mb-1 text-gray-400"/>
+                                    <MapPin size={16} className="mx-auto mb-1 text-primary"/>
                                     <p className="text-[10px] font-bold text-gray-400 uppercase">País</p>
                                     <p className="text-sm font-bold text-gray-900">{selectedEmisor.pais}</p>
                                 </div>
                                 <div className="bg-gray-50 p-3 rounded-2xl text-center">
-                                    <Calendar size={16} className="mx-auto mb-1 text-gray-400"/>
+                                    <Calendar size={16} className="mx-auto mb-1 text-accent"/>
                                     <p className="text-[10px] font-bold text-gray-400 uppercase">Ingreso</p>
                                     <p className="text-sm font-bold text-gray-900">{selectedEmisor.mes_entrada}</p>
                                 </div>
@@ -240,10 +261,11 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
           </div>
       )}
 
-      {/* Modal Agregar */}
+      {/* Modal Agregar (También ajustado z-index) */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-pop-in">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAddModal(false)}></div>
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-pop-in relative z-10">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-bold text-gray-900">Nuevo Registro</h3>
                 <button onClick={() => setShowAddModal(false)}><X size={20} className="text-gray-400" /></button>

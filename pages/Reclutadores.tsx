@@ -1,19 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { User } from '../types';
+import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
 import { authService } from '../services/auth';
-import { UserPlus, Mail, X, Power, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { UserPlus, Mail, X, Power, ShieldCheck, ShieldAlert, Target, Users } from 'lucide-react';
 
 interface ReclutadoresProps {
   user: User;
 }
 
+interface RecruiterStats extends User {
+  emisoresCount: number;
+}
+
 const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
-  const [recruiters, setRecruiters] = useState<User[]>([]);
+  const [recruiters, setRecruiters] = useState<RecruiterStats[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Meta Mensual
+  const GOAL_EMISORES = 15;
 
   useEffect(() => {
     loadData();
@@ -21,8 +28,18 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
 
   const loadData = async () => {
     setLoading(true);
+    // 1. Obtener reclutadores
     const usersData = await dataService.getRecruiters();
-    setRecruiters(usersData);
+    // 2. Obtener TODOS los emisores (como admin) para contar
+    const allEmisores = await dataService.getEmisores({ ...user, rol: 'admin' });
+
+    // 3. Mapear conteo
+    const statsData = usersData.map(rec => ({
+        ...rec,
+        emisoresCount: allEmisores.filter(e => e.reclutador_id === rec.id).length
+    }));
+
+    setRecruiters(statsData);
     setLoading(false);
   };
 
@@ -41,7 +58,6 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
 
   const toggleAccess = async (recruiter: User) => {
       if(!confirm(`¿Estás seguro que deseas ${recruiter.activo ? 'REVOCAR' : 'ACTIVAR'} el acceso a ${recruiter.nombre}?`)) return;
-      
       await dataService.toggleUserAccess(recruiter.id, recruiter.activo);
       loadData();
   };
@@ -49,11 +65,11 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
   return (
     <div className="space-y-6 pb-20">
        
-       {/* Header Administrativo */}
+       {/* Header */}
        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Equipo de Reclutamiento</h2>
-            <p className="text-gray-500 mt-1 text-sm">Administración de accesos y usuarios.</p>
+            <p className="text-gray-500 mt-1 text-sm">Meta mensual: <span className="font-bold text-black">15 Emisores Nuevos</span></p>
           </div>
           <button 
             onClick={() => setIsModalOpen(true)} 
@@ -63,55 +79,80 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
           </button>
        </div>
 
-       {/* Lista Simple de Usuarios */}
+       {/* Lista de Reclutadores con Métricas */}
        <div className="grid grid-cols-1 gap-4">
-          {loading ? <div className="text-center py-10 text-gray-400">Cargando equipo...</div> : 
-           recruiters.map((rec) => (
-               <div key={rec.id} className="bg-white border border-gray-100 p-4 rounded-xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                   <div className="flex items-center gap-4">
-                       <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold border ${rec.activo ? 'bg-gray-50 border-gray-200 text-gray-700' : 'bg-red-50 border-red-100 text-red-500'}`}>
-                           {rec.nombre.charAt(0).toUpperCase()}
-                       </div>
-                       <div>
-                           <h3 className={`font-bold text-base ${rec.activo ? 'text-gray-900' : 'text-gray-400 line-through'}`}>{rec.nombre}</h3>
-                           <div className="flex items-center gap-2 text-sm text-gray-500">
-                               <Mail size={14} /> {rec.correo}
+          {loading ? <div className="text-center py-10 text-gray-400">Calculando productividad...</div> : 
+           recruiters.map((rec) => {
+               const progress = Math.min((rec.emisoresCount / GOAL_EMISORES) * 100, 100);
+               const isGoalMet = rec.emisoresCount >= GOAL_EMISORES;
+
+               return (
+               <div key={rec.id} className="bg-white border border-gray-100 p-5 rounded-2xl shadow-sm flex flex-col gap-6 relative overflow-hidden">
+                   
+                   {/* Top Section: Info & Access */}
+                   <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                       <div className="flex items-center gap-4">
+                           <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold border ${rec.activo ? 'bg-gray-50 border-gray-200 text-gray-700' : 'bg-red-50 border-red-100 text-red-500'}`}>
+                               {rec.nombre.charAt(0).toUpperCase()}
+                           </div>
+                           <div>
+                               <h3 className={`font-bold text-base ${rec.activo ? 'text-gray-900' : 'text-gray-400 line-through'}`}>{rec.nombre}</h3>
+                               <div className="flex items-center gap-2 text-sm text-gray-500">
+                                   <Mail size={14} /> {rec.correo}
+                               </div>
                            </div>
                        </div>
+                       
+                       {/* Control Buttons */}
+                       <div className="flex items-center gap-3">
+                           <button 
+                               onClick={() => toggleAccess(rec)}
+                               className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors flex items-center gap-2
+                               ${rec.activo 
+                                   ? 'border-gray-200 text-gray-500 hover:bg-gray-50' 
+                                   : 'border-green-200 text-green-600 hover:bg-green-50'
+                               }`}
+                           >
+                               <Power size={14} />
+                               {rec.activo ? 'Revocar' : 'Activar'}
+                           </button>
+                       </div>
                    </div>
 
-                   <div className="flex items-center gap-4 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-gray-50">
-                       <div className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${rec.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                           {rec.activo ? <ShieldCheck size={12} /> : <ShieldAlert size={12} />}
-                           {rec.activo ? 'ACCESO ACTIVO' : 'REVOCADO'}
+                   {/* Productivity Bar */}
+                   {rec.activo && (
+                       <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                           <div className="flex justify-between items-end mb-2">
+                               <div className="flex items-center gap-2">
+                                   <Target size={16} className={isGoalMet ? 'text-green-600' : 'text-accent'} />
+                                   <span className="text-xs font-bold text-gray-500 uppercase">Productividad Mes</span>
+                               </div>
+                               <div className="text-right">
+                                   <span className="text-lg font-black text-gray-900">{rec.emisoresCount}</span>
+                                   <span className="text-xs text-gray-400 font-bold"> / {GOAL_EMISORES}</span>
+                               </div>
+                           </div>
+                           <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                               <div 
+                                   className={`h-full rounded-full transition-all duration-500 ${isGoalMet ? 'bg-green-500' : 'bg-primary'}`}
+                                   style={{width: `${progress}%`}}
+                               ></div>
+                           </div>
+                           <p className="text-[10px] text-gray-400 mt-2 text-right">
+                               {isGoalMet ? 'Meta Cumplida 🎉' : `${GOAL_EMISORES - rec.emisoresCount} faltantes para meta`}
+                           </p>
                        </div>
-                       
-                       <button 
-                           onClick={() => toggleAccess(rec)}
-                           className={`ml-auto px-4 py-2 rounded-lg text-xs font-bold border transition-colors flex items-center gap-2
-                           ${rec.activo 
-                               ? 'border-red-200 text-red-600 hover:bg-red-50' 
-                               : 'border-green-200 text-green-600 hover:bg-green-50'
-                           }`}
-                       >
-                           <Power size={14} />
-                           {rec.activo ? 'Revocar Acceso' : 'Reactivar Acceso'}
-                       </button>
-                   </div>
+                   )}
                </div>
-           ))
+           )})
           }
-          {recruiters.length === 0 && !loading && (
-              <div className="text-center py-10 text-gray-400 bg-gray-50 rounded-xl border-dashed border-2 border-gray-200">
-                  No hay reclutadores registrados.
-              </div>
-          )}
        </div>
 
-       {/* Modal Simple de Invitación */}
+       {/* Modal Invitación */}
        {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-           <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
+           <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl relative z-10 animate-pop-in">
               <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
                   <h3 className="text-lg font-bold text-gray-900">Registrar Reclutador</h3>
                   <button onClick={() => setIsModalOpen(false)}><X size={20} className="text-gray-400 hover:text-black"/></button>
@@ -121,8 +162,7 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
                     <label className="text-xs font-bold text-gray-500 block mb-1 uppercase">Nombre Completo</label>
                     <input 
                         required 
-                        className="w-full bg-white border border-gray-300 p-3 rounded-lg text-sm outline-none focus:border-black transition-colors placeholder-gray-300" 
-                        placeholder="Ej. Juan Pérez" 
+                        className="w-full bg-white border border-gray-300 p-3 rounded-lg text-sm outline-none focus:border-black transition-colors" 
                         value={newName} 
                         onChange={e => setNewName(e.target.value)} 
                     />
@@ -132,8 +172,7 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
                     <input 
                         required 
                         type="email" 
-                        className="w-full bg-white border border-gray-300 p-3 rounded-lg text-sm outline-none focus:border-black transition-colors placeholder-gray-300" 
-                        placeholder="correo@ejemplo.com" 
+                        className="w-full bg-white border border-gray-300 p-3 rounded-lg text-sm outline-none focus:border-black transition-colors" 
                         value={newEmail} 
                         onChange={e => setNewEmail(e.target.value)} 
                     />
