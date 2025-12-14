@@ -2,17 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Users, Clock, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Users, Clock, TrendingUp, AlertCircle, CheckCircle2, Target } from 'lucide-react';
 
 interface DashboardProps {
   user: User;
 }
 
-const GOAL_HOURS_MIN = 20;
-
 const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [emisores, setEmisores] = useState<Emisor[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Objetivos
+  const MONTHLY_EMISOR_GOAL = 15;
+  const PRODUCTIVITY_HOURS_GOAL = 20;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -23,9 +25,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     fetchData();
   }, [user]);
 
-  const activeEmisores = emisores.filter(e => e.estado === 'activo');
+  // CORRECCIÓN: Filtrado case-insensitive para asegurar que no salga 0 si dice 'Activo' o 'activo'
+  const activeEmisores = emisores.filter(e => 
+    e.estado && e.estado.toLowerCase() === 'activo'
+  );
+  
   const totalHours = emisores.reduce((acc, curr) => acc + curr.horas_mes, 0);
   const avgHours = activeEmisores.length > 0 ? totalHours / activeEmisores.length : 0;
+  
+  // Lógica de Meta Mensual (15 Emisores)
+  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const newEmisoresThisMonth = emisores.filter(e => 
+    // Usamos mes_entrada (input manual) o fecha_registro como fallback
+    (e.mes_entrada && e.mes_entrada === currentMonth) || 
+    (e.fecha_registro && e.fecha_registro.startsWith(currentMonth))
+  );
+  const monthlyProgress = Math.min((newEmisoresThisMonth.length / MONTHLY_EMISOR_GOAL) * 100, 100);
   
   // Chart Data: Top 5 Emisores
   const chartData = [...emisores]
@@ -54,17 +69,63 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     <div className="space-y-6 animate-slide-up">
       
       {/* Title */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Resumen General</h2>
-        <p className="text-gray-500 text-sm mt-1">Métricas clave de rendimiento en tiempo real.</p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-2">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Rendimiento</h2>
+            <p className="text-gray-500 text-sm mt-1">Resumen general y metas del mes.</p>
+          </div>
+          <div className="text-right">
+              <span className="text-xs font-bold text-primary bg-purple-50 px-3 py-1 rounded-full uppercase tracking-wide">
+                  {new Date().toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
+              </span>
+          </div>
       </div>
 
-      {/* KPI Grid - Iconos Morados/Naranjas */}
+      {/* --- SECCIÓN META MENSUAL (RECLUTADOR) --- */}
+      <div className="bg-black text-white p-6 rounded-2xl shadow-xl shadow-gray-200 relative overflow-hidden">
+          {/* Decoración de fondo */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600 rounded-full blur-[60px] opacity-30 -mr-10 -mt-10"></div>
+          
+          <div className="relative z-10">
+              <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center gap-3">
+                      <div className="p-2 bg-white/10 rounded-xl backdrop-blur-sm">
+                        <Target size={24} className="text-purple-400" />
+                      </div>
+                      <div>
+                          <h3 className="text-lg font-bold">Meta de Reclutamiento</h3>
+                          <p className="text-xs text-gray-400 font-medium">Objetivo: 15 Nuevos Emisores</p>
+                      </div>
+                  </div>
+                  <div className="text-right">
+                      <span className="text-3xl font-black">{newEmisoresThisMonth.length}</span>
+                      <span className="text-sm text-gray-500 font-bold"> / 15</span>
+                  </div>
+              </div>
+
+              {/* Barra de Progreso */}
+              <div className="w-full bg-gray-800 h-3 rounded-full overflow-hidden mb-2 border border-gray-700">
+                  <div 
+                      className="h-full rounded-full bg-gradient-to-r from-purple-600 to-accent transition-all duration-700 ease-out relative"
+                      style={{width: `${monthlyProgress}%`}}
+                  >
+                      <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                  </div>
+              </div>
+              
+              <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  <span>Progreso Actual</span>
+                  <span>{Math.round(monthlyProgress)}% Completado</span>
+              </div>
+          </div>
+      </div>
+
+      {/* KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard 
             title="Emisores Activos" 
             value={activeEmisores.length} 
-            sub="Total en plataforma" 
+            sub="Cartera Total" 
             icon={Users} 
             color="bg-purple-50" 
             iconColor="text-primary"
@@ -86,9 +147,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             iconColor="text-primary"
           />
           <StatCard 
-            title="Cumplimiento" 
-            value={`${Math.round((activeEmisores.filter(e => e.horas_mes >= GOAL_HOURS_MIN).length / (activeEmisores.length || 1)) * 100)}%`} 
-            sub="Meta > 20 Horas" 
+            title="Productivos" 
+            value={`${Math.round((activeEmisores.filter(e => e.horas_mes >= PRODUCTIVITY_HOURS_GOAL).length / (activeEmisores.length || 1)) * 100)}%`} 
+            sub="Emisores > 20 Horas" 
             icon={CheckCircle2} 
             color="bg-green-50" 
             iconColor="text-green-600"
@@ -99,29 +160,35 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           
           {/* Chart Section */}
           <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-             <h3 className="text-sm font-bold text-gray-900 mb-6 uppercase tracking-wide">Top Rendimiento</h3>
-             <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
-                        <XAxis 
-                            dataKey="name" 
-                            axisLine={false} 
-                            tickLine={false} 
-                            tick={{fill: '#9CA3AF', fontSize: 11, fontWeight: 600}} 
-                            dy={10} 
-                        />
-                        <Tooltip 
-                            cursor={{fill: '#F3F4F6'}}
-                            contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
-                        />
-                        <Bar dataKey="hours" radius={[6, 6, 6, 6]} barSize={40}>
-                            {chartData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={index === 0 ? '#7C3AED' : '#E5E7EB'} />
-                            ))}
-                        </Bar>
-                    </BarChart>
-                </ResponsiveContainer>
-             </div>
+             <h3 className="text-sm font-bold text-gray-900 mb-6 uppercase tracking-wide">Top Productividad</h3>
+             {chartData.length > 0 ? (
+                 <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData}>
+                            <XAxis 
+                                dataKey="name" 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{fill: '#9CA3AF', fontSize: 11, fontWeight: 600}} 
+                                dy={10} 
+                            />
+                            <Tooltip 
+                                cursor={{fill: '#F3F4F6'}}
+                                contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
+                            />
+                            <Bar dataKey="hours" radius={[6, 6, 6, 6]} barSize={40}>
+                                {chartData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={index === 0 ? '#7C3AED' : '#E5E7EB'} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                 </div>
+             ) : (
+                 <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
+                     Sin datos suficientes
+                 </div>
+             )}
           </div>
 
           {/* Alert List */}
@@ -143,7 +210,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                     </div>
                 ))}
                 {activeEmisores.filter(e => e.horas_mes < 10).length === 0 && (
-                    <p className="text-xs text-gray-400 text-center py-10">Todo bajo control.</p>
+                    <div className="flex flex-col items-center justify-center h-full py-10 text-gray-400">
+                        <CheckCircle2 size={30} className="mb-2 text-green-500 opacity-50" />
+                        <p className="text-xs">Todo bajo control.</p>
+                    </div>
                 )}
              </div>
           </div>

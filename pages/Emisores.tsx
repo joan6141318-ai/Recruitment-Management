@@ -181,10 +181,14 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       </div>
 
       {/* --- MODAL FICHA INFORMATIVA (DETAILS) --- */}
-      {/* CORRECCIÓN: z-50 -> z-[70] para asegurar que esté sobre todo */}
+      {/* SOLUCIÓN FONDO MOCHA: fixed w-screen h-screen z-[70] para cubrir TODO */}
       {showDetailModal && selectedEmisor && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowDetailModal(false)}></div>
+              <div 
+                  className="fixed inset-0 w-screen h-screen bg-black/60 backdrop-blur-sm" 
+                  onClick={() => setShowDetailModal(false)}
+              ></div>
+              
               <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl relative z-10 animate-pop-in">
                   
                   {/* Header de la ficha */}
@@ -261,10 +265,10 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
           </div>
       )}
 
-      {/* Modal Agregar (También ajustado z-index) */}
+      {/* Modal Agregar */}
       {showAddModal && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAddModal(false)}></div>
+          <div className="fixed inset-0 w-screen h-screen bg-black/60 backdrop-blur-sm" onClick={() => setShowAddModal(false)}></div>
           <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-pop-in relative z-10">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-bold text-gray-900">Nuevo Registro</h3>
