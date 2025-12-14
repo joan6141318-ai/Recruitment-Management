@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
 import { authService } from '../services/auth';
-import { UserPlus, Mail, X, Power, ShieldCheck, ShieldAlert, Target, Users } from 'lucide-react';
+import { UserPlus, Mail, X, Power, ShieldCheck, ShieldAlert, Target, Users, Database, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface ReclutadoresProps {
   user: User;
@@ -18,6 +19,7 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   // Meta Mensual
   const GOAL_EMISORES = 15;
@@ -62,6 +64,10 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
       loadData();
   };
 
+  const viewDatabase = (recruiterId: string, recruiterName: string) => {
+    navigate(`/emisores?reclutador=${recruiterId}&nombre=${encodeURIComponent(recruiterName)}`);
+  };
+
   return (
     <div className="space-y-6 pb-20">
        
@@ -87,7 +93,7 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
                const isGoalMet = rec.emisoresCount >= GOAL_EMISORES;
 
                return (
-               <div key={rec.id} className="bg-white border border-gray-100 p-5 rounded-2xl shadow-sm flex flex-col gap-6 relative overflow-hidden">
+               <div key={rec.id} className="bg-white border border-gray-100 p-5 rounded-2xl shadow-sm flex flex-col gap-6 relative overflow-hidden group">
                    
                    {/* Top Section: Info & Access */}
                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
@@ -119,28 +125,38 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
                        </div>
                    </div>
 
-                   {/* Productivity Bar */}
+                   {/* Productivity Bar & Database Action */}
                    {rec.activo && (
-                       <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                           <div className="flex justify-between items-end mb-2">
-                               <div className="flex items-center gap-2">
-                                   <Target size={16} className={isGoalMet ? 'text-green-600' : 'text-accent'} />
-                                   <span className="text-xs font-bold text-gray-500 uppercase">Productividad Mes</span>
+                       <div className="flex flex-col md:flex-row gap-4">
+                           {/* Stats */}
+                           <div className="flex-1 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                               <div className="flex justify-between items-end mb-2">
+                                   <div className="flex items-center gap-2">
+                                       <Target size={16} className={isGoalMet ? 'text-green-600' : 'text-accent'} />
+                                       <span className="text-xs font-bold text-gray-500 uppercase">Productividad Mes</span>
+                                   </div>
+                                   <div className="text-right">
+                                       <span className="text-lg font-black text-gray-900">{rec.emisoresCount}</span>
+                                       <span className="text-xs text-gray-400 font-bold"> / {GOAL_EMISORES}</span>
+                                   </div>
                                </div>
-                               <div className="text-right">
-                                   <span className="text-lg font-black text-gray-900">{rec.emisoresCount}</span>
-                                   <span className="text-xs text-gray-400 font-bold"> / {GOAL_EMISORES}</span>
+                               <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                                   <div 
+                                       className={`h-full rounded-full transition-all duration-500 ${isGoalMet ? 'bg-green-500' : 'bg-primary'}`}
+                                       style={{width: `${progress}%`}}
+                                   ></div>
                                </div>
                            </div>
-                           <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-                               <div 
-                                   className={`h-full rounded-full transition-all duration-500 ${isGoalMet ? 'bg-green-500' : 'bg-primary'}`}
-                                   style={{width: `${progress}%`}}
-                               ></div>
-                           </div>
-                           <p className="text-[10px] text-gray-400 mt-2 text-right">
-                               {isGoalMet ? 'Meta Cumplida 🎉' : `${GOAL_EMISORES - rec.emisoresCount} faltantes para meta`}
-                           </p>
+
+                           {/* View DB Button */}
+                           <button 
+                               onClick={() => viewDatabase(rec.id, rec.nombre)}
+                               className="bg-black text-white px-6 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-gray-800 transition-colors md:w-auto w-full py-4 md:py-0"
+                           >
+                               <Database size={16} />
+                               <span>Ver Base</span>
+                               <ArrowRight size={16} className="opacity-50" />
+                           </button>
                        </div>
                    )}
                </div>

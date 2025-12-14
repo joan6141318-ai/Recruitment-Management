@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
-import { Search, Plus, MapPin, Calendar, Clock, Edit3, X, User as UserIcon, AlertTriangle, CheckCircle, Trophy } from 'lucide-react';
+import { Search, Plus, MapPin, Calendar, Clock, Edit3, X, User as UserIcon, AlertTriangle, CheckCircle, Trophy, FilterX } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 
 interface EmisoresProps {
   user: User;
@@ -12,6 +13,11 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   const [filtered, setFiltered] = useState<Emisor[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // URL Params para filtros de Admin
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filterRecruiterId = searchParams.get('reclutador');
+  const filterRecruiterName = searchParams.get('nombre');
 
   // Modals States
   const [showAddModal, setShowAddModal] = useState(false);
@@ -29,7 +35,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
   const isAdmin = user.rol === 'admin';
 
-  useEffect(() => { loadData(); }, [user]);
+  useEffect(() => { loadData(); }, [user, filterRecruiterId]);
 
   useEffect(() => {
     let result = emisores;
@@ -42,7 +48,9 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
   const loadData = async () => {
     setLoading(true);
-    const data = await dataService.getEmisores(user);
+    // Si es Admin y hay parametro en URL, pasa el ID. Si no hay parametro, pasa undefined (carga todos o los del user).
+    const targetId = (isAdmin && filterRecruiterId) ? filterRecruiterId : undefined;
+    const data = await dataService.getEmisores(user, targetId);
     setEmisores(data);
     setLoading(false);
   };
@@ -71,6 +79,10 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       setEditHours(emisor.horas_mes);
       setIsEditingMode(false); 
       setShowDetailModal(true);
+  };
+
+  const clearFilter = () => {
+      setSearchParams({});
   };
 
   // Helper para estado
@@ -112,6 +124,22 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   return (
     <div className="pb-20 space-y-6">
       
+      {/* Banner de Filtro Activo (Solo Admin) */}
+      {filterRecruiterId && isAdmin && (
+          <div className="bg-black text-white p-4 rounded-xl flex justify-between items-center shadow-lg">
+              <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Viendo Base de Datos de</p>
+                  <p className="font-bold text-lg">{filterRecruiterName || 'Reclutador'}</p>
+              </div>
+              <button 
+                onClick={clearFilter}
+                className="bg-white/20 hover:bg-white/30 p-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+              >
+                  <FilterX size={16} /> Ver Todo
+              </button>
+          </div>
+      )}
+
       {/* Header & Search */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-2 md:p-4 rounded-2xl border border-gray-100 shadow-sm sticky top-20 md:top-5 z-30 mx-1">
          <div className="relative w-full md:w-96">
@@ -124,6 +152,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
          </div>
+         {/* Solo mostrar botón Nuevo si NO estamos filtrando una base ajena, o permitirlo bajo tu criterio (aquí lo dejo abierto) */}
          <button 
             onClick={() => setShowAddModal(true)}
             className="w-full md:w-auto bg-black text-white px-5 py-3 rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-lg shadow-gray-200 active:scale-95 transition-transform"
@@ -134,7 +163,8 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
       {/* Grid List */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {loading ? <div className="col-span-full text-center py-20 text-gray-400">Cargando...</div> : 
+        {loading ? <div className="col-span-full text-center py-20 text-gray-400">Cargando base de datos...</div> : 
+         filtered.length === 0 ? <div className="col-span-full text-center py-20 text-gray-400">No se encontraron emisores.</div> :
          filtered.map((emisor) => {
             const status = getStatusInfo(emisor.horas_mes);
             const StatusIcon = status.icon;
@@ -226,6 +256,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                 </div>
                             </div>
 
+                            {/* ADMIN SIEMPRE PUEDE EDITAR, incluso en vista filtrada */}
                             {isAdmin && (
                                 <button 
                                     onClick={() => setIsEditingMode(true)}

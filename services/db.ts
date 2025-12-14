@@ -61,13 +61,21 @@ export const dataService = {
     });
   },
 
-  getEmisores: async (currentUser: User): Promise<Emisor[]> => {
+  // MODIFICADO: Acepta un targetRecruiterId opcional para filtros de Admin
+  getEmisores: async (currentUser: User, targetRecruiterId?: string): Promise<Emisor[]> => {
     const emisoresRef = collection(db, 'emisores');
     let q;
 
     if (currentUser.rol === 'admin') {
-      q = query(emisoresRef);
+      // Si es Admin y pide un reclutador específico, filtramos
+      if (targetRecruiterId) {
+        q = query(emisoresRef, where('reclutador_id', '==', targetRecruiterId));
+      } else {
+        // Si no, trae todo
+        q = query(emisoresRef);
+      }
     } else {
+      // Si es Reclutador, SIEMPRE solo los suyos, ignorando el target
       q = query(emisoresRef, where('reclutador_id', '==', currentUser.id));
     }
 
