@@ -19,14 +19,12 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   const filterRecruiterId = searchParams.get('reclutador');
   const filterRecruiterName = searchParams.get('nombre');
 
-  // Modals States
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false); 
   const [isEditingMode, setIsEditingMode] = useState(false); 
   
   const [selectedEmisor, setSelectedEmisor] = useState<Emisor | null>(null);
   
-  // Forms Data
   const [newEmisorName, setNewEmisorName] = useState('');
   const [newEmisorBigo, setNewEmisorBigo] = useState('');
   const [newEmisorCountry, setNewEmisorCountry] = useState('');
@@ -48,7 +46,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
   const loadData = async () => {
     setLoading(true);
-    // Si es Admin y hay parametro en URL, pasa el ID. Si no hay parametro, pasa undefined (carga todos o los del user).
     const targetId = (isAdmin && filterRecruiterId) ? filterRecruiterId : undefined;
     const data = await dataService.getEmisores(user, targetId);
     setEmisores(data);
@@ -61,7 +58,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       nombre: newEmisorName, bigo_id: newEmisorBigo, pais: newEmisorCountry, mes_entrada: newEmisorMonth, reclutador_id: user.id
     }, user);
     setShowAddModal(false); loadData();
-    // Reset forms...
     setNewEmisorName(''); setNewEmisorBigo(''); setNewEmisorCountry('');
   };
 
@@ -73,7 +69,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
     setShowDetailModal(false);
     loadData();
   };
-  
+
   const handleDeleteEmisor = async (emisorId: string) => {
       if(!confirm("¿Estás seguro de ELIMINAR este emisor permanentemente? Esta acción no se puede deshacer.")) return;
       await dataService.deleteEmisor(emisorId);
@@ -92,7 +88,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       setSearchParams({});
   };
 
-  // Helper para estado
   const getStatusInfo = (hours: number, state?: string) => {
       if (state === 'pausado') return { label: 'Inactivo', color: 'text-gray-400', bg: 'bg-gray-100', icon: X, barColor: 'bg-gray-300' };
       if (hours >= 44) return { label: 'Meta Cumplida', color: 'text-green-600', bg: 'bg-green-100', icon: Trophy, barColor: 'bg-green-500' };
@@ -100,17 +95,16 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       return { label: 'Riesgo', color: 'text-accent', bg: 'bg-orange-100', icon: AlertTriangle, barColor: 'bg-accent' };
   };
 
-  // Circular Progress Component
   const CircularProgress = ({ value, max = 44, size = 120, strokeWidth = 8, state = 'activo' }: any) => {
       const radius = (size - strokeWidth) / 2;
       const circumference = radius * 2 * Math.PI;
       const progress = Math.min(value / max, 1);
       const dash = circumference * progress;
       
-      let strokeColor = "#F97316"; // Naranja (Riesgo)
-      if(value >= 20) strokeColor = "#7C3AED"; // Morado (Productivo)
-      if(value >= 44) strokeColor = "#16A34A"; // Verde (Meta)
-      if(state === 'pausado') strokeColor = "#D1D5DB"; // Gris (Inactivo)
+      let strokeColor = "#F97316"; 
+      if(value >= 20) strokeColor = "#7C3AED"; 
+      if(value >= 44) strokeColor = "#16A34A"; 
+      if(state === 'pausado') strokeColor = "#D1D5DB";
 
       return (
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
@@ -131,7 +125,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   return (
     <div className="pb-20 space-y-6">
       
-      {/* Banner de Filtro Activo (Solo Admin) */}
       {filterRecruiterId && isAdmin && (
           <div className="bg-black text-white p-4 rounded-xl flex justify-between items-center shadow-lg">
               <div>
@@ -147,7 +140,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
           </div>
       )}
 
-      {/* Header & Search */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-2 md:p-4 rounded-2xl border border-gray-100 shadow-sm sticky top-20 md:top-5 z-30 mx-1">
          <div className="relative w-full md:w-96">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -159,7 +151,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
          </div>
-         {/* Solo mostrar botón Nuevo si NO estamos filtrando una base ajena, o permitirlo bajo tu criterio (aquí lo dejo abierto) */}
          <button 
             onClick={() => setShowAddModal(true)}
             className="w-full md:w-auto bg-black text-white px-5 py-3 rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-lg shadow-gray-200 active:scale-95 transition-transform"
@@ -168,7 +159,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
         </button>
       </div>
 
-      {/* Grid List */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {loading ? <div className="col-span-full text-center py-20 text-gray-400">Cargando base de datos...</div> : 
          filtered.length === 0 ? <div className="col-span-full text-center py-20 text-gray-400">No se encontraron emisores.</div> :
@@ -179,7 +169,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
             return (
                 <div 
                     key={emisor.id} 
-                    className={`bg-white rounded-2xl p-5 border shadow-sm transition-all relative group ${emisor.estado === 'pausado' ? 'border-gray-100 opacity-70 hover:opacity-100' : 'border-gray-100 hover:shadow-md hover:border-gray-200'}`}
+                    className={`bg-white rounded-2xl p-5 border shadow-sm transition-all relative group ${emisor.estado === 'pausado' ? 'border-gray-100 opacity-70' : 'border-gray-100 hover:shadow-md hover:border-gray-200'}`}
                 >
                     <div className="cursor-pointer" onClick={() => openEmisorDetail(emisor)}>
                         <div className="flex justify-between items-start mb-4">
@@ -192,13 +182,11 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                     <p className="text-xs text-gray-400 font-mono">ID: {emisor.bigo_id}</p>
                                 </div>
                             </div>
-                            {/* Status Indicator */}
                             <div className={`p-1.5 rounded-full ${status.bg}`}>
                                 <StatusIcon size={14} className={status.color} />
                             </div>
                         </div>
 
-                        {/* Progress Bar & Status Text */}
                         <div className="mt-4">
                             <div className="flex justify-between text-xs mb-1.5 font-bold">
                                 <span className={status.color}>{status.label}</span>
@@ -213,14 +201,14 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                         </div>
                     </div>
                     
-                    {/* Botón de Eliminar Rápido (Solo Admin e Inactivo) */}
+                    {/* BOTÓN ELIMINAR (Solo Admin e Inactivo) */}
                     {isAdmin && emisor.estado === 'pausado' && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); handleDeleteEmisor(emisor.id); }}
-                            className="absolute -top-2 -right-2 bg-red-50 text-red-500 p-2 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity border border-red-100 hover:bg-red-500 hover:text-white"
-                            title="Eliminar Emisor Inactivo"
+                            className="absolute -top-2 -right-2 bg-white text-red-500 p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity border border-red-100 hover:bg-red-50"
+                            title="Eliminar Emisor"
                         >
-                            <Trash2 size={14} />
+                            <Trash2 size={16} />
                         </button>
                     )}
                 </div>
@@ -229,24 +217,21 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
         }
       </div>
 
-      {/* --- MODAL FICHA INFORMATIVA (DETAILS) --- */}
       {showDetailModal && selectedEmisor && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
               <div 
-                  className="fixed inset-0 w-screen h-screen bg-black/60 backdrop-blur-sm" 
+                  className="fixed inset-0 w-screen h-screen bg-black/50 backdrop-blur-sm" 
                   onClick={() => setShowDetailModal(false)}
               ></div>
               
               <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl relative z-10 animate-pop-in">
                   
-                  {/* Header de la ficha */}
                   <div className="bg-gray-50 p-6 border-b border-gray-100 flex justify-between items-start">
                       <div>
                           <h2 className="text-xl font-black text-gray-900 leading-tight">{selectedEmisor.nombre}</h2>
                           <div className="flex items-center gap-2 mt-1 text-gray-500">
                              <UserIcon size={12} />
                              <span className="text-xs font-mono font-medium">{selectedEmisor.bigo_id}</span>
-                             {/* Badge de Estado en Header */}
                              {selectedEmisor.estado === 'pausado' && (
                                  <span className="bg-gray-200 text-gray-500 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ml-1">Inactivo</span>
                              )}
@@ -258,7 +243,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                   </div>
 
                   <div className="p-8 flex flex-col items-center">
-                      {/* Visualización Principal */}
                       {!isEditingMode ? (
                           <>
                             <div className="mb-6 scale-110">
@@ -278,7 +262,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                 </div>
                             </div>
 
-                            {/* Acciones de Admin */}
                             {isAdmin && (
                                 <div className="w-full space-y-3">
                                     <button 
@@ -288,21 +271,19 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                         <Edit3 size={16} /> Modificar Horas
                                     </button>
                                     
-                                    {/* Botón Eliminar si está inactivo */}
+                                    {/* Botón Eliminar en Detalle */}
                                     {selectedEmisor.estado === 'pausado' && (
                                         <button 
                                             onClick={() => handleDeleteEmisor(selectedEmisor.id)}
-                                            className="w-full py-3 border-2 border-red-50 text-red-500 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-50 transition-colors"
+                                            className="w-full py-3 border border-red-200 text-red-500 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-50 transition-colors"
                                         >
                                             <Trash2 size={16} /> Eliminar Definitivamente
                                         </button>
                                     )}
                                     
-                                    {/* Toggle Estado (Activar/Pausar) */}
                                     <button 
                                         onClick={async () => {
                                             await dataService.toggleStatus(selectedEmisor.id);
-                                            // Actualizar localmente o cerrar modal
                                             setShowDetailModal(false);
                                             loadData();
                                         }}
@@ -314,7 +295,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                             )}
                           </>
                       ) : (
-                          // MODO EDICIÓN (Solo Admin llega aquí)
                           <form onSubmit={handleSaveHours} className="w-full animate-slide-up">
                               <div className="text-center mb-6">
                                   <Clock size={32} className="mx-auto text-black mb-2" />
@@ -343,10 +323,9 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
           </div>
       )}
 
-      {/* Modal Agregar */}
       {showAddModal && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <div className="fixed inset-0 w-screen h-screen bg-black/60 backdrop-blur-sm" onClick={() => setShowAddModal(false)}></div>
+          <div className="fixed inset-0 w-screen h-screen bg-black/50 backdrop-blur-sm" onClick={() => setShowAddModal(false)}></div>
           <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-pop-in relative z-10">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-bold text-gray-900">Nuevo Registro</h3>
