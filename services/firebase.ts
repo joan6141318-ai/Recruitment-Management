@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import * as firebaseApp from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
@@ -16,7 +16,7 @@ const firebaseConfig = {
 };
 
 // Inicialización (Firebase v9+ Modular)
-const app = initializeApp(firebaseConfig);
+const app = firebaseApp.initializeApp(firebaseConfig);
 
 // Exportación de instancias modulares
 export const auth = getAuth(app);

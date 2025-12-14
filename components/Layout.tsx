@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { User } from '../types';
-import { LogOut, Users, Radio, LayoutDashboard, Moon, Edit2, Check } from 'lucide-react';
+import { LogOut, Users, Radio, LayoutDashboard, Menu, X, UserCircle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { dataService } from '../services/db';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,122 +12,107 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
   const location = useLocation();
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [tempName, setTempName] = useState(user.nombre);
-
-  useEffect(() => { setTempName(user.nombre); }, [user.nombre]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
-  const handleSaveName = async () => {
-    if (tempName.trim() && tempName !== user.nombre) {
-        await dataService.updateUserName(user.id, tempName);
-        user.nombre = tempName; 
-    }
-    setIsEditingName(false);
-  };
-
-  const NavItem = ({ to, icon: Icon, label, mobileOnly = false }: { to: string, icon: any, label: string, mobileOnly?: boolean }) => {
+  // Navigation Items
+  const NavItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => {
     const active = isActive(to);
     return (
       <Link
         to={to}
-        className={`
-          flex items-center transition-all duration-200
-          ${mobileOnly 
-            ? 'flex-col justify-center py-1 px-2 w-full text-center' // Mobile Styles
-            : 'flex-row px-4 py-3 rounded-lg mb-1' // Desktop Styles
-          }
-          ${active 
-            ? 'text-primary md:bg-purple-50 md:font-bold' 
-            : 'text-gray-400 hover:text-gray-900 md:hover:bg-gray-100'
-          }
-        `}
+        onClick={() => setIsSidebarOpen(false)} // Close sidebar on nav click (if used inside)
+        className={`flex flex-col items-center justify-center py-2 px-4 transition-all duration-300 relative ${active ? 'text-primary' : 'text-gray-400 hover:text-gray-600'}`}
       >
-        <Icon size={mobileOnly ? 20 : 18} strokeWidth={active ? 2.5 : 2} className={mobileOnly ? "mb-1" : "mr-3"} />
-        <span className={`${mobileOnly ? 'text-[10px]' : 'text-sm'} font-medium`}>{label}</span>
+        <div className={`p-1.5 rounded-xl transition-all ${active ? 'bg-purple-50 translate-y-[-2px]' : ''}`}>
+             <Icon size={22} strokeWidth={active ? 2.5 : 2} />
+        </div>
+        <span className="text-[9px] font-bold uppercase mt-1 tracking-wide">{label}</span>
       </Link>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row font-sans text-sm text-gray-900">
+    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-20">
       
-      {/* SIDEBAR (Desktop Only) */}
-      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-screen sticky top-0 z-40 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-          {/* Logo */}
-          <div className="h-16 flex items-center px-6 border-b border-gray-100">
-             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center mr-3 shadow-md shadow-purple-200">
-                <Moon size={16} className="text-white fill-white" />
-             </div>
-             <div>
-                <span className="font-bold text-gray-900 block leading-none">Agencia Moon</span>
-                <span className="text-[10px] text-gray-400 font-medium">Panel de Control</span>
-             </div>
+      {/* 1. TOP BAR (Mobile & Desktop) */}
+      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex justify-between items-center shadow-sm">
+          <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-gray-800 hover:bg-gray-50 rounded-lg">
+              <Menu size={24} />
+          </button>
+          
+          <div className="text-right">
+              <h1 className="text-sm font-black uppercase tracking-tight text-gray-900 leading-none">{user.nombre}</h1>
+              <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full mt-1 inline-block ${user.rol === 'admin' ? 'bg-black text-white' : 'bg-purple-100 text-purple-700'}`}>
+                  {user.rol}
+              </span>
           </div>
+      </header>
 
-          {/* Nav Desktop */}
-          <nav className="flex-1 p-4">
-              <div className="mb-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Menú Principal</div>
-              <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
-              <NavItem to="/emisores" icon={Radio} label="Mis Emisores" />
-              {user.rol === 'admin' && <NavItem to="/reclutadores" icon={Users} label="Equipo Reclutamiento" />}
-          </nav>
+      {/* 2. SIDEBAR (Overlay Drawer) */}
+      {isSidebarOpen && (
+          <div className="fixed inset-0 z-50 flex">
+              {/* Backdrop */}
+              <div 
+                  className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+                  onClick={() => setIsSidebarOpen(false)}
+              ></div>
+              
+              {/* Drawer Content */}
+              <div className="relative w-3/4 max-w-xs bg-white h-full shadow-2xl flex flex-col animate-slide-right">
+                  <div className="p-6 border-b border-gray-100 flex justify-between items-start">
+                      <div className="flex flex-col">
+                           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-2xl font-black text-gray-400">
+                                {user.nombre.charAt(0).toUpperCase()}
+                           </div>
+                           <h2 className="text-lg font-black text-gray-900 leading-tight">{user.nombre}</h2>
+                           <p className="text-xs text-gray-400 font-medium break-all">{user.correo}</p>
+                      </div>
+                      <button onClick={() => setIsSidebarOpen(false)} className="text-gray-400 hover:text-black">
+                          <X size={24} />
+                      </button>
+                  </div>
+                  
+                  <div className="flex-1 p-6">
+                      <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4">
+                          <p className="text-[10px] font-bold text-purple-400 uppercase mb-1">Tu Rol Actual</p>
+                          <p className="text-xl font-black text-purple-700 capitalize">{user.rol}</p>
+                      </div>
+                  </div>
 
-          {/* User Profile Desktop */}
-          <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-             <div className="flex items-center justify-between mb-3">
-                {isEditingName ? (
-                    <div className="flex items-center gap-1 w-full mr-2 bg-white border border-gray-300 rounded px-2 py-1">
-                        <input autoFocus value={tempName} onChange={(e) => setTempName(e.target.value)} onBlur={handleSaveName} onKeyDown={(e) => e.key === 'Enter' && handleSaveName()} className="w-full text-xs font-bold outline-none bg-transparent" />
-                        <Check size={12} className="text-green-600 cursor-pointer" onClick={handleSaveName}/>
-                    </div>
-                ) : (
-                    <div className="flex items-center gap-2 cursor-pointer group" onClick={() => setIsEditingName(true)}>
-                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
-                            {user.nombre.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="overflow-hidden">
-                            <p className="font-bold text-xs text-gray-900 truncate w-24">{user.nombre}</p>
-                            <p className="text-[10px] text-gray-500 capitalize">{user.rol}</p>
-                        </div>
-                        <Edit2 size={10} className="text-gray-400 opacity-0 group-hover:opacity-100" />
-                    </div>
-                )}
-             </div>
-             <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 rounded-md transition-all text-xs font-bold text-gray-500">
-                <LogOut size={14} /> Cerrar Sesión
-             </button>
+                  <div className="p-6 border-t border-gray-100 bg-gray-50">
+                      <button 
+                          onClick={onLogout} 
+                          className="w-full bg-black text-white py-4 rounded-xl font-bold uppercase text-xs flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors"
+                      >
+                          <LogOut size={16} /> Cerrar Sesión
+                      </button>
+                  </div>
+              </div>
           </div>
-      </aside>
+      )}
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 pb-20 md:pb-8 p-4 md:p-6 max-w-7xl mx-auto w-full overflow-x-hidden">
-        {/* Mobile Top Bar */}
-        <div className="md:hidden flex justify-between items-center mb-4 bg-white p-3 rounded-lg shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-                    <Moon size={16} className="text-white fill-white" />
-                </div>
-                <div>
-                    <h1 className="font-bold text-sm leading-none text-gray-900">Agencia Moon</h1>
-                    <p className="text-[10px] text-gray-500 capitalize">{user.nombre} • {user.rol}</p>
-                </div>
-            </div>
-            <button onClick={onLogout} className="p-2 bg-gray-50 rounded-full text-gray-500 hover:bg-red-50 hover:text-red-500 transition-colors">
-                <LogOut size={16} />
-            </button>
-        </div>
-
-        {children}
+      {/* 3. MAIN CONTENT */}
+      <main className="p-4 max-w-5xl mx-auto">
+          {children}
       </main>
 
-      {/* BOTTOM NAVIGATION (Mobile Only) - FIXED & STANDARD */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 flex justify-around items-center h-[60px] pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
-          <NavItem to="/" icon={LayoutDashboard} label="Inicio" mobileOnly />
-          <NavItem to="/emisores" icon={Radio} label="Emisores" mobileOnly />
-          {user.rol === 'admin' && <NavItem to="/reclutadores" icon={Users} label="Equipo" mobileOnly />}
+      {/* 4. BOTTOM NAVIGATION (Sticky Footer) */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 pb-safe pt-1 px-2 shadow-[0_-5px_15px_rgba(0,0,0,0.03)] flex justify-around items-center h-[70px]">
+          <NavItem to="/" icon={LayoutDashboard} label="Panel" />
+          <NavItem to="/emisores" icon={Radio} label="Emisores" />
+          {user.rol === 'admin' && <NavItem to="/reclutadores" icon={Users} label="Equipo" />}
       </nav>
+
+      <style>{`
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+        @keyframes slide-right {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+        .animate-slide-right { animation: slide-right 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+      `}</style>
     </div>
   );
 };
