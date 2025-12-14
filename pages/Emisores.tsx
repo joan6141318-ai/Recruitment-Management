@@ -89,7 +89,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
     };
 
     // Solo incluimos las horas si es Admin. 
-    // Si es reclutador, ignoramos el campo editHours para evitar modificaciones no autorizadas.
     if (isAdmin) {
         updatePayload.horas_mes = Number(editHours);
     }
@@ -402,7 +401,8 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                               </div>
                               
                               <div className="grid grid-cols-2 gap-3">
-                                  <div>
+                                  {/* Si es Admin, País comparte fila con Horas. Si NO es Admin, País ocupa todo el ancho */}
+                                  <div className={isAdmin ? "" : "col-span-2"}>
                                       <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">País</label>
                                       <input 
                                         className="w-full bg-gray-50 p-3 rounded-xl text-sm font-medium outline-none focus:ring-1 focus:ring-black"
@@ -410,22 +410,21 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                         onChange={e => setEditCountry(e.target.value)}
                                       />
                                   </div>
-                                  <div>
-                                      <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">
-                                          Horas {isAdmin ? '(Editable)' : '(Solo Admin)'}
-                                      </label>
-                                      <input 
-                                        type="number" step="0.1"
-                                        disabled={!isAdmin} // BLOQUEADO PARA RECLUTADORES
-                                        className={`w-full p-3 rounded-xl text-sm font-bold outline-none text-center transition-colors ${
-                                            isAdmin 
-                                            ? 'bg-gray-100 text-black focus:ring-1 focus:ring-black' 
-                                            : 'bg-gray-200/50 text-gray-400 cursor-not-allowed border border-gray-100'
-                                        }`}
-                                        value={editHours}
-                                        onChange={e => setEditHours(e.target.value)}
-                                      />
-                                  </div>
+                                  
+                                  {/* CAMPO HORAS: SOLO VISIBLE PARA ADMIN */}
+                                  {isAdmin && (
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">
+                                            Horas
+                                        </label>
+                                        <input 
+                                            type="number" step="0.1"
+                                            className="w-full p-3 rounded-xl text-sm font-bold outline-none text-center transition-colors bg-gray-100 text-black focus:ring-1 focus:ring-black"
+                                            value={editHours}
+                                            onChange={e => setEditHours(e.target.value)}
+                                        />
+                                    </div>
+                                  )}
                               </div>
 
                               <div className="flex gap-3 pt-2">
