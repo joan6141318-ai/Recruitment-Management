@@ -26,12 +26,18 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   
   const [selectedEmisor, setSelectedEmisor] = useState<Emisor | null>(null);
   
-  // Forms Data
+  // Forms Data - ADD
   const [newEmisorName, setNewEmisorName] = useState('');
   const [newEmisorBigo, setNewEmisorBigo] = useState('');
   const [newEmisorCountry, setNewEmisorCountry] = useState('');
   const [newEmisorMonth, setNewEmisorMonth] = useState('');
-  const [isShared, setIsShared] = useState(false); // Nuevo: Compartido
+  const [isShared, setIsShared] = useState(false); 
+
+  // Forms Data - EDIT (Ahora incluye todos los campos)
+  const [editName, setEditName] = useState('');
+  const [editBigo, setEditBigo] = useState('');
+  const [editCountry, setEditCountry] = useState('');
+  const [editMonth, setEditMonth] = useState('');
   const [editHours, setEditHours] = useState<string | number>('');
 
   const isAdmin = user.rol === 'admin';
@@ -49,7 +55,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
   const loadData = async () => {
     setLoading(true);
-    // Si es Admin y hay parametro en URL, pasa el ID. Si no hay parametro, pasa undefined (carga todos o los del user).
     const targetId = (isAdmin && filterRecruiterId) ? filterRecruiterId : undefined;
     const data = await dataService.getEmisores(user, targetId);
     setEmisores(data);
@@ -64,18 +69,25 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       pais: newEmisorCountry, 
       mes_entrada: newEmisorMonth, 
       reclutador_id: user.id,
-      es_compartido: isAdmin ? isShared : false // Solo admin puede compartir
+      es_compartido: isAdmin ? isShared : false 
     }, user);
     setShowAddModal(false); loadData();
     
-    // Reset forms...
     setNewEmisorName(''); setNewEmisorBigo(''); setNewEmisorCountry(''); setIsShared(false);
   };
 
-  const handleSaveHours = async (e: React.FormEvent) => {
+  const handleSaveChanges = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedEmisor || !isAdmin) return;
-    await dataService.updateHours(selectedEmisor.id, Number(editHours), user.id);
+    if (!selectedEmisor) return;
+    
+    await dataService.updateEmisorData(selectedEmisor.id, {
+        nombre: editName,
+        bigo_id: editBigo,
+        pais: editCountry,
+        mes_entrada: editMonth,
+        horas_mes: Number(editHours)
+    }, user.id);
+
     setIsEditingMode(false); 
     setShowDetailModal(false);
     loadData();
@@ -90,7 +102,13 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
   const openEmisorDetail = (emisor: Emisor) => {
       setSelectedEmisor(emisor);
+      // Cargar datos actuales en el form de edición
+      setEditName(emisor.nombre);
+      setEditBigo(emisor.bigo_id);
+      setEditCountry(emisor.pais);
+      setEditMonth(emisor.mes_entrada);
       setEditHours(emisor.horas_mes);
+      
       setIsEditingMode(false); 
       setShowDetailModal(true);
   };
@@ -99,7 +117,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       setSearchParams({});
   };
 
-  // Helper para estado
   const getStatusInfo = (hours: number, state?: string) => {
       if (state === 'pausado') return { label: 'Inactivo', color: 'text-gray-400', bg: 'bg-gray-100', icon: X, barColor: 'bg-gray-300' };
       if (hours >= 44) return { label: 'Meta Cumplida', color: 'text-green-600', bg: 'bg-green-100', icon: Trophy, barColor: 'bg-green-500' };
@@ -107,7 +124,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       return { label: 'Riesgo', color: 'text-accent', bg: 'bg-orange-100', icon: AlertTriangle, barColor: 'bg-accent' };
   };
 
-  // Circular Progress Component
   const CircularProgress = ({ value, max = 44, size = 120, strokeWidth = 8, state }: any) => {
       const radius = (size - strokeWidth) / 2;
       const circumference = radius * 2 * Math.PI;
@@ -138,17 +154,13 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   return (
     <div className="pb-20 space-y-6">
       
-      {/* Banner de Filtro Activo (Solo Admin) */}
       {filterRecruiterId && isAdmin && (
           <div className="bg-black text-white p-4 rounded-xl flex justify-between items-center shadow-lg">
               <div>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Viendo Base de Datos de</p>
                   <p className="font-bold text-lg">{filterRecruiterName || 'Reclutador'}</p>
               </div>
-              <button 
-                onClick={clearFilter}
-                className="bg-white/20 hover:bg-white/30 p-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
-              >
+              <button onClick={clearFilter} className="bg-white/20 hover:bg-white/30 p-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
                   <FilterX size={16} /> Ver Todo
               </button>
           </div>
@@ -166,10 +178,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
          </div>
-         <button 
-            onClick={() => setShowAddModal(true)}
-            className="w-full md:w-auto bg-black text-white px-5 py-3 rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-lg shadow-gray-200 active:scale-95 transition-transform"
-        >
+         <button onClick={() => setShowAddModal(true)} className="w-full md:w-auto bg-black text-white px-5 py-3 rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-lg shadow-gray-200 active:scale-95 transition-transform">
             <Plus size={18} /> Nuevo Emisor
         </button>
       </div>
@@ -180,7 +189,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
          filtered.length === 0 ? <div className="col-span-full text-center py-20 text-gray-400">No se encontraron emisores.</div> :
          filtered.map((emisor) => {
             const status = getStatusInfo(emisor.horas_mes, emisor.estado);
-            const StatusIcon = status.icon;
             const isSharedItem = emisor.es_compartido;
 
             return (
@@ -192,7 +200,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                     ${isSharedItem ? 'ring-1 ring-purple-100' : ''}
                     `}
                 >
-                    {/* Badge de Compartido */}
                     {isSharedItem && (
                         <div className="absolute top-3 right-3 flex gap-1">
                             <div className="bg-purple-100 text-primary p-1 rounded-md" title="Emisor Oficial / Compartido">
@@ -213,7 +220,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                         </div>
                     </div>
 
-                    {/* Progress Bar & Status Text */}
                     <div className="mt-4">
                         <div className="flex justify-between text-xs mb-1.5 font-bold">
                             <span className={status.color}>{status.label}</span>
@@ -227,7 +233,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                         </div>
                     </div>
                     
-                    {/* Botón Eliminar (Solo Admin e Inactivo) */}
                     {isAdmin && emisor.estado === 'pausado' && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); handleDelete(emisor.id); }}
@@ -273,9 +278,9 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                   </div>
 
                   <div className="p-8 flex flex-col items-center">
-                      {/* Visualización Principal */}
                       {!isEditingMode ? (
                           <>
+                            {/* VISTA NORMAL */}
                             <div className="mb-6 scale-110">
                                 <CircularProgress value={selectedEmisor.horas_mes} state={selectedEmisor.estado} />
                             </div>
@@ -293,22 +298,17 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                 </div>
                             </div>
 
-                            {/* Solo Admin puede editar SIEMPRE. Reclutador puede editar SI NO ES COMPARTIDO */}
                             {(isAdmin || (user.id === selectedEmisor.reclutador_id && !selectedEmisor.es_compartido)) ? (
                                 <div className="w-full space-y-3">
-                                    {isAdmin && (
-                                        <button 
-                                            onClick={() => setIsEditingMode(true)}
-                                            className="w-full py-3 bg-black text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-gray-900 transition-colors"
-                                        >
-                                            <Edit3 size={16} /> Modificar Horas
-                                        </button>
-                                    )}
+                                    <button 
+                                        onClick={() => setIsEditingMode(true)}
+                                        className="w-full py-3 bg-black text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-gray-900 transition-colors"
+                                    >
+                                        <Edit3 size={16} /> Modificar Datos
+                                    </button>
 
-                                    {/* Botones de Admin para gestión */}
                                     {isAdmin && (
                                         <>
-                                            {/* BOTÓN NUEVO: VISIBILIDAD */}
                                             <button 
                                                 onClick={async () => {
                                                     await dataService.toggleShared(selectedEmisor.id, selectedEmisor.es_compartido);
@@ -355,25 +355,63 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                             )}
                           </>
                       ) : (
-                          // MODO EDICIÓN (Solo Admin llega aquí)
-                          <form onSubmit={handleSaveHours} className="w-full animate-slide-up">
-                              <div className="text-center mb-6">
-                                  <Clock size={32} className="mx-auto text-black mb-2" />
-                                  <h3 className="font-bold text-lg">Actualizar Horas</h3>
-                                  <p className="text-xs text-gray-400">Ingresa el nuevo valor acumulado del mes</p>
+                          // MODO EDICIÓN COMPLETO
+                          <form onSubmit={handleSaveChanges} className="w-full animate-slide-up space-y-4">
+                              <div className="text-center mb-4">
+                                  <h3 className="font-bold text-lg">Modificar Emisor</h3>
+                                  <p className="text-xs text-gray-400">Corrige cualquier error en los datos</p>
                               </div>
 
-                              <div className="bg-gray-50 rounded-2xl p-4 mb-6 border border-gray-100">
-                                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-2 text-center">Horas Actuales</label>
+                              <div>
+                                  <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Nombre</label>
                                   <input 
-                                    type="number" step="0.1" autoFocus
-                                    className="w-full bg-transparent text-center text-4xl font-black text-black outline-none"
-                                    value={editHours}
-                                    onChange={e => setEditHours(e.target.value)}
+                                    className="w-full bg-gray-50 p-3 rounded-xl text-sm font-medium outline-none focus:ring-1 focus:ring-black"
+                                    value={editName}
+                                    onChange={e => setEditName(e.target.value)}
                                   />
                               </div>
 
-                              <div className="flex gap-3">
+                              <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                      <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">ID Bigo</label>
+                                      <input 
+                                        className="w-full bg-gray-50 p-3 rounded-xl text-sm font-medium outline-none focus:ring-1 focus:ring-black"
+                                        value={editBigo}
+                                        onChange={e => setEditBigo(e.target.value)}
+                                      />
+                                  </div>
+                                  <div>
+                                      <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Mes</label>
+                                      <input 
+                                        type="month"
+                                        className="w-full bg-gray-50 p-3 rounded-xl text-sm font-medium outline-none focus:ring-1 focus:ring-black"
+                                        value={editMonth}
+                                        onChange={e => setEditMonth(e.target.value)}
+                                      />
+                                  </div>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                      <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">País</label>
+                                      <input 
+                                        className="w-full bg-gray-50 p-3 rounded-xl text-sm font-medium outline-none focus:ring-1 focus:ring-black"
+                                        value={editCountry}
+                                        onChange={e => setEditCountry(e.target.value)}
+                                      />
+                                  </div>
+                                  <div>
+                                      <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Horas</label>
+                                      <input 
+                                        type="number" step="0.1"
+                                        className="w-full bg-gray-100 p-3 rounded-xl text-sm font-bold text-black outline-none focus:ring-1 focus:ring-black text-center"
+                                        value={editHours}
+                                        onChange={e => setEditHours(e.target.value)}
+                                      />
+                                  </div>
+                              </div>
+
+                              <div className="flex gap-3 pt-2">
                                   <button type="button" onClick={() => setIsEditingMode(false)} className="flex-1 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold text-sm">Cancelar</button>
                                   <button type="submit" className="flex-1 py-3 bg-black text-white rounded-xl font-bold text-sm shadow-lg">Guardar</button>
                               </div>
@@ -384,7 +422,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
           </div>
       )}
 
-      {/* Modal Agregar */}
+      {/* Modal Agregar (Mantenido Igual) */}
       {showAddModal && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
           <div className="fixed inset-0 w-screen h-screen bg-black/60 backdrop-blur-sm" onClick={() => setShowAddModal(false)}></div>
@@ -413,7 +451,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                    <input required className="w-full bg-gray-50 border-none p-3.5 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-black/5" value={newEmisorCountry} onChange={e => setNewEmisorCountry(e.target.value)} />
                </div>
                
-               {/* Checkbox Compartir (Solo Admin) */}
                {isAdmin && (
                    <div className="flex items-center gap-3 bg-purple-50 p-3 rounded-xl cursor-pointer" onClick={() => setIsShared(!isShared)}>
                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${isShared ? 'bg-primary border-primary text-white' : 'bg-white border-gray-300'}`}>

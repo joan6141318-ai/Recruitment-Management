@@ -13,7 +13,7 @@ import {
   where,
   writeBatch,
   onSnapshot,
-  or // IMPORTANTE: Necesario para la consulta "Míos O Públicos"
+  or 
 } from 'firebase/firestore';
 
 export const dataService = {
@@ -59,26 +59,22 @@ export const dataService = {
         return {
             id: docSnap.id,
             ...data,
-            activo: data.activo !== undefined ? data.activo : true // Default to true if missing
+            activo: data.activo !== undefined ? data.activo : true 
         } as User;
     });
   },
 
-  // MODIFICADO: Lógica de permisos de visualización
   getEmisores: async (currentUser: User, targetRecruiterId?: string): Promise<Emisor[]> => {
     const emisoresRef = collection(db, 'emisores');
     let q;
 
     if (currentUser.rol === 'admin') {
-      // Si es Admin y pide un reclutador específico, filtramos
       if (targetRecruiterId) {
         q = query(emisoresRef, where('reclutador_id', '==', targetRecruiterId));
       } else {
-        // Si no, trae todo
         q = query(emisoresRef);
       }
     } else {
-      // RECLUTADOR: Ve sus propios emisores O los que estén marcados como compartidos
       q = query(
         emisoresRef, 
         or(
@@ -95,7 +91,6 @@ export const dataService = {
     } as Emisor));
   },
 
-  // NUEVO: Suscripción en tiempo real para el Dashboard
   subscribeToEmisores: (currentUser: User, callback: (emisores: Emisor[]) => void): () => void => {
     const emisoresRef = collection(db, 'emisores');
     let q;
@@ -103,7 +98,6 @@ export const dataService = {
     if (currentUser.rol === 'admin') {
       q = query(emisoresRef);
     } else {
-      // Misma lógica para suscripción: Míos OR Compartidos
       q = query(
         emisoresRef, 
         or(
@@ -128,7 +122,6 @@ export const dataService = {
       horas_mes: 0,
       estado: 'activo',
       fecha_registro: new Date().toISOString(),
-      // Si no se especifica (caso reclutador), es falso por defecto
       es_compartido: emisorData.es_compartido || false 
     };
     
@@ -136,35 +129,40 @@ export const dataService = {
     return { ...newEmisor, id: docRef.id } as Emisor;
   },
 
-  updateHours: async (emisorId: string, newHours: number, adminId: string): Promise<void> => {
+  // FUNCIÓN ACTUALIZADA: Permite editar datos y horas al mismo tiempo
+  updateEmisorData: async (emisorId: string, data: Partial<Emisor>, adminId: string): Promise<void> => {
     const batch = writeBatch(db);
-    
-    // Referencias
     const emisorRef = doc(db, 'emisores', emisorId);
-    const historialRef = doc(collection(db, 'historial')); // ID automático para historial
     
-    // Obtener datos actuales para el historial (lectura antes de escritura)
-    const emisorSnap = await getDoc(emisorRef);
-    let oldHours = 0;
-    if (emisorSnap.exists()) {
-        const data = emisorSnap.data();
-        oldHours = data ? data.horas_mes : 0;
+    // Si se están actualizando las horas, guardamos historial
+    if (data.horas_mes !== undefined) {
+        const emisorSnap = await getDoc(emisorRef);
+        let oldHours = 0;
+        if (emisorSnap.exists()) {
+            const currentData = emisorSnap.data();
+            oldHours = currentData ? currentData.horas_mes : 0;
+        }
+
+        // Solo crear historial si las horas realmente cambiaron
+        if (oldHours !== data.horas_mes) {
+            const historialRef = doc(collection(db, 'historial'));
+            batch.set(historialRef, {
+                emisor_id: emisorId,
+                horas_anteriores: oldHours,
+                horas_nuevas: data.horas_mes,
+                fecha: new Date().toISOString(),
+                modificado_por: adminId
+            });
+        }
     }
 
-    // 1. Actualizar Horas
-    batch.update(emisorRef, { horas_mes: newHours });
-
-    // 2. Crear registro Historial
-    batch.set(historialRef, {
-        emisor_id: emisorId,
-        horas_anteriores: oldHours,
-        horas_nuevas: newHours,
-        fecha: new Date().toISOString(),
-        modificado_por: adminId
-    });
-
-    // Ejecutar ambas operaciones atómicamente
+    batch.update(emisorRef, data);
     await batch.commit();
+  },
+
+  // MANTENIDA POR COMPATIBILIDAD (Redirige a la nueva)
+  updateHours: async (emisorId: string, newHours: number, adminId: string): Promise<void> => {
+      return dataService.updateEmisorData(emisorId, { horas_mes: newHours }, adminId);
   },
 
   toggleStatus: async (emisorId: string): Promise<void> => {

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
 import { authService } from '../services/auth';
-import { UserPlus, Mail, X, Power, ShieldCheck, ShieldAlert, Target, Users, Database, ArrowRight } from 'lucide-react';
+import { UserPlus, Mail, X, Power, ShieldCheck, ShieldAlert, Target, Users, Database, ArrowRight, Edit2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface ReclutadoresProps {
@@ -15,13 +15,20 @@ interface RecruiterStats extends User {
 
 const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
   const [recruiters, setRecruiters] = useState<RecruiterStats[]>([]);
+  
+  // Modal de Invitación
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  
+  // Modal de Edición (Corrección de Nombre)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingRecruiter, setEditingRecruiter] = useState<User | null>(null);
+  const [editRecruiterName, setEditRecruiterName] = useState('');
+
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Meta Mensual (Para Admin, la meta global es 30, pero individualmente cada reclutador debe hacer 15)
   const INDIVIDUAL_GOAL = 15;
 
   useEffect(() => {
@@ -30,12 +37,9 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
 
   const loadData = async () => {
     setLoading(true);
-    // 1. Obtener reclutadores
     const usersData = await dataService.getRecruiters();
-    // 2. Obtener TODOS los emisores (como admin) para contar
     const allEmisores = await dataService.getEmisores({ ...user, rol: 'admin' });
 
-    // 3. Mapear conteo
     const statsData = usersData.map(rec => ({
         ...rec,
         emisoresCount: allEmisores.filter(e => e.reclutador_id === rec.id).length
@@ -58,6 +62,21 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
     }
   };
 
+  const handleUpdateRecruiterName = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!editingRecruiter) return;
+      await dataService.updateUserName(editingRecruiter.id, editRecruiterName);
+      setIsEditModalOpen(false);
+      setEditingRecruiter(null);
+      loadData();
+  };
+
+  const openEditModal = (rec: User) => {
+      setEditingRecruiter(rec);
+      setEditRecruiterName(rec.nombre);
+      setIsEditModalOpen(true);
+  };
+
   const toggleAccess = async (recruiter: User) => {
       if(!confirm(`¿Estás seguro que deseas ${recruiter.activo ? 'REVOCAR' : 'ACTIVAR'} el acceso a ${recruiter.nombre}?`)) return;
       await dataService.toggleUserAccess(recruiter.id, recruiter.activo);
@@ -71,7 +90,6 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
   return (
     <div className="space-y-6 pb-20">
        
-       {/* Header */}
        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Equipo de Reclutamiento</h2>
@@ -85,7 +103,6 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
           </button>
        </div>
 
-       {/* Lista de Reclutadores con Métricas */}
        <div className="grid grid-cols-1 gap-4">
           {loading ? <div className="text-center py-10 text-gray-400">Calculando productividad...</div> : 
            recruiters.map((rec) => {
@@ -95,21 +112,29 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
                return (
                <div key={rec.id} className="bg-white border border-gray-100 p-5 rounded-2xl shadow-sm flex flex-col gap-6 relative overflow-hidden group">
                    
-                   {/* Top Section: Info & Access */}
+                   {/* Top Section */}
                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                        <div className="flex items-center gap-4">
                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold border ${rec.activo ? 'bg-gray-50 border-gray-200 text-gray-700' : 'bg-red-50 border-red-100 text-red-500'}`}>
                                {rec.nombre.charAt(0).toUpperCase()}
                            </div>
                            <div>
-                               <h3 className={`font-bold text-base ${rec.activo ? 'text-gray-900' : 'text-gray-400 line-through'}`}>{rec.nombre}</h3>
+                               <div className="flex items-center gap-2">
+                                   <h3 className={`font-bold text-base ${rec.activo ? 'text-gray-900' : 'text-gray-400 line-through'}`}>{rec.nombre}</h3>
+                                   <button 
+                                     onClick={() => openEditModal(rec)}
+                                     className="p-1 text-gray-300 hover:text-black transition-colors rounded-full hover:bg-gray-100"
+                                     title="Corregir Nombre"
+                                   >
+                                       <Edit2 size={14} />
+                                   </button>
+                               </div>
                                <div className="flex items-center gap-2 text-sm text-gray-500">
                                    <Mail size={14} /> {rec.correo}
                                </div>
                            </div>
                        </div>
                        
-                       {/* Control Buttons */}
                        <div className="flex items-center gap-3">
                            <button 
                                onClick={() => toggleAccess(rec)}
@@ -125,10 +150,9 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
                        </div>
                    </div>
 
-                   {/* Productivity Bar & Database Action */}
+                   {/* Stats & Actions */}
                    {rec.activo && (
                        <div className="flex flex-col md:flex-row gap-4">
-                           {/* Stats */}
                            <div className="flex-1 bg-gray-50 rounded-xl p-4 border border-gray-100">
                                <div className="flex justify-between items-end mb-2">
                                    <div className="flex items-center gap-2">
@@ -148,7 +172,6 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
                                </div>
                            </div>
 
-                           {/* View DB Button */}
                            <button 
                                onClick={() => viewDatabase(rec.id, rec.nombre)}
                                className="bg-black text-white px-6 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-gray-800 transition-colors md:w-auto w-full py-4 md:py-0"
@@ -202,6 +225,35 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
            </div>
         </div>
        )}
+
+       {/* Modal Corrección Nombre (EDIT) */}
+       {isEditModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsEditModalOpen(false)}></div>
+           <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl relative z-10 animate-pop-in">
+              <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-bold text-gray-900">Corregir Nombre</h3>
+                  <button onClick={() => setIsEditModalOpen(false)}><X size={20} className="text-gray-400 hover:text-black"/></button>
+              </div>
+              <form onSubmit={handleUpdateRecruiterName} className="space-y-4">
+                 <div>
+                    <label className="text-xs font-bold text-gray-500 block mb-1 uppercase">Nombre</label>
+                    <input 
+                        required 
+                        className="w-full bg-gray-50 p-3 rounded-xl text-sm font-medium outline-none focus:ring-1 focus:ring-black" 
+                        value={editRecruiterName} 
+                        onChange={e => setEditRecruiterName(e.target.value)} 
+                    />
+                 </div>
+                 <div className="pt-2 flex gap-2">
+                    <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-bold text-gray-500">Cancelar</button>
+                    <button type="submit" className="flex-1 bg-black text-white py-3 rounded-xl text-sm font-bold shadow-lg">Guardar</button>
+                 </div>
+              </form>
+           </div>
+        </div>
+       )}
+
     </div>
   );
 };
