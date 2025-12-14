@@ -9,7 +9,7 @@ interface LayoutProps {
   onLogout: () => void;
 }
 
-// Logo Ajustado
+// Logo Original Restaurado
 const BrandLogo = ({ className = "w-8 h-8" }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none">
      <rect width="100" height="100" rx="22" className="fill-black"/>
@@ -73,7 +73,6 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
                  <BrandLogo className="w-10 h-10" />
                  <div>
                     <h1 className="font-bold text-lg text-black uppercase tracking-widest leading-none">AGENCIA MOON</h1>
-                    {/* CORRECCIÓN: Título restaurado */}
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Gestor de Reclutamiento</p>
                  </div>
              </div>

@@ -59,7 +59,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
             
             <h1 className="text-2xl font-black text-gray-900 tracking-tight">Agencia Moon</h1>
-            {/* CORRECCIÓN: Título restaurado */}
             <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-2">Gestor de Reclutamiento</p>
         </div>
 

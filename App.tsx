@@ -10,7 +10,7 @@ import { authService } from './services/auth';
 import { auth } from './services/firebase';
 import { onAuthStateChanged } from 'firebase/auth'; 
 
-// NUEVO LOGO: "Orbital Focus"
+// Logo Original Restaurado
 const BrandLogo = ({ className = "w-12 h-12" }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none">
      <rect width="100" height="100" rx="22" className="fill-black"/>
