@@ -33,7 +33,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   const [newEmisorMonth, setNewEmisorMonth] = useState('');
   const [isShared, setIsShared] = useState(false); 
 
-  // Forms Data - EDIT (Ahora incluye todos los campos)
+  // Forms Data - EDIT
   const [editName, setEditName] = useState('');
   const [editBigo, setEditBigo] = useState('');
   const [editCountry, setEditCountry] = useState('');
@@ -80,13 +80,21 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
     e.preventDefault();
     if (!selectedEmisor) return;
     
-    await dataService.updateEmisorData(selectedEmisor.id, {
+    // Objeto de actualización base
+    const updatePayload: Partial<Emisor> = {
         nombre: editName,
         bigo_id: editBigo,
         pais: editCountry,
         mes_entrada: editMonth,
-        horas_mes: Number(editHours)
-    }, user.id);
+    };
+
+    // Solo incluimos las horas si es Admin. 
+    // Si es reclutador, ignoramos el campo editHours para evitar modificaciones no autorizadas.
+    if (isAdmin) {
+        updatePayload.horas_mes = Number(editHours);
+    }
+
+    await dataService.updateEmisorData(selectedEmisor.id, updatePayload, user.id);
 
     setIsEditingMode(false); 
     setShowDetailModal(false);
@@ -359,7 +367,9 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                           <form onSubmit={handleSaveChanges} className="w-full animate-slide-up space-y-4">
                               <div className="text-center mb-4">
                                   <h3 className="font-bold text-lg">Modificar Emisor</h3>
-                                  <p className="text-xs text-gray-400">Corrige cualquier error en los datos</p>
+                                  <p className="text-xs text-gray-400">
+                                    {isAdmin ? 'Edita cualquier dato.' : 'Corrige información de perfil.'}
+                                  </p>
                               </div>
 
                               <div>
@@ -401,10 +411,17 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                       />
                                   </div>
                                   <div>
-                                      <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Horas</label>
+                                      <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">
+                                          Horas {isAdmin ? '(Editable)' : '(Solo Admin)'}
+                                      </label>
                                       <input 
                                         type="number" step="0.1"
-                                        className="w-full bg-gray-100 p-3 rounded-xl text-sm font-bold text-black outline-none focus:ring-1 focus:ring-black text-center"
+                                        disabled={!isAdmin} // BLOQUEADO PARA RECLUTADORES
+                                        className={`w-full p-3 rounded-xl text-sm font-bold outline-none text-center transition-colors ${
+                                            isAdmin 
+                                            ? 'bg-gray-100 text-black focus:ring-1 focus:ring-black' 
+                                            : 'bg-gray-200/50 text-gray-400 cursor-not-allowed border border-gray-100'
+                                        }`}
                                         value={editHours}
                                         onChange={e => setEditHours(e.target.value)}
                                       />
