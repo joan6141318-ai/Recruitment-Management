@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -12,17 +11,14 @@ import { auth } from './services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Moon } from 'lucide-react';
 
+// Splash Screen Minimalista y Profesional
 const SplashScreen = () => (
-  <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
-      <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mb-6 animate-pulse">
-        <Moon size={40} className="text-black fill-black" />
+  <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+      <div className="mb-6 animate-pulse">
+        <Moon size={48} className="text-primary" strokeWidth={1.5} />
       </div>
-      <h1 className="text-3xl font-black text-white tracking-tight mb-2">Agencia Moon</h1>
-      <div className="flex gap-1">
-        <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
-        <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-        <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-      </div>
+      <h1 className="text-xl font-bold text-gray-900 tracking-tight">Agencia Moon</h1>
+      <p className="text-xs text-gray-400 mt-2">Cargando información...</p>
   </div>
 );
 
@@ -32,8 +28,8 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      // Minimo delay para mostrar el splash screen bonito
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Breve delay para transición suave
+      await new Promise(resolve => setTimeout(resolve, 1200));
       
       if (firebaseUser) {
         try {
