@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
-import { Search, Plus, MapPin, Calendar, Clock, Edit3, X, User as UserIcon, AlertTriangle, CheckCircle, Trophy, FilterX, Trash2 } from 'lucide-react';
+import { Search, Plus, MapPin, Calendar, Clock, Edit3, X, User as UserIcon, AlertTriangle, CheckCircle, Trophy, FilterX, Trash2, Globe, Shield } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 interface EmisoresProps {
@@ -31,6 +31,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   const [newEmisorBigo, setNewEmisorBigo] = useState('');
   const [newEmisorCountry, setNewEmisorCountry] = useState('');
   const [newEmisorMonth, setNewEmisorMonth] = useState('');
+  const [isShared, setIsShared] = useState(false); // Nuevo: Compartido
   const [editHours, setEditHours] = useState<string | number>('');
 
   const isAdmin = user.rol === 'admin';
@@ -58,11 +59,17 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     await dataService.addEmisor({
-      nombre: newEmisorName, bigo_id: newEmisorBigo, pais: newEmisorCountry, mes_entrada: newEmisorMonth, reclutador_id: user.id
+      nombre: newEmisorName, 
+      bigo_id: newEmisorBigo, 
+      pais: newEmisorCountry, 
+      mes_entrada: newEmisorMonth, 
+      reclutador_id: user.id,
+      es_compartido: isAdmin ? isShared : false // Solo admin puede compartir
     }, user);
     setShowAddModal(false); loadData();
+    
     // Reset forms...
-    setNewEmisorName(''); setNewEmisorBigo(''); setNewEmisorCountry('');
+    setNewEmisorName(''); setNewEmisorBigo(''); setNewEmisorCountry(''); setIsShared(false);
   };
 
   const handleSaveHours = async (e: React.FormEvent) => {
@@ -174,15 +181,27 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
          filtered.map((emisor) => {
             const status = getStatusInfo(emisor.horas_mes, emisor.estado);
             const StatusIcon = status.icon;
+            const isSharedItem = emisor.es_compartido;
 
             return (
                 <div 
                     key={emisor.id} 
                     onClick={() => openEmisorDetail(emisor)}
                     className={`bg-white rounded-2xl p-5 border shadow-sm transition-all cursor-pointer relative group 
-                    ${emisor.estado === 'pausado' ? 'border-gray-200 opacity-60 hover:opacity-100' : 'border-gray-100 hover:shadow-md hover:border-gray-200'}`}
+                    ${emisor.estado === 'pausado' ? 'border-gray-200 opacity-60 hover:opacity-100' : 'border-gray-100 hover:shadow-md hover:border-gray-200'}
+                    ${isSharedItem ? 'ring-1 ring-purple-100' : ''}
+                    `}
                 >
-                    <div className="flex justify-between items-start mb-4">
+                    {/* Badge de Compartido */}
+                    {isSharedItem && (
+                        <div className="absolute top-3 right-3 flex gap-1">
+                            <div className="bg-purple-100 text-primary p-1 rounded-md" title="Emisor Oficial / Compartido">
+                                <Globe size={12} />
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex justify-between items-start mb-4 pr-6">
                         <div className="flex items-center gap-3 overflow-hidden">
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${emisor.estado === 'pausado' ? 'bg-gray-100 text-gray-400' : 'bg-gray-50 text-gray-600 border border-gray-100'}`}>
                                 {emisor.nombre.charAt(0)}
@@ -191,10 +210,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                 <h3 className={`font-bold text-sm truncate ${emisor.estado === 'pausado' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{emisor.nombre}</h3>
                                 <p className="text-xs text-gray-400 font-mono">ID: {emisor.bigo_id}</p>
                             </div>
-                        </div>
-                        {/* Status Indicator */}
-                        <div className={`p-1.5 rounded-full ${status.bg}`}>
-                            <StatusIcon size={14} className={status.color} />
                         </div>
                     </div>
 
@@ -241,7 +256,11 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                   {/* Header de la ficha */}
                   <div className="bg-gray-50 p-6 border-b border-gray-100 flex justify-between items-start">
                       <div>
-                          <h2 className="text-xl font-black text-gray-900 leading-tight">{selectedEmisor.nombre}</h2>
+                          <div className="flex items-center gap-2">
+                             <h2 className="text-xl font-black text-gray-900 leading-tight">{selectedEmisor.nombre}</h2>
+                             {selectedEmisor.es_compartido && <Globe size={16} className="text-primary" />}
+                          </div>
+                          
                           <div className="flex items-center gap-2 mt-1 text-gray-500">
                              <UserIcon size={12} />
                              <span className="text-xs font-mono font-medium">{selectedEmisor.bigo_id}</span>
@@ -274,35 +293,47 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                 </div>
                             </div>
 
-                            {/* ADMIN SIEMPRE PUEDE EDITAR, incluso en vista filtrada */}
-                            {isAdmin && (
+                            {/* Solo Admin puede editar SIEMPRE. Reclutador puede editar SI NO ES COMPARTIDO */}
+                            {(isAdmin || (user.id === selectedEmisor.reclutador_id && !selectedEmisor.es_compartido)) ? (
                                 <div className="w-full space-y-3">
-                                    <button 
-                                        onClick={() => setIsEditingMode(true)}
-                                        className="w-full py-3 bg-black text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-gray-900 transition-colors"
-                                    >
-                                        <Edit3 size={16} /> Modificar Horas
-                                    </button>
-
-                                    <button 
-                                        onClick={async () => {
-                                            await dataService.toggleStatus(selectedEmisor.id);
-                                            setShowDetailModal(false);
-                                            loadData();
-                                        }}
-                                        className="w-full py-2 text-xs font-bold text-gray-400 hover:text-black underline"
-                                    >
-                                        {selectedEmisor.estado === 'activo' ? 'Marcar como Inactivo (Pausar)' : 'Reactivar Emisor'}
-                                    </button>
-                                    
-                                    {selectedEmisor.estado === 'pausado' && (
+                                    {isAdmin && (
                                         <button 
-                                            onClick={() => handleDelete(selectedEmisor.id)}
-                                            className="w-full py-3 border border-red-200 text-red-500 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-50 transition-colors"
+                                            onClick={() => setIsEditingMode(true)}
+                                            className="w-full py-3 bg-black text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-gray-900 transition-colors"
                                         >
-                                            <Trash2 size={16} /> Eliminar Definitivamente
+                                            <Edit3 size={16} /> Modificar Horas
                                         </button>
                                     )}
+
+                                    {/* Botones de Admin para gestión */}
+                                    {isAdmin && (
+                                        <>
+                                            <button 
+                                                onClick={async () => {
+                                                    await dataService.toggleStatus(selectedEmisor.id);
+                                                    setShowDetailModal(false);
+                                                    loadData();
+                                                }}
+                                                className="w-full py-2 text-xs font-bold text-gray-400 hover:text-black underline"
+                                            >
+                                                {selectedEmisor.estado === 'activo' ? 'Marcar como Inactivo (Pausar)' : 'Reactivar Emisor'}
+                                            </button>
+                                            
+                                            {selectedEmisor.estado === 'pausado' && (
+                                                <button 
+                                                    onClick={() => handleDelete(selectedEmisor.id)}
+                                                    className="w-full py-3 border border-red-200 text-red-500 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-50 transition-colors"
+                                                >
+                                                    <Trash2 size={16} /> Eliminar Definitivamente
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="bg-purple-50 p-3 rounded-xl flex items-center gap-3 text-primary text-xs font-bold w-full justify-center">
+                                    <Shield size={16} />
+                                    <span>Emisor Oficial (Solo Lectura)</span>
                                 </div>
                             )}
                           </>
@@ -364,6 +395,19 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                    <label className="text-xs font-bold text-gray-500 block mb-1.5 ml-1">País</label>
                    <input required className="w-full bg-gray-50 border-none p-3.5 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-black/5" value={newEmisorCountry} onChange={e => setNewEmisorCountry(e.target.value)} />
                </div>
+               
+               {/* Checkbox Compartir (Solo Admin) */}
+               {isAdmin && (
+                   <div className="flex items-center gap-3 bg-purple-50 p-3 rounded-xl cursor-pointer" onClick={() => setIsShared(!isShared)}>
+                       <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${isShared ? 'bg-primary border-primary text-white' : 'bg-white border-gray-300'}`}>
+                           {isShared && <CheckCircle size={14} />}
+                       </div>
+                       <label className="text-sm font-bold text-gray-700 cursor-pointer select-none">
+                           Compartir con todos los reclutadores
+                       </label>
+                   </div>
+               )}
+
                <button type="submit" className="w-full py-4 bg-black text-white rounded-xl font-bold text-sm mt-2 shadow-lg hover:bg-gray-900 transition-colors">Guardar Emisor</button>
             </form>
           </div>

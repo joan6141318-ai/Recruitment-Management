@@ -20,6 +20,7 @@ export interface Emisor {
   mes_entrada: string; // Format: YYYY-MM
   estado: EstadoEmisor;
   fecha_registro: string;
+  es_compartido?: boolean; // NUEVO: Si es true, todos los reclutadores pueden verlo
 }
 
 export interface HistorialHoras {

@@ -12,7 +12,8 @@ import {
   query, 
   where,
   writeBatch,
-  onSnapshot
+  onSnapshot,
+  or // IMPORTANTE: Necesario para la consulta "Míos O Públicos"
 } from 'firebase/firestore';
 
 export const dataService = {
@@ -63,7 +64,7 @@ export const dataService = {
     });
   },
 
-  // MODIFICADO: Acepta un targetRecruiterId opcional para filtros de Admin
+  // MODIFICADO: Lógica de permisos de visualización
   getEmisores: async (currentUser: User, targetRecruiterId?: string): Promise<Emisor[]> => {
     const emisoresRef = collection(db, 'emisores');
     let q;
@@ -77,8 +78,14 @@ export const dataService = {
         q = query(emisoresRef);
       }
     } else {
-      // Si es Reclutador, SIEMPRE solo los suyos, ignorando el target
-      q = query(emisoresRef, where('reclutador_id', '==', currentUser.id));
+      // RECLUTADOR: Ve sus propios emisores O los que estén marcados como compartidos
+      q = query(
+        emisoresRef, 
+        or(
+          where('reclutador_id', '==', currentUser.id),
+          where('es_compartido', '==', true)
+        )
+      );
     }
 
     const querySnapshot = await getDocs(q);
@@ -96,10 +103,16 @@ export const dataService = {
     if (currentUser.rol === 'admin') {
       q = query(emisoresRef);
     } else {
-      q = query(emisoresRef, where('reclutador_id', '==', currentUser.id));
+      // Misma lógica para suscripción: Míos OR Compartidos
+      q = query(
+        emisoresRef, 
+        or(
+          where('reclutador_id', '==', currentUser.id),
+          where('es_compartido', '==', true)
+        )
+      );
     }
 
-    // onSnapshot devuelve la función para desuscribirse
     return onSnapshot(q, (snapshot) => {
       const emisores = snapshot.docs.map(docSnap => ({
         id: docSnap.id,
@@ -115,6 +128,8 @@ export const dataService = {
       horas_mes: 0,
       estado: 'activo',
       fecha_registro: new Date().toISOString(),
+      // Si no se especifica (caso reclutador), es falso por defecto
+      es_compartido: emisorData.es_compartido || false 
     };
     
     const docRef = await addDoc(collection(db, 'emisores'), newEmisor);
@@ -164,7 +179,6 @@ export const dataService = {
     }
   },
 
-  // NUEVA FUNCIÓN: Eliminar Emisor
   deleteEmisor: async (emisorId: string): Promise<void> => {
     const emisorRef = doc(db, 'emisores', emisorId);
     await deleteDoc(emisorRef);
