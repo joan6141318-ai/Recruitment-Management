@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { User } from '../types';
-import { LogOut, Users, Radio, LayoutDashboard, Menu, X, UserCircle } from 'lucide-react';
+import { LogOut, Users, Radio, LayoutDashboard, Menu, X, ChevronRight } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 interface LayoutProps {
@@ -22,71 +21,71 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
     return (
       <Link
         to={to}
-        onClick={() => setIsSidebarOpen(false)} // Close sidebar on nav click (if used inside)
-        className={`flex flex-col items-center justify-center py-2 px-4 transition-all duration-300 relative ${active ? 'text-primary' : 'text-gray-400 hover:text-gray-600'}`}
+        className={`flex flex-col items-center justify-center w-full h-full transition-all duration-200 ${
+          active ? 'text-primary' : 'text-gray-400 hover:text-gray-600'
+        }`}
       >
-        <div className={`p-1.5 rounded-xl transition-all ${active ? 'bg-purple-50 translate-y-[-2px]' : ''}`}>
-             <Icon size={22} strokeWidth={active ? 2.5 : 2} />
-        </div>
-        <span className="text-[9px] font-bold uppercase mt-1 tracking-wide">{label}</span>
+        <Icon size={24} strokeWidth={active ? 2.5 : 1.5} className="mb-1" />
+        <span className={`text-[10px] font-medium ${active ? 'font-bold' : ''}`}>{label}</span>
       </Link>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-20">
+    <div className="min-h-screen bg-[#F9FAFB] font-sans text-gray-900 pb-24">
       
-      {/* 1. TOP BAR (Mobile & Desktop) */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex justify-between items-center shadow-sm">
-          <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-gray-800 hover:bg-gray-50 rounded-lg">
-              <Menu size={24} />
+      {/* 1. HEADER - Minimalista y Limpio */}
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-100 px-5 py-4 flex justify-between items-center">
+          <button 
+            onClick={() => setIsSidebarOpen(true)} 
+            className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-colors text-gray-700"
+          >
+              <Menu size={22} strokeWidth={1.5} />
           </button>
           
-          <div className="text-right">
-              <h1 className="text-sm font-black uppercase tracking-tight text-gray-900 leading-none">{user.nombre}</h1>
-              <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full mt-1 inline-block ${user.rol === 'admin' ? 'bg-black text-white' : 'bg-purple-100 text-purple-700'}`}>
-                  {user.rol}
-              </span>
+          <div className="text-center">
+              <span className="text-xs font-bold tracking-widest uppercase text-gray-900">Agencia Moon</span>
+          </div>
+
+          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center border border-gray-200">
+             <span className="text-xs font-bold text-gray-700">{user.nombre.charAt(0).toUpperCase()}</span>
           </div>
       </header>
 
-      {/* 2. SIDEBAR (Overlay Drawer) */}
+      {/* 2. SIDEBAR (Perfil y Ajustes) - Estilo iOS/Moderno */}
       {isSidebarOpen && (
           <div className="fixed inset-0 z-50 flex">
               {/* Backdrop */}
               <div 
-                  className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+                  className="absolute inset-0 bg-gray-900/20 backdrop-blur-sm transition-opacity"
                   onClick={() => setIsSidebarOpen(false)}
               ></div>
               
               {/* Drawer Content */}
-              <div className="relative w-3/4 max-w-xs bg-white h-full shadow-2xl flex flex-col animate-slide-right">
-                  <div className="p-6 border-b border-gray-100 flex justify-between items-start">
-                      <div className="flex flex-col">
-                           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-2xl font-black text-gray-400">
-                                {user.nombre.charAt(0).toUpperCase()}
-                           </div>
-                           <h2 className="text-lg font-black text-gray-900 leading-tight">{user.nombre}</h2>
-                           <p className="text-xs text-gray-400 font-medium break-all">{user.correo}</p>
-                      </div>
-                      <button onClick={() => setIsSidebarOpen(false)} className="text-gray-400 hover:text-black">
-                          <X size={24} />
-                      </button>
+              <div className="relative w-[280px] bg-white h-full shadow-2xl flex flex-col animate-slide-right">
+                  <div className="p-6 pt-12 pb-8 border-b border-gray-50">
+                       <h2 className="text-2xl font-bold text-gray-900 tracking-tight mb-1">{user.nombre}</h2>
+                       <p className="text-sm text-gray-500 font-medium">{user.correo}</p>
+                       <div className={`mt-4 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                           user.rol === 'admin' ? 'bg-gray-900 text-white' : 'bg-purple-50 text-purple-700'
+                       }`}>
+                           {user.rol === 'admin' ? 'Administrador' : 'Reclutador'}
+                       </div>
                   </div>
                   
-                  <div className="flex-1 p-6">
-                      <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4">
-                          <p className="text-[10px] font-bold text-purple-400 uppercase mb-1">Tu Rol Actual</p>
-                          <p className="text-xl font-black text-purple-700 capitalize">{user.rol}</p>
-                      </div>
+                  <div className="flex-1 py-4">
+                      {/* Aquí podrían ir opciones futuras como "Ajustes", "Ayuda", etc. */}
+                      <div className="px-6 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Cuenta</div>
                   </div>
 
-                  <div className="p-6 border-t border-gray-100 bg-gray-50">
+                  <div className="p-6 border-t border-gray-50">
                       <button 
                           onClick={onLogout} 
-                          className="w-full bg-black text-white py-4 rounded-xl font-bold uppercase text-xs flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors"
+                          className="flex items-center w-full text-left text-red-600 hover:bg-red-50 p-3 rounded-lg transition-colors group"
                       >
-                          <LogOut size={16} /> Cerrar Sesión
+                          <LogOut size={18} className="mr-3" />
+                          <span className="text-sm font-semibold">Cerrar Sesión</span>
+                          <ChevronRight size={16} className="ml-auto opacity-0 group-hover:opacity-100 text-red-400" />
                       </button>
                   </div>
               </div>
@@ -94,13 +93,13 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
       )}
 
       {/* 3. MAIN CONTENT */}
-      <main className="p-4 max-w-5xl mx-auto">
+      <main className="px-5 py-6 max-w-2xl mx-auto">
           {children}
       </main>
 
-      {/* 4. BOTTOM NAVIGATION (Sticky Footer) */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 pb-safe pt-1 px-2 shadow-[0_-5px_15px_rgba(0,0,0,0.03)] flex justify-around items-center h-[70px]">
-          <NavItem to="/" icon={LayoutDashboard} label="Panel" />
+      {/* 4. BOTTOM NAVIGATION - Flotante o Fija muy limpia */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-40 pb-safe pt-2 px-6 flex justify-between items-center h-[80px]">
+          <NavItem to="/" icon={LayoutDashboard} label="Inicio" />
           <NavItem to="/emisores" icon={Radio} label="Emisores" />
           {user.rol === 'admin' && <NavItem to="/reclutadores" icon={Users} label="Equipo" />}
       </nav>
