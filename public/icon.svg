@@ -1,21 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <clipPath id="circle">
-      <circle cx="256" cy="256" r="256" />
-    </clipPath>
+    <linearGradient id="moonGradient" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" style="stop-color:#7C3AED;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4C1D95;stop-opacity:1" />
+    </linearGradient>
   </defs>
   
-  <!-- Fondo Redondo -->
-  <g clip-path="url(#circle)">
-    <rect width="512" height="512" fill="#09090B"/>
-    
-    <!-- Elemento decorativo sutil (Moon Glow) -->
-    <circle cx="400" cy="100" r="150" fill="#7C3AED" fill-opacity="0.2" filter="blur(40px)"/>
-    
-    <!-- Logo Central Moderno (M estilizada) -->
-    <path d="M140 380V180C140 180 200 130 256 220C312 130 372 180 372 180V380" stroke="white" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
-    
-    <!-- Punto de acento (Reclutamiento/Objetivo) -->
-    <circle cx="256" cy="130" r="25" fill="#7C3AED"/>
-  </g>
+  <!-- Fondo Circular Negro (Estilo App Icon) -->
+  <circle cx="256" cy="256" r="256" fill="#09090B"/>
+  
+  <!-- Luna Creciente Abstracta (Geometría limpia) -->
+  <path d="M256 96C167.63 96 96 167.63 96 256C96 344.37 167.63 416 256 416C275.5 416 294.5 412.5 312 406C245 390 196 330 196 256C196 182 245 122 312 106C294.5 99.5 275.5 96 256 96Z" fill="url(#moonGradient)"/>
+  
+  <!-- Punto de Acento (Representa el Talento/Objetivo) -->
+  <circle cx="360" cy="170" r="35" fill="#F97316"/>
+  
+  <!-- Brillo sutil en el punto -->
+  <circle cx="372" cy="160" r="12" fill="white" fill-opacity="0.25"/>
 </svg>
