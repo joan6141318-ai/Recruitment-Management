@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Emisor, InvoiceConfig } from '../types';
 import { dataService } from '../services/db';
-import { Download, Edit3, Save, X, Search, ChevronDown, CheckSquare, Square, Eye, EyeOff, AlertCircle, PlusCircle, DollarSign } from 'lucide-react';
+import { Download, Edit3, Save, X, Search, ChevronDown, CheckSquare, Square, Eye, EyeOff, AlertCircle, PlusCircle, DollarSign, Settings2 } from 'lucide-react';
 
 interface FacturaProps {
   user: User;
@@ -82,14 +82,17 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
         return bracket ? bracket.usd : 0;
     };
 
-    const totalPayment = filteredData.reduce((acc, curr) => {
-        // Si hay montos manuales definidos por el admin, tienen prioridad absoluta
+    // Suma de pagos individuales (Metas + Horas o Automático)
+    const baseTotal = filteredData.reduce((acc, curr) => {
         if (curr.pago_meta !== undefined || curr.pago_horas !== undefined) {
             return acc + (Number(curr.pago_meta) || 0) + (Number(curr.pago_horas) || 0);
         }
-        // Si no, cálculo automático por tabla (solo si no es manual o si es manual pero sin montos fijos)
         return acc + calculateCommission(curr.semillas_mes || 0, curr.horas_mes || 0);
     }, 0);
+
+    // Aplicar ajuste global manual si existe para esta factura específica
+    const globalAdjustment = Number(invoiceConfig.pagoAjustes?.[invoiceKey]) || 0;
+    const totalPayment = baseTotal + globalAdjustment;
 
     const total = filteredData.length;
     const nonProductive = filteredData.filter(e => (e.horas_mes || 0) < 20).length;
@@ -99,13 +102,21 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
         return bracket && (e.horas_mes || 0) >= 44;
     }).length;
 
-    return { total, nonProductive, hourGoal, seedGoalCount, totalPayment };
-  }, [filteredData, invoiceConfig]);
+    return { total, nonProductive, hourGoal, seedGoalCount, totalPayment, globalAdjustment };
+  }, [filteredData, invoiceConfig, invoiceKey]);
 
   const handleUpdateEmisorDirect = async (id: string, field: string, value: string) => {
       if (user.rol !== 'admin') return;
       const numValue = Number(value);
       await dataService.updateEmisorData(id, { [field]: numValue }, user.id);
+  };
+
+  const handleUpdateGlobalAdjustment = (val: string) => {
+      if (!invoiceConfig) return;
+      const amount = Number(val) || 0;
+      const currentAjustes = invoiceConfig.pagoAjustes || {};
+      const newAjustes = { ...currentAjustes, [invoiceKey]: amount };
+      setInvoiceConfig({ ...invoiceConfig, pagoAjustes: newAjustes });
   };
 
   const handleSaveConfig = async () => {
@@ -132,11 +143,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
               pago_meta: Number(manualPagoMeta) || 0,
               pago_horas: Number(manualPagoHoras) || 0
           }, user);
-          setManualId('');
-          setManualHours('');
-          setManualSeeds('');
-          setManualPagoMeta('');
-          setManualPagoHoras('');
+          setManualId(''); setManualHours(''); setManualSeeds(''); setManualPagoMeta(''); setManualPagoHoras('');
       } catch (e) {
           console.error(e);
       } finally {
@@ -156,7 +163,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
   const handlePrint = () => { 
     if (!isAvailableForDownload) return;
     const originalTitle = document.title;
-    document.title = `factura mes de : ${selectedMonth}`;
+    document.title = `Factura_${selectedMonth}_${selectedRecruiter?.nombre.replace(/\s+/g, '_')}`;
     window.print(); 
     setTimeout(() => { document.title = originalTitle; }, 100);
   };
@@ -180,16 +187,10 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                       </div>
                   </div>
                   <div className="flex gap-2">
-                    <button 
-                        onClick={toggleInvoicePublication}
-                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 border ${invoiceConfig?.publishedInvoices?.[invoiceKey] ? 'bg-green-50 border-green-200 text-green-600 shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-400'}`}
-                    >
+                    <button onClick={toggleInvoicePublication} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 border ${invoiceConfig?.publishedInvoices?.[invoiceKey] ? 'bg-green-50 border-green-200 text-green-600 shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
                         {invoiceConfig?.publishedInvoices?.[invoiceKey] ? <><Eye size={14} /> Visible</> : <><EyeOff size={14} /> Privada</>}
                     </button>
-                    <button 
-                        onClick={() => setEditMode(!editMode)}
-                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-colors flex items-center gap-2 ${editMode ? 'bg-orange-50 text-accent' : 'bg-gray-100 text-gray-600'}`}
-                    >
+                    <button onClick={() => setEditMode(!editMode)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-colors flex items-center gap-2 ${editMode ? 'bg-orange-50 text-accent' : 'bg-gray-100 text-gray-600'}`}>
                         {editMode ? <><X size={14} /> Cerrar</> : <><Edit3 size={14} /> Editar</>}
                     </button>
                   </div>
@@ -199,30 +200,48 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-slide-up">
                       <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
                           <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Identidad Corporativa</h4>
-                          <input 
-                            className="w-full bg-gray-50 p-3 rounded-xl text-xs font-bold border-none outline-none focus:ring-1 focus:ring-black"
-                            value={invoiceConfig.agenciaNombre}
-                            onChange={e => setInvoiceConfig({...invoiceConfig, agenciaNombre: e.target.value})}
-                          />
-                          <textarea 
-                            className="w-full bg-gray-50 p-3 rounded-xl text-xs font-medium border-none h-20 outline-none focus:ring-1 focus:ring-black"
-                            value={invoiceConfig.agenciaInfo}
-                            onChange={e => setInvoiceConfig({...invoiceConfig, agenciaInfo: e.target.value})}
-                          />
+                          <input className="w-full bg-gray-100 border-2 border-white p-3 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-primary shadow-sm" value={invoiceConfig.agenciaNombre} onChange={e => setInvoiceConfig({...invoiceConfig, agenciaNombre: e.target.value})} />
+                          <textarea className="w-full bg-gray-100 border-2 border-white p-3 rounded-xl text-xs font-medium h-20 outline-none focus:ring-2 focus:ring-primary shadow-sm" value={invoiceConfig.agenciaInfo} onChange={e => setInvoiceConfig({...invoiceConfig, agenciaInfo: e.target.value})} />
                       </div>
 
                       <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
                           <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Método de Liquidación</h4>
                           <div className="relative">
-                            <select 
-                                className="w-full bg-gray-50 p-4 rounded-xl text-xs font-bold border-none outline-none appearance-none cursor-pointer focus:ring-1 focus:ring-black"
-                                value={invoiceConfig.institucionPago}
-                                onChange={e => setInvoiceConfig({...invoiceConfig, institucionPago: e.target.value})}
-                            >
+                            <select className="w-full bg-gray-100 border-2 border-white p-4 rounded-xl text-xs font-bold outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-primary shadow-sm" value={invoiceConfig.institucionPago} onChange={e => setInvoiceConfig({...invoiceConfig, institucionPago: e.target.value})}>
                                 {instituciones.map(inst => <option key={inst} value={inst}>{inst}</option>)}
                             </select>
                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                           </div>
+                      </div>
+
+                      {/* AJUSTE GLOBAL DE PAGO - NUEVO MÓDULO */}
+                      <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4 md:col-span-2">
+                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                             <Settings2 size={14} /> Ajuste Global de Pago (Bono Extra o Deducción)
+                          </h4>
+                          <div className="bg-gray-100 border-2 border-white p-5 rounded-2xl flex flex-col sm:flex-row items-center gap-4 shadow-sm">
+                              <div className="flex-1 w-full">
+                                  <label className="text-[9px] font-bold text-primary uppercase tracking-tighter block mb-1">Monto de Ajuste ($ USD):</label>
+                                  <div className="relative">
+                                      <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                      <input 
+                                          type="number" 
+                                          step="0.01"
+                                          className="w-full bg-white border border-gray-200 pl-8 pr-4 py-3 rounded-xl text-sm font-black text-black outline-none focus:ring-2 focus:ring-primary"
+                                          placeholder="Ej: 50.00 o -10.00"
+                                          value={invoiceConfig.pagoAjustes?.[invoiceKey] || ''}
+                                          onChange={(e) => handleUpdateGlobalAdjustment(e.target.value)}
+                                      />
+                                  </div>
+                              </div>
+                              <div className="bg-white p-4 rounded-xl border border-gray-200 text-center min-w-[140px]">
+                                  <p className="text-[9px] font-black text-gray-400 uppercase leading-none mb-1">Impacto en Total</p>
+                                  <p className={`text-lg font-black ${stats.globalAdjustment >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      {stats.globalAdjustment >= 0 ? '+' : ''}{stats.globalAdjustment.toFixed(2)} USD
+                                  </p>
+                              </div>
+                          </div>
+                          <p className="text-[10px] text-gray-400 italic">Este ajuste se sumará directamente al cálculo final de los emisores seleccionados.</p>
                       </div>
 
                       {/* INCLUSIÓN MANUAL EXTENDIDA */}
@@ -230,48 +249,29 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           <h4 className="text-[11px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
                              <PlusCircle size={14} /> Agregar ID Manual con Pagos Definidos
                           </h4>
-                          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
+                          <div className="bg-gray-100 border-2 border-white p-6 rounded-2xl grid grid-cols-2 md:grid-cols-5 gap-4 items-end shadow-sm">
                               <div className="space-y-1">
                                   <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Bigo ID:</label>
-                                  <input 
-                                      className="w-full bg-gray-50 p-3 rounded-xl text-xs font-bold border-none outline-none focus:ring-1 focus:ring-black"
-                                      value={manualId} placeholder="ID..." onChange={e => setManualId(e.target.value)}
-                                  />
+                                  <input className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none focus:ring-2 focus:ring-primary" value={manualId} placeholder="ID..." onChange={e => setManualId(e.target.value)} />
                               </div>
                               <div className="space-y-1">
                                   <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Horas:</label>
-                                  <input 
-                                      type="number" className="w-full bg-gray-50 p-3 rounded-xl text-xs font-bold border-none outline-none focus:ring-1 focus:ring-black"
-                                      value={manualHours} placeholder="0" onChange={e => setManualHours(e.target.value)}
-                                  />
+                                  <input type="number" className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none focus:ring-2 focus:ring-primary" value={manualHours} placeholder="0" onChange={e => setManualHours(e.target.value)} />
                               </div>
                               <div className="space-y-1">
                                   <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Semillas:</label>
-                                  <input 
-                                      type="number" className="w-full bg-gray-50 p-3 rounded-xl text-xs font-bold border-none outline-none focus:ring-1 focus:ring-black"
-                                      value={manualSeeds} placeholder="0" onChange={e => setManualSeeds(e.target.value)}
-                                  />
+                                  <input type="number" className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none focus:ring-2 focus:ring-primary" value={manualSeeds} placeholder="0" onChange={e => setManualSeeds(e.target.value)} />
                               </div>
                               <div className="space-y-1">
-                                  <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Pago por Meta ($):</label>
-                                  <input 
-                                      type="number" className="w-full bg-purple-50 p-3 rounded-xl text-xs font-black text-primary border-none outline-none focus:ring-1 focus:ring-primary"
-                                      value={manualPagoMeta} placeholder="0.00" onChange={e => setManualPagoMeta(e.target.value)}
-                                  />
+                                  <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Bono Meta ($):</label>
+                                  <input type="number" className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black text-primary outline-none focus:ring-2 focus:ring-primary" value={manualPagoMeta} placeholder="0.00" onChange={e => setManualPagoMeta(e.target.value)} />
                               </div>
                               <div className="space-y-1">
-                                  <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Pago Horas ($):</label>
-                                  <input 
-                                      type="number" className="w-full bg-purple-50 p-3 rounded-xl text-xs font-black text-primary border-none outline-none focus:ring-1 focus:ring-primary"
-                                      value={manualPagoHoras} placeholder="0.00" onChange={e => setManualPagoHoras(e.target.value)}
-                                  />
+                                  <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Bono Horas ($):</label>
+                                  <input type="number" className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black text-primary outline-none focus:ring-2 focus:ring-primary" value={manualPagoHoras} placeholder="0.00" onChange={e => setManualPagoHoras(e.target.value)} />
                               </div>
                           </div>
-                          <button 
-                              onClick={handleSaveManualEntry}
-                              disabled={!manualId || isSavingManual}
-                              className="w-full bg-primary text-white py-4 rounded-2xl font-black text-xs uppercase shadow-lg shadow-purple-100 hover:bg-purple-700 disabled:bg-gray-200 transition-all flex items-center justify-center gap-2"
-                          >
+                          <button onClick={handleSaveManualEntry} disabled={!manualId || isSavingManual} className="w-full bg-primary text-white py-4 rounded-2xl font-black text-xs uppercase shadow-lg shadow-purple-100 hover:bg-purple-700 disabled:bg-gray-200 transition-all flex items-center justify-center gap-2">
                               {isSavingManual ? 'Sincronizando...' : <><Save size={16} /> Guardar y Reflejar en Listado</>}
                           </button>
                       </div>
@@ -282,7 +282,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                               <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Gestión de Visibilidad en Factura</h4>
                               <div className="relative">
                                   <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-300" />
-                                  <input placeholder="Filtrar..." className="pl-8 pr-3 py-1 bg-gray-50 rounded-lg text-[10px] font-bold outline-none" value={idFilter} onChange={e => setIdFilter(e.target.value)} />
+                                  <input placeholder="Filtrar..." className="pl-8 pr-3 py-1 bg-gray-100 border-2 border-white rounded-lg text-[10px] font-bold outline-none shadow-sm" value={idFilter} onChange={e => setIdFilter(e.target.value)} />
                               </div>
                           </div>
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
@@ -317,12 +317,12 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                   <label className="text-[10px] font-black text-primary uppercase ml-1 tracking-widest">Mes de Factura:</label>
-                  <input type="month" className="w-full bg-gray-50 p-3.5 rounded-2xl text-sm font-black border-none outline-none" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
+                  <input type="month" className="w-full bg-gray-100 border-2 border-white p-3.5 rounded-2xl text-sm font-black outline-none focus:ring-2 focus:ring-primary shadow-sm" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
               </div>
               {user.rol === 'admin' && (
                   <div className="space-y-1">
                       <label className="text-[10px] font-black text-primary uppercase ml-1 tracking-widest">Reclutador:</label>
-                      <select className="w-full bg-gray-50 p-3.5 rounded-2xl text-sm font-black border-none outline-none" value={targetRecruiterId} onChange={(e) => setTargetRecruiterId(e.target.value)}>
+                      <select className="w-full bg-gray-100 border-2 border-white p-3.5 rounded-2xl text-sm font-black outline-none focus:ring-2 focus:ring-primary shadow-sm" value={targetRecruiterId} onChange={(e) => setTargetRecruiterId(e.target.value)}>
                         {reclutadores.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
                       </select>
                   </div>
@@ -363,7 +363,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-12 border-b-2 border-gray-100 pb-12">
                       <div className="space-y-8">
                           <div>
-                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Liquidación a nombre de :</p>
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Pago a nombre de :</p>
                               <p className="text-2xl font-black text-gray-900 border-l-8 border-black pl-4 uppercase tracking-tighter">{selectedRecruiter?.nombre || '...'}</p>
                           </div>
                       </div>
@@ -375,53 +375,53 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                       </div>
                   </div>
 
-                  {/* TABLA DE RELACIÓN DETALLADA - REDISEÑADA PARA VISIBILIDAD 100% */}
+                  {/* TABLA DE RELACIÓN DETALLADA - OPTIMIZADA PARA VISIBILIDAD TOTAL */}
                   <div className="space-y-6">
                       <h3 className="text-[11px] font-black text-black uppercase tracking-[0.3em] flex items-center gap-4">
                         <span className="w-16 h-[4px] bg-black"></span> 
                         RELACIÓN DETALLADA DE EMISORES Y OBJETIVOS CUMPLIDOS
                       </h3>
-                      <div className="overflow-hidden rounded-3xl border-2 border-black">
-                          <table className="w-full text-left text-[11px] border-collapse">
+                      <div className="overflow-x-auto rounded-3xl border-2 border-black shadow-lg">
+                          <table className="w-full text-left text-[11px] min-w-[700px]">
                               <thead className="bg-black text-white font-black uppercase tracking-widest">
                                   <tr>
-                                      <th className="py-5 px-6 border-r border-white/10 w-[25%]">Bigo ID</th>
-                                      <th className="py-5 px-2 text-center border-r border-white/10 w-[15%]">Horas</th>
-                                      <th className="py-5 px-2 text-center border-r border-white/10 w-[15%]">Semillas</th>
-                                      <th className="py-5 px-2 text-center border-r border-white/10 w-[22%]">Bono Meta ($)</th>
-                                      <th className="py-5 px-6 text-right w-[23%]">Bono Horas ($)</th>
+                                      <th className="py-6 px-6 border-r border-white/10 whitespace-nowrap w-[20%]">Bigo ID</th>
+                                      <th className="py-6 px-2 text-center border-r border-white/10 whitespace-nowrap w-[15%]">Horas</th>
+                                      <th className="py-6 px-2 text-center border-r border-white/10 whitespace-nowrap w-[15%]">Semillas</th>
+                                      <th className="py-6 px-4 text-center border-r border-white/10 whitespace-nowrap w-[25%]">Bono Meta ($)</th>
+                                      <th className="py-6 px-6 text-right whitespace-nowrap w-[25%]">Bono Horas ($)</th>
                                   </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-200">
                                   {filteredData.length > 0 ? filteredData.map(e => (
-                                    <tr key={e.id} className={`${e.isManualEntry ? 'bg-purple-50/20' : 'bg-white'}`}>
-                                        <td className="py-4 px-6 font-black text-gray-900 border-r border-gray-100">
+                                    <tr key={e.id} className={`${e.isManualEntry ? 'bg-purple-50/20' : 'bg-white'} hover:bg-gray-50/50 transition-colors`}>
+                                        <td className="py-5 px-6 font-black text-gray-900 border-r border-gray-100 min-w-[150px]">
                                             <div className="flex items-center gap-2">
-                                                ID: {e.bigo_id}
-                                                {e.isManualEntry && <span className="text-[7px] bg-primary text-white px-1.5 py-0.5 rounded-full uppercase tracking-tighter font-black no-print">M</span>}
+                                                <span className="whitespace-nowrap">ID: {e.bigo_id}</span>
+                                                {e.isManualEntry && <span className="text-[7px] bg-primary text-white px-2 py-0.5 rounded-full uppercase tracking-tighter font-black no-print">M</span>}
                                             </div>
                                         </td>
-                                        <td className="py-4 px-2 text-center border-r border-gray-100">
+                                        <td className="py-5 px-2 text-center border-r border-gray-100 min-w-[80px]">
                                             {user.rol === 'admin' ? (
-                                                <input type="number" className="w-16 bg-gray-50 border border-gray-200 rounded p-1 text-center font-black no-print focus:ring-1 focus:ring-black" defaultValue={e.horas_mes} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'horas_mes', ev.target.value)} />
+                                                <input type="number" className="w-20 bg-gray-100 border-2 border-white rounded-lg p-2 text-center font-black no-print shadow-sm focus:ring-2 focus:ring-black outline-none transition-all" defaultValue={e.horas_mes} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'horas_mes', ev.target.value)} />
                                             ) : null}
                                             <span className={user.rol === 'admin' ? 'hidden print:inline font-black' : 'inline font-black'}>{e.horas_mes || 0}</span>
                                         </td>
-                                        <td className="py-4 px-2 text-center border-r border-gray-100">
+                                        <td className="py-5 px-2 text-center border-r border-gray-100 min-w-[100px]">
                                             {user.rol === 'admin' ? (
-                                                <input type="number" className="w-20 bg-gray-50 border border-gray-200 rounded p-1 text-center font-black no-print focus:ring-1 focus:ring-black" defaultValue={e.semillas_mes} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'semillas_mes', ev.target.value)} />
+                                                <input type="number" className="w-24 bg-gray-100 border-2 border-white rounded-lg p-2 text-center font-black no-print shadow-sm focus:ring-2 focus:ring-black outline-none transition-all" defaultValue={e.semillas_mes} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'semillas_mes', ev.target.value)} />
                                             ) : null}
                                             <span className={user.rol === 'admin' ? 'hidden print:inline font-black' : 'inline font-black'}>{(e.semillas_mes || 0).toLocaleString()}</span>
                                         </td>
-                                        <td className="py-4 px-2 text-center border-r border-gray-100">
+                                        <td className="py-5 px-4 text-center border-r border-gray-100 min-w-[120px]">
                                             {user.rol === 'admin' ? (
-                                                <input type="number" className="w-24 bg-purple-50 border border-purple-100 text-primary rounded p-1 text-center font-black no-print focus:ring-1 focus:ring-primary" defaultValue={e.pago_meta || 0} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'pago_meta', ev.target.value)} />
+                                                <input type="number" className="w-28 bg-gray-100 border-2 border-white text-primary rounded-lg p-2 text-center font-black no-print shadow-sm focus:ring-2 focus:ring-primary outline-none transition-all" defaultValue={e.pago_meta || 0} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'pago_meta', ev.target.value)} />
                                             ) : null}
                                             <span className={user.rol === 'admin' ? 'hidden print:inline font-black' : 'inline font-black text-primary'}>${(e.pago_meta || 0).toFixed(2)}</span>
                                         </td>
-                                        <td className="py-4 px-6 text-right">
+                                        <td className="py-5 px-6 text-right min-w-[120px]">
                                             {user.rol === 'admin' ? (
-                                                <input type="number" className="w-24 bg-purple-50 border border-purple-100 text-primary rounded p-1 text-right font-black no-print focus:ring-1 focus:ring-primary" defaultValue={e.pago_horas || 0} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'pago_horas', ev.target.value)} />
+                                                <input type="number" className="w-28 bg-gray-100 border-2 border-white text-primary rounded-lg p-2 text-right font-black no-print shadow-sm focus:ring-2 focus:ring-primary outline-none transition-all" defaultValue={e.pago_horas || 0} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'pago_horas', ev.target.value)} />
                                             ) : null}
                                             <span className={user.rol === 'admin' ? 'hidden print:inline font-black' : 'inline font-black text-primary'}>${(e.pago_horas || 0).toFixed(2)}</span>
                                         </td>
@@ -434,11 +434,15 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                       </div>
                   </div>
 
+                  {/* SECCIÓN DE TOTALES ACTUALIZADA */}
                   <div className="bg-white rounded-[3rem] p-12 border-[4px] border-black flex flex-col md:flex-row justify-between items-center gap-12 relative overflow-hidden print:p-10 print:rounded-3xl">
                       <div className="space-y-10 w-full md:w-auto relative z-10">
                           <div>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Liquidación Total :</p>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Pago Total :</p>
                             <p className="text-6xl font-black text-black tracking-tighter leading-none">$ {stats.totalPayment.toFixed(2)} <span className="text-2xl">USD</span></p>
+                            {stats.globalAdjustment !== 0 && (
+                                <p className="text-[9px] font-black text-primary uppercase mt-2">* Incluye ajuste manual de {stats.globalAdjustment.toFixed(2)} USD</p>
+                            )}
                           </div>
                           <div className="space-y-4">
                             <div>
@@ -474,10 +478,10 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
           .no-print { display: none !important; }
           body { background: white !important; margin: 0; padding: 0; }
           #invoice-document { border: none !important; border-radius: 0 !important; width: 100% !important; display: block !important; }
-          table { width: 100% !important; border: 1.5px solid black !important; table-layout: fixed !important; }
-          th, td { padding: 12px 6px !important; border: 1px solid #eee !important; font-size: 10px !important; overflow: hidden; text-overflow: ellipsis; }
+          table { width: 100% !important; border: 2px solid black !important; table-layout: fixed !important; }
+          th, td { padding: 14px 10px !important; border: 1.5px solid #eee !important; font-size: 10px !important; }
           thead { background-color: black !important; -webkit-print-color-adjust: exact; }
-          @page { size: A4; margin: 10mm; }
+          @page { size: A4; margin: 5mm; }
         }
         .custom-scrollbar::-webkit-scrollbar { width: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f9fafb; }

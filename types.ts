@@ -21,6 +21,8 @@ export interface InvoiceConfig {
   institucionPago: string;
   // Mapa de disponibilidad: "YYYY-MM_userId": boolean
   publishedInvoices?: Record<string, boolean>;
+  // Mapa de ajustes manuales globales: "YYYY-MM_userId": monto
+  pagoAjustes?: Record<string, number>;
 }
 
 export type EstadoEmisor = 'activo' | 'pausado';
