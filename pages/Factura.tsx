@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Emisor, InvoiceConfig } from '../types';
 import { dataService } from '../services/db';
@@ -471,15 +472,15 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           </div>
                       </div>
                       
-                      {/* ÁREA DE FIRMA ACTUALIZADA */}
+                      {/* ÁREA DE FIRMA ACTUALIZADA (CURSIVA SIN NEGRITAS) */}
                       <div className="text-center md:text-right flex-1 md:max-w-md space-y-6 relative z-10">
                           <div className="pt-8 flex flex-col items-center md:items-end">
                               <div className="mb-2">
-                                  <p className="text-xl font-brand italic font-black text-black border-b-2 border-black/10 px-4">
+                                  <p className="text-3xl font-cursive text-black border-b border-black/10 px-6 py-1">
                                       {invoiceConfig.signatureName || ''}
                                   </p>
                               </div>
-                              <div className="w-56 h-[3px] bg-black mb-2"></div>
+                              <div className="w-56 h-[2px] bg-black mb-2"></div>
                               <p className="text-[10px] font-black text-black uppercase tracking-[0.4em] mb-1">Firma Autorizada</p>
                               <p className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.2em]">{invoiceConfig.agenciaNombre}</p>
                           </div>
