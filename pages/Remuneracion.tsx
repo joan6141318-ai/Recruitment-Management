@@ -1,5 +1,5 @@
 import React from 'react';
-import { Banknote, Clock, Target, Info, Sparkles, Coins } from 'lucide-react';
+import { Clock, Target, Info, Sparkles, Coins, ArrowUpRight } from 'lucide-react';
 
 const Remuneracion: React.FC = () => {
   const paymentData = [
@@ -22,94 +22,102 @@ const Remuneracion: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-8 animate-slide-up max-w-2xl mx-auto">
-      {/* Header Centralizado */}
-      <div className="text-center space-y-2">
-        <h2 className="text-3xl font-black text-gray-900 tracking-tight font-brand">Plan de Pagos</h2>
-        <p className="text-gray-500 text-sm font-medium">Requisitos y escala de beneficios vigentes</p>
+    <div className="space-y-10 animate-slide-up max-w-4xl mx-auto px-4 pb-12">
+      {/* Header Minimalista */}
+      <div className="flex flex-col items-center text-center space-y-3">
+        <div className="bg-primary/10 text-primary px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
+          Estructura de Comisiones 2024
+        </div>
+        <h2 className="text-4xl font-black text-black tracking-tighter font-brand leading-none">
+          TABULADOR MOON
+        </h2>
+        <div className="h-1 w-12 bg-black rounded-full"></div>
       </div>
 
-      {/* Requisitos con el nuevo estilo Estético */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-gray-100 p-5 rounded-[2rem] border-[6px] border-white shadow-xl shadow-gray-200/50 flex items-center gap-4 transition-transform hover:scale-[1.02]">
-          <div className="p-3 bg-white text-primary rounded-2xl shadow-sm">
+      {/* KPI Requirements - Diseño Simétrico */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-white p-6 rounded-[2.5rem] shadow-card flex flex-col items-center text-center space-y-2 border border-gray-100">
+          <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-primary">
             <Clock size={24} strokeWidth={2.5} />
           </div>
-          <div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Diario</p>
-            <p className="text-xl font-black text-gray-900 leading-tight">2 Horas</p>
-          </div>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Compromiso Diario</p>
+          <p className="text-2xl font-black text-black font-brand">2 HORAS</p>
         </div>
-        
-        <div className="bg-gray-100 p-5 rounded-[2rem] border-[6px] border-white shadow-xl shadow-gray-200/50 flex items-center gap-4 transition-transform hover:scale-[1.02]">
-          <div className="p-3 bg-white text-accent rounded-2xl shadow-sm">
+        <div className="bg-white p-6 rounded-[2.5rem] shadow-card flex flex-col items-center text-center space-y-2 border border-gray-100">
+          <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-accent">
             <Target size={24} strokeWidth={2.5} />
           </div>
-          <div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Mensual</p>
-            <p className="text-xl font-black text-gray-900 leading-tight">44 Horas</p>
-          </div>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Meta de Transmisión</p>
+          <p className="text-2xl font-black text-black font-brand">44 HORAS</p>
         </div>
       </div>
 
-      {/* Tabla con Marco Blanco y Fondo Gris */}
-      <div className="bg-gray-100 rounded-[2.5rem] border-[6px] border-white shadow-2xl shadow-gray-300/40 overflow-hidden">
+      {/* Main Table Content - El "Frame" Blanco con Fondo Gris */}
+      <div className="bg-gray-100 rounded-[3rem] border-[8px] border-white shadow-2xl overflow-hidden">
         
-        {/* Cabecera de la Tabla */}
-        <div className="p-8 pb-4 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-                <div className="bg-black p-1.5 rounded-lg text-white">
-                    <Sparkles size={16} />
-                </div>
-                <h3 className="font-black text-gray-900 uppercase tracking-widest text-xs">Escala de Semillas</h3>
+        {/* Subheader Interno */}
+        <div className="p-10 pb-6 flex justify-between items-end">
+            <div className="space-y-1">
+                <h3 className="font-black text-black text-xl font-brand flex items-center gap-2">
+                    <Sparkles size={20} className="text-primary" /> ESCALA DE ÉXITO
+                </h3>
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Relación Semilla vs USD</p>
             </div>
-            <div className="bg-white/80 backdrop-blur px-4 py-1.5 rounded-full border border-gray-200 text-[10px] font-black text-gray-600 uppercase tracking-tighter shadow-sm">
-                Divisa: USD
+            <div className="bg-black text-white px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-tighter shadow-lg">
+                Official Agency Rates
             </div>
         </div>
 
-        <div className="px-4 pb-4">
-          <div className="bg-white rounded-[1.8rem] overflow-hidden shadow-inner border border-gray-50">
-            <table className="w-full text-left border-collapse">
-                <thead>
-                <tr className="bg-gray-50/80">
-                    <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Metas Semillas</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Pago Bruto</th>
-                </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                {paymentData.map((item, index) => (
-                    <tr key={index} className="hover:bg-purple-50/30 transition-colors group">
-                    <td className="px-8 py-5">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-white transition-colors">
-                                <Coins size={14} className="text-gray-400 group-hover:text-primary" />
-                            </div>
-                            <span className="text-sm font-black text-gray-800 tracking-tight">{item.seeds}</span>
-                        </div>
-                    </td>
-                    <td className="px-8 py-5 text-right">
-                        <div className="inline-flex items-center gap-1.5 bg-gray-50 px-4 py-2 rounded-2xl group-hover:bg-black group-hover:text-white transition-all duration-300">
-                            <span className="text-xs font-bold opacity-60">$</span>
-                            <span className="text-sm font-black tracking-tighter">{item.usd}</span>
-                        </div>
-                    </td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
-          </div>
+        {/* Grid Symmetrical List - 2 Columnas para reducir largo */}
+        <div className="px-8 pb-10 grid grid-cols-1 md:grid-cols-2 gap-3">
+          {paymentData.map((item, index) => (
+            <div 
+                key={index} 
+                className="bg-white rounded-[1.5rem] p-5 flex justify-between items-center group hover:bg-black hover:scale-[1.02] transition-all duration-300 border border-gray-200/50 shadow-sm"
+            >
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+                        <Coins size={18} className="text-gray-400 group-hover:text-primary transition-colors" />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest group-hover:text-white/50">Semillas</span>
+                        <span className="text-base font-black text-black font-brand tracking-tight group-hover:text-white">{item.seeds}</span>
+                    </div>
+                </div>
+                
+                <div className="text-right flex flex-col items-end">
+                    <div className="flex items-center gap-1.5 text-primary font-black text-lg group-hover:text-white transition-colors">
+                        <span className="text-sm opacity-50">$</span>
+                        <span className="font-brand leading-none">{item.usd}</span>
+                        <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                    </div>
+                    <span className="text-[8px] font-bold text-gray-300 uppercase group-hover:text-white/30">Pago Bruto</span>
+                </div>
+            </div>
+          ))}
         </div>
-        
-        {/* Nota Informativa */}
-        <div className="p-8 pt-4 bg-gray-100">
-            <div className="bg-white/40 p-5 rounded-2xl border border-white/60 flex items-start gap-3">
-                <Info size={18} className="text-primary mt-0.5 flex-shrink-0" />
-                <p className="text-[11px] leading-relaxed font-bold text-gray-500 uppercase tracking-tight italic">
-                    Nota: Los pagos se procesan únicamente si el emisor cumple el 100% de la meta de horas. Valores sujetos a políticas de la agencia.
-                </p>
+
+        {/* Footer Profesional - Nota Legal */}
+        <div className="bg-white/50 backdrop-blur-sm p-8 border-t border-gray-200">
+            <div className="flex items-start gap-4 max-w-2xl mx-auto">
+                <div className="bg-black text-white p-2 rounded-lg mt-1">
+                    <Info size={14} />
+                </div>
+                <div className="space-y-2">
+                    <p className="text-[11px] font-black text-black uppercase tracking-widest">Protocolo de Validación de Pagos</p>
+                    <p className="text-[10px] leading-relaxed font-medium text-gray-500 uppercase">
+                        El desembolso total está estrictamente vinculado al cumplimiento simultáneo de las <span className="text-black font-bold">44 horas mensuales</span> y el promedio de <span className="text-black font-bold">2 horas diarias</span>. Cualquier incumplimiento en los requisitos de tiempo invalidará la bonificación por semillas, aplicándose únicamente las tasas base de la plataforma si corresponde.
+                    </p>
+                </div>
             </div>
         </div>
+      </div>
+
+      {/* Footer Branding */}
+      <div className="flex justify-center items-center gap-4 opacity-30 grayscale hover:grayscale-0 transition-all pb-8">
+          <div className="h-px w-12 bg-gray-400"></div>
+          <span className="text-[10px] font-black tracking-[0.4em] text-gray-400 uppercase">Agencia Moon International</span>
+          <div className="h-px w-12 bg-gray-400"></div>
       </div>
     </div>
   );
