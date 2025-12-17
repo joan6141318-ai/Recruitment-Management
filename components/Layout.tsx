@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
-import { LogOut, Users, Radio, LayoutDashboard, Menu, X, ChevronRight } from 'lucide-react';
+import { LogOut, Users, Radio, LayoutDashboard, Menu, X, ChevronRight, Banknote } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 interface LayoutProps {
@@ -72,6 +72,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
           <nav className="flex-1 px-4 py-8 space-y-2">
               <NavItem to="/" icon={LayoutDashboard} label="Dashboard" colorClass="text-gray-400" />
               <NavItem to="/emisores" icon={Radio} label="Emisores" colorClass="text-gray-400" />
+              <NavItem to="/remuneracion" icon={Banknote} label="Remuneración" colorClass="text-gray-400" />
               {user.rol === 'admin' && <NavItem to="/reclutadores" icon={Users} label="Equipo Reclutadores" colorClass="text-gray-400" />}
           </nav>
 
@@ -136,7 +137,6 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
       )}
 
       {/* MAIN CONTENT */}
-      {/* Añadido mb-24 en móvil para evitar que la navbar tape contenido */}
       <main className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full mt-[60px] md:mt-0 mb-24 md:mb-0">
         {children}
       </main>
@@ -145,14 +145,17 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-4 z-50 flex justify-between items-center h-[80px] shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
          <BottomNavItem to="/" icon={LayoutDashboard} label="Inicio" />
          <BottomNavItem to="/emisores" icon={Radio} label="Emisores" />
-         {user.rol === 'admin' && <BottomNavItem to="/reclutadores" icon={Users} label="Equipo" />}
-         
-         <button onClick={onLogout} className="flex flex-col items-center justify-center w-full py-1 text-gray-400 group">
-             <div className="p-2 mb-0.5 rounded-xl group-active:bg-gray-100 transition-colors">
-                <LogOut size={20} />
-             </div>
-             <span className="text-[10px] font-bold">Salir</span>
-         </button>
+         <BottomNavItem to="/remuneracion" icon={Banknote} label="Pagos" />
+         {user.rol === 'admin' ? (
+             <BottomNavItem to="/reclutadores" icon={Users} label="Equipo" />
+         ) : (
+             <button onClick={onLogout} className="flex flex-col items-center justify-center w-full py-1 text-gray-400 group">
+                <div className="p-2 mb-0.5 rounded-xl group-active:bg-gray-100 transition-colors">
+                    <LogOut size={20} />
+                </div>
+                <span className="text-[10px] font-bold">Salir</span>
+            </button>
+         )}
       </div>
 
     </div>
