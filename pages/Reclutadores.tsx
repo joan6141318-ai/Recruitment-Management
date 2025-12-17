@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
 import { authService } from '../services/auth';
-import { UserPlus, Mail, X, Power, ShieldCheck, ShieldAlert, Target, Users, Database, ArrowRight, Edit2 } from 'lucide-react';
+import { UserPlus, Mail, X, Power, Target, Database, ArrowRight, Edit2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface ReclutadoresProps {
@@ -15,6 +16,7 @@ interface RecruiterStats extends User {
 
 const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
   const [recruiters, setRecruiters] = useState<RecruiterStats[]>([]);
+  const [allEmisores, setAllEmisores] = useState<Emisor[]>([]);
   
   // Modal de Invitación
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,22 +34,26 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
   const INDIVIDUAL_GOAL = 15;
 
   useEffect(() => {
-    loadData();
-  }, [user]);
+    // Suscripción a Emisores para conteos
+    const unsubscribeEmisores = dataService.subscribeToEmisores({ ...user, rol: 'admin' }, (data) => {
+      setAllEmisores(data);
+    });
 
-  const loadData = async () => {
-    setLoading(true);
-    const usersData = await dataService.getRecruiters();
-    const allEmisores = await dataService.getEmisores({ ...user, rol: 'admin' });
-
-    const statsData = usersData.map(rec => ({
+    // Suscripción a Reclutadores para reflejo inmediato
+    const unsubscribeRecruiters = dataService.subscribeToRecruiters((usersData) => {
+      const statsData = usersData.map(rec => ({
         ...rec,
         emisoresCount: allEmisores.filter(e => e.reclutador_id === rec.id).length
-    }));
+      }));
+      setRecruiters(statsData);
+      setLoading(false);
+    });
 
-    setRecruiters(statsData);
-    setLoading(false);
-  };
+    return () => {
+      unsubscribeEmisores();
+      unsubscribeRecruiters();
+    };
+  }, [user, allEmisores.length]); // Re-renderizar si cambia el número de emisores para actualizar conteos
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +62,6 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
       setIsModalOpen(false); 
       setNewName(''); 
       setNewEmail(''); 
-      loadData();
     } catch (err) { 
         alert('Error al invitar al reclutador. Verifica si el correo ya existe.'); 
     }
@@ -68,7 +73,6 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
       await dataService.updateUserName(editingRecruiter.id, editRecruiterName);
       setIsEditModalOpen(false);
       setEditingRecruiter(null);
-      loadData();
   };
 
   const openEditModal = (rec: User) => {
@@ -79,8 +83,8 @@ const Reclutadores: React.FC<ReclutadoresProps> = ({ user }) => {
 
   const toggleAccess = async (recruiter: User) => {
       if(!confirm(`¿Estás seguro que deseas ${recruiter.activo ? 'REVOCAR' : 'ACTIVAR'} el acceso a ${recruiter.nombre}?`)) return;
+      // El cambio se verá reflejado inmediatamente gracias al onSnapshot
       await dataService.toggleUserAccess(recruiter.id, recruiter.activo);
-      loadData();
   };
 
   const viewDatabase = (recruiterId: string, recruiterName: string) => {

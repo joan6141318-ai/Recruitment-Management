@@ -1,3 +1,4 @@
+
 import { User, Emisor, HistorialHoras, SystemMetadata, InvoiceConfig } from '../types';
 import { db } from './firebase'; 
 import { 
@@ -88,6 +89,32 @@ export const dataService = {
   toggleUserAccess: async (userId: string, currentStatus: boolean): Promise<void> => {
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, { activo: !currentStatus });
+  },
+
+  // Suscripción al perfil de un usuario específico
+  subscribeToUserProfile: (uid: string, callback: (user: User | null) => void): () => void => {
+    const docRef = doc(db, 'users', uid);
+    return onSnapshot(docRef, (snapshot) => {
+      if (snapshot.exists()) {
+        callback({ id: snapshot.id, ...snapshot.data() } as User);
+      } else {
+        callback(null);
+      }
+    });
+  },
+
+  // Suscripción a todos los reclutadores
+  subscribeToRecruiters: (callback: (users: User[]) => void): () => void => {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('rol', '==', 'reclutador'));
+    return onSnapshot(q, (snapshot) => {
+      const users = snapshot.docs.map(docSnap => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+        activo: docSnap.data().activo !== undefined ? docSnap.data().activo : true 
+      } as User));
+      callback(users);
+    });
   },
 
   getRecruiters: async (): Promise<User[]> => {

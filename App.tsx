@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -9,6 +10,7 @@ import Remuneracion from './pages/Remuneracion';
 import Factura from './pages/Factura';
 import { User } from './types';
 import { authService } from './services/auth'; 
+import { dataService } from './services/db';
 import { auth } from './services/firebase';
 import { onAuthStateChanged } from 'firebase/auth'; 
 
@@ -30,22 +32,36 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let unsubscribeProfile: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        try {
-          const profile = await authService.getUserProfile(firebaseUser.uid, firebaseUser.email || '');
-          setUser(profile);
-        } catch (error) {
-          console.error("Error crítico recuperando perfil:", error);
-          setUser(null);
-        }
+        // Suscribirse al documento del usuario en Firestore para cambios en tiempo real (activo/inactivo)
+        unsubscribeProfile = dataService.subscribeToUserProfile(firebaseUser.uid, (profile) => {
+          if (profile) {
+            // Si el administrador lo marca como inactivo, cerrar sesión inmediatamente
+            if (profile.activo === false) {
+              console.warn("Acceso revocado por el administrador.");
+              handleLogout();
+            } else {
+              setUser(profile);
+            }
+          } else {
+            setUser(null);
+          }
+          setLoading(false);
+        });
       } else {
+        if (unsubscribeProfile) unsubscribeProfile();
         setUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeProfile) unsubscribeProfile();
+    };
   }, []);
 
   const handleLoginSuccess = (newUser: User) => {
