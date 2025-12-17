@@ -1,5 +1,6 @@
 import React from 'react';
-import { Banknote, Clock, Target, Info } from 'lucide-react';
+import { Banknote, Target, Info, Sparkles, Timer, ShieldCheck, AlertCircle } from 'lucide-center';
+import { Timer as TimerIcon, Target as TargetIcon, Info as InfoIcon, Sparkles as SparklesIcon, ShieldCheck as ShieldIcon, AlertCircle as AlertIcon } from 'lucide-react';
 
 const Remuneracion: React.FC = () => {
   const paymentData = [
@@ -22,83 +23,104 @@ const Remuneracion: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 space-y-8 animate-slide-up">
-      {/* Encabezado Profesional */}
-      <div className="border-l-4 border-primary pl-4 py-1">
-        <h2 className="text-2xl font-bold text-black tracking-tight font-brand uppercase">Remuneración</h2>
-        <p className="text-gray-500 text-sm font-medium">Escala de pagos por cumplimiento de metas mensuales.</p>
+    <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 animate-slide-up">
+      {/* Encabezado Ejecutivo */}
+      <div className="border-l-4 border-black pl-4 py-1">
+        <h2 className="text-2xl font-black text-black tracking-tight font-brand uppercase">Estructura de Comisiones</h2>
+        <div className="flex items-center gap-2 mt-1">
+            <ShieldIcon size={14} className="text-primary" />
+            <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Exclusivo: Equipo Interno de Reclutadores</p>
+        </div>
       </div>
 
-      {/* Requisitos de Base - Simetría Lado a Lado */}
+      {/* Requisitos de Base - Fondo Gris con Marco Blanco */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white border border-gray-100 p-5 rounded-2xl flex items-center gap-4 shadow-sm">
-          <div className="w-10 h-10 bg-purple-50 text-primary rounded-xl flex items-center justify-center shrink-0">
-            <Clock size={20} />
+        <div className="bg-gray-100 border-[5px] border-white p-5 rounded-[2rem] flex items-center gap-4 shadow-xl shadow-gray-200/40">
+          <div className="w-12 h-12 bg-white text-primary rounded-2xl flex items-center justify-center shrink-0 shadow-sm">
+            <TimerIcon size={22} strokeWidth={2.5} />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Diario</p>
-            <p className="text-lg font-bold text-black">2 Horas</p>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Actividad</p>
+            <p className="text-xl font-black text-black leading-tight">2 Horas</p>
           </div>
         </div>
-        <div className="bg-white border border-gray-100 p-5 rounded-2xl flex items-center gap-4 shadow-sm">
-          <div className="w-10 h-10 bg-orange-50 text-accent rounded-xl flex items-center justify-center shrink-0">
-            <Target size={20} />
+        
+        <div className="bg-gray-100 border-[5px] border-white p-5 rounded-[2rem] flex items-center gap-4 shadow-xl shadow-gray-200/40">
+          <div className="w-12 h-12 bg-white text-accent rounded-2xl flex items-center justify-center shrink-0 shadow-sm">
+            <TargetIcon size={22} strokeWidth={2.5} />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Mensual</p>
-            <p className="text-lg font-bold text-black">44 Horas</p>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Mensual</p>
+            <p className="text-xl font-black text-black leading-tight">44 Horas</p>
           </div>
         </div>
       </div>
 
-      {/* Estructura de la Tabla: Fondo Gris con Marco Blanco */}
-      <div className="bg-gray-100 border-[6px] border-white rounded-[2rem] shadow-xl overflow-hidden">
+      {/* Tabulador Principal */}
+      <div className="bg-gray-100 border-[6px] border-white rounded-[2.5rem] shadow-2xl shadow-gray-300/30 overflow-hidden">
         
-        {/* Título de sección dentro del frame */}
-        <div className="px-8 py-6 flex justify-between items-center border-b border-gray-200/50">
+        <div className="px-8 py-6 flex justify-between items-center border-b border-gray-200/30">
             <div className="flex items-center gap-2">
-                <Banknote size={18} className="text-gray-900" />
-                <span className="text-xs font-bold text-black uppercase tracking-wider">Tabulador de Semillas</span>
+                <div className="bg-black p-1.5 rounded-lg text-white">
+                  <SparklesIcon size={14} />
+                </div>
+                <span className="text-xs font-black text-black uppercase tracking-widest">Escala de Bonos</span>
             </div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase">Moneda: USD</span>
+            <div className="bg-white px-3 py-1 rounded-full text-[10px] font-black text-gray-500 uppercase tracking-tighter border border-gray-100">
+                Divisa: USD
+            </div>
         </div>
 
-        {/* Tabla en Grid de 2 columnas para reducir altura */}
-        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-2">
+        {/* Listado en Cuadrícula Simétrica para ahorrar espacio vertical */}
+        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-2.5">
           {paymentData.map((item, index) => (
             <div 
               key={index} 
-              className="flex justify-between items-center bg-white p-4 rounded-xl border border-gray-200/40 hover:border-primary/30 transition-colors"
+              className="flex justify-between items-center bg-white p-4 rounded-2xl border border-gray-100/50 hover:bg-black group transition-all duration-300 shadow-sm"
             >
               <div className="flex flex-col">
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Meta Semillas</span>
-                <span className="text-sm font-bold text-black font-brand">{item.seeds}</span>
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter group-hover:text-gray-500 transition-colors">Volumen Semillas</span>
+                <span className="text-sm font-black text-black font-brand group-hover:text-white transition-colors">{item.seeds}</span>
               </div>
               <div className="flex flex-col text-right">
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Pago Total</span>
-                <span className="text-sm font-black text-primary">$ {item.usd}</span>
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter group-hover:text-gray-500 transition-colors">Comisión</span>
+                <span className="text-sm font-black text-primary group-hover:text-white transition-colors">$ {item.usd}</span>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Nota Legal Limpia y Profesional */}
-        <div className="bg-white/40 p-8 border-t border-gray-200/50">
-          <div className="flex gap-3 items-start max-w-2xl">
-            <Info size={16} className="text-gray-400 shrink-0 mt-0.5" />
+        {/* Disclaimer Profesional y Notas Clarificadoras */}
+        <div className="bg-white p-8 border-t border-gray-200/40 space-y-4">
+          <div className="flex gap-4 items-start max-w-2xl">
+            <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center shrink-0 mt-0.5 shadow-lg">
+               <InfoIcon size={14} />
+            </div>
             <div className="space-y-1">
-              <p className="text-[11px] font-bold text-black uppercase tracking-wide">Condiciones de Pago</p>
-              <p className="text-[10px] font-medium text-gray-500 leading-relaxed uppercase">
-                Para acceder a la remuneración es obligatorio cumplir con las 44 horas mensuales y las 2 horas diarias de transmisión. El incumplimiento de cualquiera de los dos requisitos anulará el bono de semillas.
+              <p className="text-[11px] font-black text-black uppercase tracking-widest">Cláusulas de Transparencia</p>
+              <p className="text-[10px] font-bold text-gray-500 leading-relaxed uppercase tracking-tight">
+                Este tabulador es <span className="text-black">estrictamente confidencial</span> y de uso exclusivo para el equipo de reclutadores internos de Agencia Moon. Los valores expresados pueden estar sujetos a variaciones según el rendimiento global y políticas vigentes.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-4 items-start max-w-2xl border-t border-gray-50 pt-4">
+            <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center shrink-0 mt-0.5">
+               <AlertIcon size={14} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Independencia de Objetivos</p>
+              <p className="text-[10px] font-medium text-gray-400 leading-relaxed uppercase tracking-tight italic">
+                Este esquema es independiente a la remuneración y objetivos mensuales por ingreso de nuevos emisores. Los requisitos de tiempo (44h/2h) son obligatorios para la activación de cualquier pago de comisión aquí listado.
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Identidad de Marca */}
-      <div className="pt-4 text-center">
-        <p className="text-[9px] font-bold text-gray-300 uppercase tracking-[0.5em]">Agencia Moon International</p>
+      {/* Identidad de Marca Simplificada */}
+      <div className="pt-6 text-center">
+        <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.6em]">Agencia Moon</p>
       </div>
     </div>
   );
