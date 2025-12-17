@@ -38,6 +38,8 @@ export interface Emisor {
   fecha_registro: string;
   es_compartido?: boolean; 
   isManualEntry?: boolean; // Identificador para registros agregados manualmente desde factura
+  pago_meta?: number;      // Monto manual por meta de semillas
+  pago_horas?: number;     // Monto manual por cumplimiento de horas
 }
 
 export interface HistorialHoras {
