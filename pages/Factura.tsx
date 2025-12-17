@@ -397,7 +397,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           </div>
                           <div className="space-y-4">
                             <div>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Vía de Pago :</p>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Transferencia vía canal de pago :</p>
                                 <p className="text-lg font-black text-black uppercase border-b-4 border-black inline-block tracking-widest">{invoiceConfig.institucionPago || "NO DEFINIDA"}</p>
                             </div>
                           </div>
@@ -412,7 +412,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                   </div>
               </div>
 
-              {/* PIE DE PÁGINA */}
+              {/* PIE DE PÁGINA PROFESIONAL */}
               <div className="bg-gray-50 py-12 text-center border-t-2 border-gray-100">
                   <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.4em]">
                     {invoiceConfig.agenciaNombre} — {new Date().getFullYear()}
