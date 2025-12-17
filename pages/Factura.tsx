@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Emisor, InvoiceConfig } from '../types';
 import { dataService } from '../services/db';
-import { Edit3, Save, X, ChevronDown, Eye, EyeOff, AlertCircle, PlusCircle, DollarSign, Settings2, Users, Trash2, FileText, ChevronUp } from 'lucide-react';
+import { Edit3, Save, X, ChevronDown, Eye, EyeOff, AlertCircle, PlusCircle, DollarSign, Settings2, Users, FileText, ChevronUp } from 'lucide-react';
 
 interface FacturaProps {
   user: User;
@@ -85,10 +85,11 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
     return { totalEmisores, totalPayment };
   }, [filteredData, invoiceConfig, invoiceKey]);
 
-  const handleUpdateEmisorDirect = async (id: string, field: string, value: string) => {
-      if (user.rol !== 'admin') return;
-      const numValue = Number(value);
-      await dataService.updateEmisorData(id, { [field]: numValue }, user.id);
+  const handleSaveConfig = async () => {
+      if (invoiceConfig) {
+          await dataService.updateInvoiceConfig(invoiceConfig);
+          setEditMode(false);
+      }
   };
 
   const handleUpdateGlobalAdjustment = (val: string) => {
@@ -103,19 +104,6 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
       const total = parseInt(val);
       const newAjustes = { ...(invoiceConfig.totalEmisoresAjustes || {}), [invoiceKey]: isNaN(total) ? 0 : total };
       setInvoiceConfig({ ...invoiceConfig, totalEmisoresAjustes: newAjustes });
-  };
-
-  const handleSaveConfig = async () => {
-      if (invoiceConfig) {
-          await dataService.updateInvoiceConfig(invoiceConfig);
-          setEditMode(false);
-      }
-  };
-
-  const handleRemoveEmisorDirect = (id: string) => {
-      if (!excludedEmisores.includes(id)) {
-          setExcludedEmisores([...excludedEmisores, id]);
-      }
   };
 
   const handleSaveManualEntry = async () => {
@@ -156,7 +144,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20 animate-slide-up">
       
-      {/* PANEL DE CONTROL ADMINISTRATIVO */}
+      {/* PANEL ADMINISTRATIVO (NO PRINT) */}
       {user.rol === 'admin' && (
           <div className="space-y-4 no-print">
               <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex justify-between items-center">
@@ -165,8 +153,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           <Settings2 size={20} />
                       </div>
                       <div>
-                          <h3 className="font-black text-sm uppercase tracking-tight">Administración de Factura</h3>
-                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ajustes y Visibilidad</p>
+                          <h3 className="font-black text-sm uppercase tracking-tight">Administración</h3>
                       </div>
                   </div>
                   <div className="flex gap-2">
@@ -186,84 +173,60 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-slide-up">
                       <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-4">
                           <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Datos de Agencia</h4>
-                          <input className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none shadow-sm" value={invoiceConfig.agenciaNombre} onChange={e => setInvoiceConfig({...invoiceConfig, agenciaNombre: e.target.value})} />
-                          <textarea className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-medium h-20 outline-none shadow-sm" value={invoiceConfig.agenciaInfo} onChange={e => setInvoiceConfig({...invoiceConfig, agenciaInfo: e.target.value})} />
+                          <input className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none" value={invoiceConfig.agenciaNombre} onChange={e => setInvoiceConfig({...invoiceConfig, agenciaNombre: e.target.value})} />
+                          <textarea className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-medium h-20 outline-none" value={invoiceConfig.agenciaInfo} onChange={e => setInvoiceConfig({...invoiceConfig, agenciaInfo: e.target.value})} />
                       </div>
-
                       <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-4">
-                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Institución de Pago</h4>
-                          <select className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none shadow-sm" value={invoiceConfig.institucionPago} onChange={e => setInvoiceConfig({...invoiceConfig, institucionPago: e.target.value})}>
+                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Pago</h4>
+                          <select className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none" value={invoiceConfig.institucionPago} onChange={e => setInvoiceConfig({...invoiceConfig, institucionPago: e.target.value})}>
                               {instituciones.map(inst => <option key={inst} value={inst}>{inst}</option>)}
                           </select>
+                          <input type="number" step="0.01" className="w-full bg-white p-3 rounded-xl text-xs font-black outline-none" placeholder="Pago Total $" value={invoiceConfig.pagoAjustes?.[invoiceKey] || ''} onChange={(e) => handleUpdateGlobalAdjustment(e.target.value)} />
                       </div>
-
-                      <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-4 md:col-span-2">
-                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                             <DollarSign size={14} /> Ajustes Globales de Monto
-                          </h4>
-                          <div className="grid grid-cols-2 gap-4">
-                            <input type="number" step="0.01" className="bg-white p-4 rounded-xl text-sm font-black outline-none" placeholder="Pago Total $" value={invoiceConfig.pagoAjustes?.[invoiceKey] || ''} onChange={(e) => handleUpdateGlobalAdjustment(e.target.value)} />
-                            <input type="number" className="bg-white p-4 rounded-xl text-sm font-black outline-none" placeholder="Total Emisores" value={invoiceConfig.totalEmisoresAjustes?.[invoiceKey] || ''} onChange={(e) => handleUpdateTotalEmisoresAdjustment(e.target.value)} />
-                          </div>
-                          <button onClick={handleSaveConfig} className="w-full py-4 bg-black text-white rounded-2xl font-black text-sm uppercase shadow-xl">Guardar Cambios</button>
-                      </div>
+                      <button onClick={handleSaveConfig} className="md:col-span-2 py-4 bg-black text-white rounded-2xl font-black text-xs uppercase shadow-xl">Aplicar Ajustes</button>
                   </div>
               )}
           </div>
       )}
 
-      {/* FILTROS DE CONSULTA */}
+      {/* FILTROS (NO PRINT) */}
       <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4 no-print">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                  <label className="text-[10px] font-black text-primary uppercase ml-1 tracking-widest">Mes Facturado:</label>
-                  <input type="month" className="w-full bg-gray-50 border-none p-4 rounded-2xl text-sm font-black outline-none shadow-sm" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
-              </div>
+              <input type="month" className="w-full bg-gray-50 border-none p-4 rounded-2xl text-sm font-black outline-none shadow-sm" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
               {user.rol === 'admin' && (
-                  <div className="space-y-1">
-                      <label className="text-[10px] font-black text-primary uppercase ml-1 tracking-widest">Reclutador:</label>
-                      <select className="w-full bg-gray-50 border-none p-4 rounded-2xl text-sm font-black outline-none shadow-sm" value={targetRecruiterId} onChange={(e) => setTargetRecruiterId(e.target.value)}>
-                        {reclutadores.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-                      </select>
-                  </div>
+                  <select className="w-full bg-gray-50 border-none p-4 rounded-2xl text-sm font-black outline-none shadow-sm" value={targetRecruiterId} onChange={(e) => setTargetRecruiterId(e.target.value)}>
+                    {reclutadores.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                  </select>
               )}
           </div>
       </div>
 
-      {/* RENDERIZADO DE FACTURA */}
       {!isAvailableForView ? (
           <div className="bg-white rounded-[2.5rem] p-20 text-center border-2 border-dashed border-gray-200 shadow-sm animate-pop-in">
               <AlertCircle className="text-accent mx-auto mb-6" size={48} />
-              <h3 className="text-xl font-black text-black uppercase tracking-tight mb-2">Consulta No Disponible</h3>
-              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-relaxed max-w-sm mx-auto">
+              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest max-w-sm mx-auto">
                   Lo sentimos tu consulta no está dentro de el período de pago
               </p>
           </div>
       ) : (
-          <div id="invoice-sheet" className="bg-white shadow-2xl overflow-hidden font-sans border border-gray-50">
+          <div id="invoice-sheet" className="bg-white shadow-2xl overflow-hidden font-sans border border-gray-100">
               
-              {/* ENCABEZADO FORMAL JERARQUIZADO */}
-              <header className="bg-white border-b-8 border-black p-10 flex flex-col md:flex-row justify-between items-center gap-6">
+              {/* ENCABEZADO MINIMALISTA PROFESIONAL */}
+              <header className="bg-white p-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                   <div className="flex items-center gap-6">
-                      <div className="bg-black p-4 rounded-3xl shadow-xl flex items-center justify-center shrink-0">
-                        <img src="/icon.svg" className="w-14 h-14 object-contain grayscale brightness-200" alt="Moon" />
+                      <div className="bg-black p-3.5 rounded-2xl shadow-lg flex items-center justify-center shrink-0">
+                        <img src="/icon.svg" className="w-12 h-12 object-contain grayscale brightness-200" alt="Moon" />
                       </div>
                       <div className="space-y-1">
-                          <h1 className="text-4xl font-black tracking-tight uppercase leading-none font-brand text-black" style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900 }}>{invoiceConfig.agenciaNombre}</h1>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em] leading-tight max-w-sm">{invoiceConfig.agenciaInfo}</p>
+                          <h1 className="text-2xl font-black tracking-tight uppercase leading-none font-brand text-black" style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900 }}>{invoiceConfig.agenciaNombre}</h1>
+                          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em] leading-tight max-w-xs">{invoiceConfig.agenciaInfo}</p>
                       </div>
                   </div>
                   
-                  <div className="flex flex-col items-center md:items-end">
-                      <div className="bg-black text-white px-8 py-3 rounded-2xl shadow-lg border-b-4 border-primary">
-                          <div className="flex flex-col items-center md:items-end">
-                              <p className="text-[8px] font-black text-gray-500 uppercase mb-0.5 tracking-widest leading-none">Folio Liquidación</p>
-                              <p className="text-xl font-black tracking-[0.2em] font-brand leading-none">MOON-{selectedMonth.replace('-','')}</p>
-                          </div>
-                      </div>
-                      <div className="mt-3 flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
-                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Documento Certificado</span>
+                  <div className="flex flex-col items-start md:items-end">
+                      <div className="bg-gray-50 px-6 py-3 rounded-2xl border border-gray-100 flex flex-col items-start md:items-end">
+                          <p className="text-[8px] font-black text-gray-400 uppercase mb-0.5 tracking-widest">Folio Liquidación</p>
+                          <p className="text-lg font-black tracking-[0.1em] font-brand text-black">MOON-{selectedMonth.replace('-','')}</p>
                       </div>
                   </div>
               </header>
@@ -271,79 +234,69 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
               <main className="p-10 space-y-12">
                   
                   {/* METADATOS */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10 border-b border-gray-100 pb-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10 border-b border-gray-50 pb-10">
                       <div className="space-y-6">
                           <div>
                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Reclutador Beneficiario :</p>
                               <p className="text-3xl font-black text-black uppercase tracking-tighter border-l-8 border-black pl-5 leading-none">{selectedRecruiter?.nombre || '...'}</p>
                           </div>
-                          <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100 inline-flex">
-                              <Users size={18} className="text-black" />
-                              <div className="pr-4">
-                                  <p className="text-[9px] font-black text-gray-400 uppercase leading-none mb-1">Emisores en Periodo :</p>
-                                  <p className="text-base font-black text-black leading-none">{stats.totalEmisores} Personas</p>
-                              </div>
-                          </div>
                       </div>
-                      <div className="flex flex-col items-center md:items-end text-center md:text-right space-y-8">
-                          <div>
+                      <div className="flex flex-col items-start md:items-end space-y-4">
+                          <div className="text-left md:text-right">
                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Periodo Correspondiente :</p>
-                              <p className="text-xl font-black text-black uppercase tracking-[0.2em] bg-gray-100 px-6 py-1.5 rounded-full inline-block">{selectedMonth}</p>
+                              <p className="text-lg font-black text-black uppercase tracking-[0.15em]">{selectedMonth}</p>
                           </div>
-                          <div>
+                          <div className="text-left md:text-right">
                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Fecha de Emisión :</p>
                               <p className="text-sm font-bold text-gray-500 uppercase">{new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                           </div>
                       </div>
                   </div>
 
-                  {/* TABLA DE RELACIÓN DETALLADA (TARJETA GRIS COLAPSABLE) */}
-                  <div className="bg-gray-100 border-[8px] border-white rounded-[2.5rem] shadow-xl overflow-hidden transition-all">
+                  {/* TABLA DE RELACIÓN DETALLADA (TARJETA GRIS) */}
+                  <div className="bg-gray-100 border-[6px] border-white rounded-[2.5rem] shadow-lg overflow-hidden">
                       <div 
-                          className="px-8 py-6 flex justify-between items-center cursor-pointer hover:bg-gray-200/50 transition-colors"
+                          className="px-8 py-5 flex justify-between items-center cursor-pointer hover:bg-gray-200/50 transition-colors"
                           onClick={() => setShowTableDetails(!showTableDetails)}
                       >
                           <div className="flex items-center gap-4">
-                              <div className="bg-black text-white p-2 rounded-xl">
-                                  <FileText size={18} />
+                              <div className="bg-black text-white p-1.5 rounded-lg">
+                                  <FileText size={16} />
                               </div>
-                              <div>
-                                  <h3 className="text-xs font-black text-black uppercase tracking-[0.3em]">Relación Detallada</h3>
-                                  <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Productividad del Periodo</p>
-                              </div>
+                              <h3 className="text-xs font-black text-black uppercase tracking-[0.2em]">Relación Detallada</h3>
                           </div>
                           <div className="flex items-center gap-3">
-                              <span className="text-[10px] font-black text-primary uppercase bg-white px-4 py-1.5 rounded-full border border-gray-100 shadow-sm transition-all hover:scale-105 active:scale-95">
-                                {showTableDetails ? 'Ocultar Detalles' : 'Ver Detalle'}
+                              <span className="text-[9px] font-black text-primary uppercase bg-white px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">
+                                {showTableDetails ? 'Ocultar' : 'Ver Detalle'}
                               </span>
-                              {showTableDetails ? <ChevronUp size={20} className="text-black" /> : <ChevronDown size={20} className="text-black" />}
+                              {showTableDetails ? <ChevronUp size={16} className="text-black" /> : <ChevronDown size={16} className="text-black" />}
                           </div>
                       </div>
                       
                       {showTableDetails && (
                           <div className="p-4 animate-slide-up">
-                              <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-inner">
+                              <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-inner">
                                   <table className="w-full text-left text-[11px] border-collapse">
                                       <thead className="bg-black text-white font-black uppercase tracking-widest">
                                           <tr>
-                                              <th className="py-5 px-6 border-r border-white/10">Bigo ID</th>
-                                              <th className="py-5 px-4 text-center border-r border-white/10">Horas</th>
-                                              <th className="py-5 px-4 text-center border-r border-white/10">Semillas</th>
-                                              <th className="py-5 px-6 text-right">Bonificación USD</th>
+                                              <th className="py-4 px-6">Bigo ID</th>
+                                              <th className="py-4 px-4 text-center">Horas</th>
+                                              <th className="py-4 px-4 text-center">Semillas</th>
+                                              <th className="py-4 px-6 text-right">Bono USD</th>
                                           </tr>
                                       </thead>
-                                      <tbody className="divide-y divide-gray-100">
+                                      <tbody className="divide-y divide-gray-50">
                                           {filteredData.length > 0 ? filteredData.map(e => (
-                                            <tr key={e.id} className="hover:bg-gray-50 transition-colors">
-                                                <td className="py-5 px-6 font-black text-gray-900 border-r border-gray-100 uppercase tracking-tight">ID: {e.bigo_id}</td>
-                                                <td className="py-5 px-4 text-center border-r border-gray-100 font-bold">{e.horas_mes || 0}H</td>
-                                                <td className="py-5 px-4 text-center border-r border-gray-100 font-bold">{(e.semillas_mes || 0).toLocaleString()}</td>
-                                                <td className="py-5 px-6 text-right font-black text-black">
+                                            <tr key={e.id}>
+                                                <td className="py-4 px-6 font-black text-gray-900 uppercase">ID: {e.bigo_id}</td>
+                                                <td className="py-4 px-4 text-center font-bold">{e.horas_mes || 0}H</td>
+                                                <td className="py-4 px-4 text-center font-bold">{(e.semillas_mes || 0).toLocaleString()}</td>
+                                                <td className="py-4 px-6 text-right font-black text-black">
                                                     ${((e.pago_meta || 0) + (e.pago_horas || 0)).toFixed(2)}
                                                 </td>
                                             </tr>
                                           )) : (
-                                              <tr><td colSpan={4} className="py-16 text-center text-gray-300 font-black uppercase tracking-widest">Sin registros detallados en este periodo.</td></tr>
+                                              <tr><td colSpan={4} className="py-12 text-center text-gray-300 font-black uppercase tracking-widest">Sin registros</td></tr>
                                           )}
                                       </tbody>
                                   </table>
@@ -353,42 +306,34 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                   </div>
 
                   {/* TARJETA DE PAGO FINAL (ESTILO GRIS CON BORDE BLANCO) */}
-                  <div className="bg-gray-100 border-[8px] border-white rounded-[3rem] p-12 shadow-2xl flex flex-col items-center text-center gap-10 relative overflow-hidden">
-                      <div className="space-y-8 max-w-2xl relative z-10 w-full">
-                          <div className="space-y-2">
-                            <p className="text-[11px] font-black text-black uppercase tracking-[0.3em] mb-4 border-b border-gray-200 pb-2">Recibí la cantidad de :</p>
-                            <div className="flex items-center justify-center gap-3 whitespace-nowrap overflow-hidden">
-                                <span className="text-7xl font-black text-black tracking-tighter leading-none font-brand">$ {stats.totalPayment.toFixed(2)}</span>
-                                <span className="text-3xl font-black text-primary tracking-widest self-end pb-1">USD</span>
+                  <div className="bg-gray-100 border-[8px] border-white rounded-[3rem] p-10 shadow-xl flex flex-col items-center text-center gap-8 relative overflow-hidden">
+                      <div className="space-y-6 w-full max-w-xl">
+                          <div className="space-y-1">
+                            <p className="text-[11px] font-black text-black uppercase tracking-[0.2em] mb-4">Recibí la cantidad de :</p>
+                            <div className="flex items-center justify-center gap-3">
+                                <span className="text-6xl font-black text-black tracking-tighter leading-none font-brand">$ {stats.totalPayment.toFixed(2)}</span>
+                                <span className="text-2xl font-black text-primary tracking-widest">USD</span>
                             </div>
                             <div className="pt-6 space-y-2">
-                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
                                     Correspondiente a liquidación del periodo <span className="text-black font-black">{selectedMonth}</span>
                                 </p>
-                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
                                     Por prestación de mis servicios como reclutador de agencia moon
                                 </p>
                             </div>
                           </div>
                           
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-full pt-10 border-t border-gray-200">
-                              <div className="text-center md:text-left">
-                                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-1">Transferencia vía canal de pago :</p>
-                                  <p className="text-xl font-black text-black uppercase tracking-widest border-b-4 border-black inline-block leading-none pb-1">{invoiceConfig.institucionPago || "PENDIENTE"}</p>
-                              </div>
-                              <div className="text-center md:text-right flex flex-col items-center md:items-end">
-                                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-1">Estatus del Periodo</p>
-                                  <div className="bg-white px-5 py-2 rounded-xl shadow-sm border border-gray-100">
-                                      <p className="text-base font-black text-green-600 uppercase tracking-widest leading-none">LIQUIDADO</p>
-                                  </div>
-                              </div>
+                          <div className="pt-8 border-t border-gray-200/50 flex flex-col items-center">
+                              <p className="text-[8px] font-black text-gray-400 uppercase tracking-[0.3em] mb-1">Transferencia vía canal de pago :</p>
+                              <p className="text-lg font-black text-black uppercase tracking-widest">{invoiceConfig.institucionPago || "PENDIENTE"}</p>
                           </div>
                       </div>
                   </div>
               </main>
 
-              <footer className="py-12 text-center bg-white border-t border-gray-50">
-                  <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.6em]">
+              <footer className="py-10 text-center bg-white border-t border-gray-50">
+                  <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.6em]">
                     {invoiceConfig.agenciaNombre} — DOCUMENTO PRIVADO E INDEPENDIENTE
                   </p>
               </footer>
@@ -401,7 +346,6 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
           body { background: white !important; margin: 0 !important; }
           #invoice-sheet { border: none !important; box-shadow: none !important; width: 100% !important; display: block !important; }
           .bg-gray-100 { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; }
-          .bg-black { background-color: #000 !important; -webkit-print-color-adjust: exact; }
           .border-white { border-color: #fff !important; }
           .font-brand { font-family: 'Outfit', sans-serif !important; }
           @page { size: A4 portrait; margin: 0; }
