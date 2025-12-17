@@ -61,6 +61,15 @@ export const dataService = {
     }
   },
 
+  subscribeToInvoiceConfig: (callback: (config: InvoiceConfig) => void): () => void => {
+    const docRef = doc(db, 'system', 'invoice_config');
+    return onSnapshot(docRef, (snapshot) => {
+      if (snapshot.exists()) {
+        callback(snapshot.data() as InvoiceConfig);
+      }
+    });
+  },
+
   updateInvoiceConfig: async (config: InvoiceConfig): Promise<void> => {
     const docRef = doc(db, 'system', 'invoice_config');
     await setDoc(docRef, config);

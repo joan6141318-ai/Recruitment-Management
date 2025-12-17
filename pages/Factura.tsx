@@ -18,7 +18,6 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
   const [invoiceConfig, setInvoiceConfig] = useState<InvoiceConfig | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [excludedEmisores, setExcludedEmisores] = useState<string[]>([]);
-  const [idFilter, setIdFilter] = useState('');
 
   // Estados para Registro Manual
   const [manualId, setManualId] = useState('');
@@ -31,10 +30,12 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
   const instituciones = ["Paypal", "Payonner", "Western union", "Zelle", "Mercado pago", "Remitly", "Otros"];
 
   useEffect(() => {
-    const loadInitialData = async () => {
-        const config = await dataService.getInvoiceConfig();
+    // Suscripción a la configuración de factura (para ver cambios de visibilidad en tiempo real)
+    const unsubscribeConfig = dataService.subscribeToInvoiceConfig((config) => {
         setInvoiceConfig(config);
+    });
 
+    const loadInitialData = async () => {
         if (user.rol === 'admin') {
             const data = await dataService.getRecruiters();
             setReclutadores(data);
@@ -45,11 +46,15 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
     };
     loadInitialData();
 
-    const unsubscribe = dataService.subscribeToEmisores(user, (data) => {
+    const unsubscribeEmisores = dataService.subscribeToEmisores(user, (data) => {
       setEmisores(data);
       setLoading(false);
     });
-    return () => unsubscribe();
+
+    return () => {
+        unsubscribeConfig();
+        unsubscribeEmisores();
+    };
   }, [user]);
 
   const selectedRecruiter = useMemo(() => {
@@ -59,8 +64,10 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
 
   const invoiceKey = useMemo(() => `${selectedMonth}_${targetRecruiterId}`, [selectedMonth, targetRecruiterId]);
   
+  // Lógica de visibilidad
   const isAvailableForDownload = useMemo(() => {
       if (user.rol === 'admin') return true;
+      // Para el reclutador, depende de si el admin activó la visibilidad para su ID y ese mes
       return invoiceConfig?.publishedInvoices?.[invoiceKey] || false;
   }, [invoiceConfig, invoiceKey, user.rol]);
 
@@ -75,10 +82,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
   const stats = useMemo(() => {
     if (!invoiceConfig) return { totalEmisores: 0, totalPayment: 0 };
     
-    // Pago Total estricto desde ajuste de admin
     const totalPayment = Number(invoiceConfig.pagoAjustes?.[invoiceKey]) || 0;
-    
-    // Total de emisores: Priorizar ajuste manual del admin si existe
     const manualTotal = invoiceConfig.totalEmisoresAjustes?.[invoiceKey];
     const totalEmisores = manualTotal !== undefined ? manualTotal : filteredData.length;
     
@@ -181,8 +185,11 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                       </div>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={toggleInvoicePublication} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 border ${invoiceConfig?.publishedInvoices?.[invoiceKey] ? 'bg-green-50 border-green-200 text-green-600 shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
-                        {invoiceConfig?.publishedInvoices?.[invoiceKey] ? <><Eye size={14} /> Visible</> : <><EyeOff size={14} /> Privada</>}
+                    <button 
+                        onClick={toggleInvoicePublication} 
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 border shadow-sm ${invoiceConfig?.publishedInvoices?.[invoiceKey] ? 'bg-purple-600 border-purple-500 text-white' : 'bg-gray-100 border-gray-200 text-gray-500'}`}
+                    >
+                        {invoiceConfig?.publishedInvoices?.[invoiceKey] ? <><Eye size={14} /> Visible para Reclutador</> : <><EyeOff size={14} /> Privada (Oculta)</>}
                     </button>
                     <button onClick={() => setEditMode(!editMode)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-colors flex items-center gap-2 ${editMode ? 'bg-orange-50 text-accent' : 'bg-gray-100 text-gray-600'}`}>
                         {editMode ? <><X size={14} /> Cerrar</> : <><Edit3 size={14} /> Editar</>}
@@ -332,7 +339,9 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                 <AlertCircle className="text-accent" size={32} />
               </div>
               <h3 className="text-xl font-black text-black uppercase tracking-tight mb-2">Acceso No Autorizado</h3>
-              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-relaxed">la información no está habilitada para este periodo</p>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
+                  la información de este periodo se encuentra en revisión por administración
+              </p>
           </div>
       ) : (
           <div id="invoice-document" className="bg-white border border-gray-100 shadow-2xl overflow-hidden print:shadow-none print:border-none print:m-0 font-sans">
@@ -449,7 +458,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                       </div>
                   </div>
 
-                  {/* FICHA INFORMATIVA ACTUALIZADA */}
+                  {/* FICHA INFORMATIVA DE RECIBO */}
                   <div className="bg-white rounded-[3rem] p-12 border-[4px] border-black flex flex-col md:flex-row justify-between items-center gap-12 relative overflow-hidden print:p-10 print:rounded-3xl">
                       <div className="space-y-10 w-full md:w-auto relative z-10">
                           <div className="space-y-2">
@@ -472,11 +481,11 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           </div>
                       </div>
                       
-                      {/* ÁREA DE FIRMA ACTUALIZADA (CURSIVA SIN NEGRITAS) */}
+                      {/* ÁREA DE FIRMA (CURSIVA PROFESIONAL) */}
                       <div className="text-center md:text-right flex-1 md:max-w-md space-y-6 relative z-10">
                           <div className="pt-8 flex flex-col items-center md:items-end">
                               <div className="mb-2">
-                                  <p className="text-3xl font-cursive text-black border-b border-black/10 px-6 py-1">
+                                  <p className="text-4xl font-cursive font-normal text-black border-b border-black/5 px-8 py-2">
                                       {invoiceConfig.signatureName || ''}
                                   </p>
                               </div>
