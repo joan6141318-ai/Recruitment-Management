@@ -23,10 +23,10 @@
     <link rel="apple-touch-icon" href="icon.svg">
     <link rel="manifest" href="manifest.json" />
     
-    <!-- FONTS: Inter (UI), Outfit (Marca) y Dancing Script (Firma) -->
+    <!-- FONTS: Inter (UI), Outfit (Marca), Great Vibes (Firma Real) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Great+Vibes&display=swap" rel="stylesheet">
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -43,8 +43,8 @@
             },
             fontFamily: {
               sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-              brand: ['Outfit', 'Inter', 'sans-serif'], // Tipografía para Marca/Títulos
-              cursive: ['Dancing Script', 'cursive'], // Tipografía para Firmas
+              brand: ['Outfit', 'Inter', 'sans-serif'], 
+              signature: ['Great Vibes', 'cursive'], 
             },
             boxShadow: {
               'card': '0 0 0 1px rgba(0,0,0,0.03), 0 4px 20px -2px rgba(0,0,0,0.05)',
@@ -73,7 +73,6 @@
       body {
         -webkit-tap-highlight-color: transparent;
         background-color: #F8FAFC;
-        /* Inter por defecto para legibilidad */
         font-family: 'Inter', sans-serif; 
       }
     </style>

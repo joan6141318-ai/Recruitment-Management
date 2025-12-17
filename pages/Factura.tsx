@@ -481,11 +481,11 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           </div>
                       </div>
                       
-                      {/* ÁREA DE FIRMA (CURSIVA PROFESIONAL) */}
+                      {/* ÁREA DE FIRMA (CURSIVA REAL ESTILO FIRMA) */}
                       <div className="text-center md:text-right flex-1 md:max-w-md space-y-6 relative z-10">
                           <div className="pt-8 flex flex-col items-center md:items-end">
                               <div className="mb-2">
-                                  <p className="text-4xl font-cursive font-normal text-black border-b border-black/5 px-8 py-2">
+                                  <p className="text-5xl font-signature font-normal text-black border-b border-black/5 px-8 py-2 lowercase first-letter:uppercase">
                                       {invoiceConfig.signatureName || ''}
                                   </p>
                               </div>
