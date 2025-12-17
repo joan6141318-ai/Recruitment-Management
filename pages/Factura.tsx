@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Emisor, InvoiceConfig } from '../types';
 import { dataService } from '../services/db';
-import { Download, Edit3, Save, X, Search, ChevronDown, CheckSquare, Square, Eye, EyeOff, AlertCircle, PlusCircle, DollarSign, Settings2, Users, Trash2, PenTool } from 'lucide-react';
+import { Download, Edit3, Save, X, ChevronDown, Eye, EyeOff, AlertCircle, PlusCircle, DollarSign, Settings2, Users, Trash2, PenTool } from 'lucide-react';
 
 interface FacturaProps {
   user: User;
@@ -157,10 +157,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
 
   const handlePrint = () => { 
     if (!isAvailableForDownload) return;
-    const originalTitle = document.title;
-    document.title = `Factura_${selectedMonth}_${selectedRecruiter?.nombre.replace(/\s+/g, '_')}`;
     window.print(); 
-    setTimeout(() => { document.title = originalTitle; }, 100);
   };
 
   if (loading || !invoiceConfig) return <div className="p-10 text-center text-gray-400 font-brand uppercase tracking-widest text-xs font-black">Sincronizando factura...</div>;
@@ -168,9 +165,9 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20 animate-slide-up">
       
-      {/* SECCIÓN DE EDICIÓN EXCLUSIVA PARA ADMINISTRADOR */}
+      {/* SECCIÓN ADMINISTRATIVA (NO IMPRIMIBLE) */}
       {user.rol === 'admin' && (
-          <div className="space-y-4 no-print">
+          <div className="space-y-4 print:hidden">
               <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex justify-between items-center">
                   <div className="flex items-center gap-3">
                       <div className="bg-black p-2 rounded-xl text-white shadow-lg">
@@ -265,37 +262,6 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           </div>
                       </div>
 
-                      <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-5 md:col-span-2">
-                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                             <PlusCircle size={14} /> Agregar Registro Manual Informativo
-                          </h4>
-                          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
-                              <div className="space-y-1">
-                                  <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Bigo ID:</label>
-                                  <input className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none focus:ring-2 focus:ring-primary shadow-sm" value={manualId} placeholder="ID..." onChange={e => setManualId(e.target.value)} />
-                              </div>
-                              <div className="space-y-1">
-                                  <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Horas:</label>
-                                  <input type="number" className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none focus:ring-2 focus:ring-primary shadow-sm" value={manualHours} placeholder="0" onChange={e => setManualHours(e.target.value)} />
-                              </div>
-                              <div className="space-y-1">
-                                  <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Semillas:</label>
-                                  <input type="number" className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none focus:ring-2 focus:ring-primary shadow-sm" value={manualSeeds} placeholder="0" onChange={e => setManualSeeds(e.target.value)} />
-                              </div>
-                              <div className="space-y-1">
-                                  <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Bono Meta ($):</label>
-                                  <input type="number" className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black text-primary outline-none focus:ring-2 focus:ring-primary shadow-sm" value={manualPagoMeta} placeholder="0.00" onChange={e => setManualPagoMeta(e.target.value)} />
-                              </div>
-                              <div className="space-y-1">
-                                  <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Bono Horas ($):</label>
-                                  <input type="number" className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black text-primary outline-none focus:ring-2 focus:ring-primary shadow-sm" value={manualPagoHoras} placeholder="0.00" onChange={e => setManualPagoHoras(e.target.value)} />
-                              </div>
-                          </div>
-                          <button onClick={handleSaveManualEntry} disabled={!manualId || isSavingManual} className="w-full bg-primary text-white py-4 rounded-2xl font-black text-xs uppercase shadow-lg shadow-purple-100 hover:bg-purple-700 disabled:bg-gray-200 transition-all flex items-center justify-center gap-2">
-                              {isSavingManual ? 'Guardando...' : <><Save size={16} /> Guardar Registro</>}
-                          </button>
-                      </div>
-
                       <button onClick={handleSaveConfig} className="md:col-span-2 py-4 bg-black text-white rounded-2xl font-black text-sm shadow-xl flex items-center justify-center gap-2 hover:bg-gray-900 transition-all">
                           <Save size={18} /> Aplicar Cambios Finales
                       </button>
@@ -304,8 +270,8 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
           </div>
       )}
 
-      {/* FILTROS DE PERIODO */}
-      <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4 no-print">
+      {/* FILTROS DE PERIODO (NO IMPRIMIBLE) */}
+      <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4 print:hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                   <label className="text-[10px] font-black text-primary uppercase ml-1 tracking-widest">Mes de Facturación:</label>
@@ -322,13 +288,13 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
           </div>
           {isAvailableForDownload && (
             <button onClick={handlePrint} className="w-full bg-black text-white px-6 py-4 rounded-2xl flex items-center justify-center gap-2 font-black text-sm shadow-xl transition-colors">
-                <Download size={18} /> Exportar Documento PDF
+                <Download size={18} /> Descargar Liquidación PDF
             </button>
           )}
       </div>
 
       {!isAvailableForDownload ? (
-          <div className="bg-white rounded-[2.5rem] p-24 text-center border-2 border-dashed border-gray-200 shadow-sm animate-pop-in">
+          <div className="bg-white rounded-[2.5rem] p-24 text-center border-2 border-dashed border-gray-200 shadow-sm animate-pop-in print:hidden">
               <div className="bg-orange-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-8">
                 <AlertCircle className="text-accent" size={40} />
               </div>
@@ -338,44 +304,44 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
               </p>
           </div>
       ) : (
-          <div id="invoice-document" className="bg-white border border-gray-100 shadow-2xl overflow-hidden print:shadow-none print:border-none print:m-0 font-sans print:rounded-none">
+          <div id="invoice-document" className="invoice-container bg-white border border-gray-100 shadow-2xl overflow-visible font-sans">
               
               {/* CABECERA FORMAL */}
-              <div className="bg-black text-white p-12 print:p-8 flex justify-between items-start print:bg-black print:text-white" style={{WebkitPrintColorAdjust: 'exact'}}>
+              <div className="bg-black text-white p-12 flex justify-between items-start header-print">
                   <div className="space-y-6">
-                      <h1 className="text-4xl font-black tracking-tighter uppercase leading-none font-brand border-b-4 border-white pb-2 inline-block print:text-4xl print:text-white">{invoiceConfig.agenciaNombre}</h1>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] leading-relaxed max-w-sm print:text-[10px] print:text-gray-300">{invoiceConfig.agenciaInfo}</p>
+                      <h1 className="text-4xl font-black tracking-tighter uppercase leading-none font-brand border-b-4 border-white pb-2 inline-block">{invoiceConfig.agenciaNombre}</h1>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] leading-relaxed max-w-sm">{invoiceConfig.agenciaInfo}</p>
                   </div>
                   <div className="text-right flex flex-col items-end">
                       <img src="/icon.svg" className="w-16 h-16 mb-4 grayscale brightness-200" alt="Moon" />
-                      <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/10 print:border-gray-500">
-                          <p className="text-[9px] font-black text-gray-500 uppercase mb-0.5 tracking-widest print:text-gray-400">Folio de Liquidación</p>
-                          <p className="text-sm font-black tracking-[0.2em] print:text-white">#MOON-{selectedMonth.replace('-','')}</p>
+                      <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/10">
+                          <p className="text-[9px] font-black text-gray-500 uppercase mb-0.5 tracking-widest">Folio de Liquidación</p>
+                          <p className="text-sm font-black tracking-[0.2em]">#MOON-{selectedMonth.replace('-','')}</p>
                       </div>
                   </div>
               </div>
 
-              <div className="p-12 print:p-8 space-y-12 bg-white print:space-y-8">
+              <div className="p-12 space-y-12 bg-white main-content-print">
                   
                   {/* INFORMACIÓN DE LA FACTURA */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12 border-b-2 border-gray-100 pb-12 print:gap-4 print:pb-6 print:grid-cols-2">
-                      <div className="space-y-8 print:space-y-4">
+                  <div className="grid grid-cols-2 gap-12 border-b-2 border-gray-100 pb-12">
+                      <div className="space-y-8">
                           <div>
                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Reclutador Beneficiario :</p>
-                              <p className="text-2xl font-black text-gray-900 border-l-8 border-black pl-4 uppercase tracking-tighter print:text-xl">{selectedRecruiter?.nombre || '...'}</p>
+                              <p className="text-2xl font-black text-gray-900 border-l-8 border-black pl-4 uppercase tracking-tighter">{selectedRecruiter?.nombre || '...'}</p>
                           </div>
                           <div>
                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Total de Emisores Ingresados :</p>
                               <div className="flex items-center gap-3">
                                   <Users size={16} className="text-black" />
-                                  <p className="text-lg font-black text-black print:text-base">{stats.totalEmisores} Personas</p>
+                                  <p className="text-lg font-black text-black">{stats.totalEmisores} Personas</p>
                               </div>
                           </div>
                       </div>
-                      <div className="space-y-8 flex flex-col items-end text-right print:space-y-4">
+                      <div className="space-y-8 flex flex-col items-end text-right">
                           <div>
                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Periodo Correspondiente :</p>
-                              <p className="text-lg font-black text-black uppercase tracking-widest print:text-base">{selectedMonth}</p>
+                              <p className="text-lg font-black text-black uppercase tracking-widest">{selectedMonth}</p>
                           </div>
                           <div>
                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Fecha de Emisión :</p>
@@ -384,64 +350,44 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                       </div>
                   </div>
 
-                  {/* TABLA RELACIÓN DETALLADA */}
-                  <div className="space-y-6 print:space-y-4">
-                      <h3 className="text-[11px] font-black text-black uppercase tracking-[0.3em] flex items-center gap-4 print:text-[10px]">
-                        <span className="w-16 h-[4px] bg-black print:h-[2px]"></span> 
+                  {/* TABLA RELACIÓN DETALLADA (MODO FORMAL, SIN SCROLL) */}
+                  <div className="space-y-6">
+                      <h3 className="text-[11px] font-black text-black uppercase tracking-[0.3em] flex items-center gap-4">
+                        <span className="w-16 h-[4px] bg-black"></span> 
                         RELACIÓN DETALLADA DE PRODUCTIVIDAD (INFORMATIVO)
                       </h3>
-                      <div className="overflow-x-auto rounded-3xl border-2 border-black shadow-lg print:overflow-visible print:border-2 print:rounded-none print:shadow-none">
-                          <table className="w-full text-left text-[11px] min-w-[700px] border-collapse print:min-w-full">
-                              <thead className="bg-black text-white font-black uppercase tracking-widest print:bg-black print:text-white" style={{WebkitPrintColorAdjust: 'exact'}}>
+                      <div className="table-wrapper-print border-2 border-black">
+                          <table className="w-full text-left text-[11px] border-collapse">
+                              <thead className="bg-black text-white font-black uppercase tracking-widest">
                                   <tr>
-                                      <th className="py-6 px-6 border-r border-white/10 whitespace-nowrap w-[20%] print:py-3 print:px-3">Bigo ID</th>
-                                      <th className="py-6 px-2 text-center border-r border-white/10 whitespace-nowrap w-[15%] print:py-3">Horas</th>
-                                      <th className="py-6 px-2 text-center border-r border-white/10 whitespace-nowrap w-[15%] print:py-3">Semillas</th>
-                                      <th className="py-6 px-4 text-center border-r border-white/10 whitespace-nowrap w-[25%] print:py-3">Bono Meta ($)</th>
-                                      <th className="py-6 px-6 text-right whitespace-nowrap w-[25%] print:py-3 print:px-3">Bono Horas ($)</th>
-                                      {user.rol === 'admin' && <th className="py-6 px-4 no-print text-center w-[5%]"></th>}
+                                      <th className="py-4 px-4 border-r border-white/10 w-[20%]">Bigo ID</th>
+                                      <th className="py-4 px-2 text-center border-r border-white/10 w-[15%]">Horas</th>
+                                      <th className="py-4 px-2 text-center border-r border-white/10 w-[15%]">Semillas</th>
+                                      <th className="py-4 px-4 text-center border-r border-white/10 w-[25%]">Bono Meta ($)</th>
+                                      <th className="py-4 px-4 text-right w-[25%]">Bono Horas ($)</th>
                                   </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-200">
                                   {filteredData.length > 0 ? filteredData.map(e => (
-                                    <tr key={e.id} className={`${e.isManualEntry ? 'bg-purple-50/20' : 'bg-white'} hover:bg-gray-50/50 transition-colors print:bg-white`}>
-                                        <td className="py-5 px-6 font-black text-gray-900 border-r border-gray-100 print:py-3 print:px-3">
+                                    <tr key={e.id} className="page-break-inside-avoid">
+                                        <td className="py-4 px-4 font-black text-gray-900 border-r border-gray-100">
                                             <span className="uppercase tracking-tight">ID: {e.bigo_id}</span>
                                         </td>
-                                        <td className="py-5 px-2 text-center border-r border-gray-100 print:py-3">
-                                            {user.rol === 'admin' ? (
-                                                <input type="number" className="w-20 bg-gray-50 border-none rounded-lg p-2 text-center font-black no-print shadow-sm outline-none transition-all" defaultValue={e.horas_mes} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'horas_mes', ev.target.value)} />
-                                            ) : null}
-                                            <span className={user.rol === 'admin' ? 'hidden print:inline font-black text-xs' : 'inline font-black text-xs'}>{e.horas_mes || 0}</span>
+                                        <td className="py-4 px-2 text-center border-r border-gray-100">
+                                            <span className="font-black text-xs">{e.horas_mes || 0}</span>
                                         </td>
-                                        <td className="py-5 px-2 text-center border-r border-gray-100 print:py-3">
-                                            {user.rol === 'admin' ? (
-                                                <input type="number" className="w-24 bg-gray-50 border-none rounded-lg p-2 text-center font-black no-print shadow-sm outline-none transition-all" defaultValue={e.semillas_mes} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'semillas_mes', ev.target.value)} />
-                                            ) : null}
-                                            <span className={user.rol === 'admin' ? 'hidden print:inline font-black text-xs' : 'inline font-black text-xs'}>{(e.semillas_mes || 0).toLocaleString()}</span>
+                                        <td className="py-4 px-2 text-center border-r border-gray-100">
+                                            <span className="font-black text-xs">{(e.semillas_mes || 0).toLocaleString()}</span>
                                         </td>
-                                        <td className="py-5 px-4 text-center border-r border-gray-100 print:py-3">
-                                            {user.rol === 'admin' ? (
-                                                <input type="number" className="w-28 bg-gray-50 border-none text-primary rounded-lg p-2 text-center font-black no-print shadow-sm outline-none transition-all" defaultValue={e.pago_meta || 0} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'pago_meta', ev.target.value)} />
-                                            ) : null}
-                                            <span className={user.rol === 'admin' ? 'hidden print:inline font-black text-xs' : 'inline font-black text-primary text-xs'}>${(e.pago_meta || 0).toFixed(2)}</span>
+                                        <td className="py-4 px-4 text-center border-r border-gray-100">
+                                            <span className="font-black text-primary text-xs">${(e.pago_meta || 0).toFixed(2)}</span>
                                         </td>
-                                        <td className="py-5 px-6 text-right print:py-3 print:px-3">
-                                            {user.rol === 'admin' ? (
-                                                <input type="number" className="w-28 bg-gray-50 border-none text-primary rounded-lg p-2 text-right font-black no-print shadow-sm outline-none transition-all" defaultValue={e.pago_horas || 0} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'pago_horas', ev.target.value)} />
-                                            ) : null}
-                                            <span className={user.rol === 'admin' ? 'hidden print:inline font-black text-xs' : 'inline font-black text-primary text-xs'}>${(e.pago_horas || 0).toFixed(2)}</span>
+                                        <td className="py-4 px-4 text-right">
+                                            <span className="font-black text-primary text-xs">${(e.pago_horas || 0).toFixed(2)}</span>
                                         </td>
-                                        {user.rol === 'admin' && (
-                                            <td className="py-5 px-4 no-print text-center">
-                                                <button onClick={() => handleRemoveEmisorDirect(e.id)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </td>
-                                        )}
                                     </tr>
                                   )) : (
-                                      <tr><td colSpan={user.rol === 'admin' ? 6 : 5} className="py-24 text-center text-gray-300 font-black uppercase tracking-[0.4em]">Sin registros detallados para este periodo.</td></tr>
+                                      <tr><td colSpan={5} className="py-24 text-center text-gray-300 font-black uppercase tracking-[0.4em]">Sin registros detallados para este periodo.</td></tr>
                                   )}
                               </tbody>
                           </table>
@@ -449,89 +395,100 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                   </div>
 
                   {/* FICHA INFORMATIVA DE RECIBO */}
-                  <div className="bg-white rounded-[3rem] p-12 border-[4px] border-black flex flex-col md:flex-row justify-between items-center gap-12 relative overflow-hidden print:p-8 print:rounded-none print:border-2 print:flex-row print:gap-4 print:mt-12" style={{pageBreakInside: 'avoid'}}>
-                      <div className="space-y-10 w-full md:w-auto relative z-10 print:space-y-4 print:flex-1">
+                  <div className="receipt-box rounded-none border-[4px] border-black p-10 flex flex-row justify-between items-center gap-8 relative overflow-hidden page-break-inside-avoid">
+                      <div className="space-y-8 flex-1">
                           <div className="space-y-2">
-                            <p className="text-[11px] font-black text-black uppercase tracking-[0.3em] mb-4 border-b border-gray-100 pb-2 print:text-[10px]">Recibí la cantidad de :</p>
-                            <p className="text-6xl font-black text-black tracking-tighter leading-none print:text-4xl">$ {stats.totalPayment.toFixed(2)} <span className="text-2xl print:text-lg">USD</span></p>
-                            <div className="pt-4 space-y-1 print:pt-2">
-                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest print:text-[9px]">
+                            <p className="text-[11px] font-black text-black uppercase tracking-[0.3em] mb-4 border-b border-gray-100 pb-2">Recibí la cantidad de :</p>
+                            <p className="text-5xl font-black text-black tracking-tighter leading-none">$ {stats.totalPayment.toFixed(2)} <span className="text-xl">USD</span></p>
+                            <div className="pt-4 space-y-1">
+                                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
                                     A fecha corte en el mes de : <span className="text-black">{selectedMonth}</span>
                                 </p>
-                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest print:text-[9px]">
+                                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
                                     Por prestación de mis servicios como reclutador de agencia moon 
                                 </p>
                             </div>
                           </div>
                           <div>
-                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 print:text-[9px]">Transferencia vía canal de pago :</p>
-                              <p className="text-lg font-black text-black uppercase border-b-4 border-black inline-block tracking-widest print:text-base print:border-b-2">{invoiceConfig.institucionPago || "PENDIENTE"}</p>
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Transferencia vía canal de pago :</p>
+                              <p className="text-lg font-black text-black uppercase border-b-4 border-black inline-block tracking-widest">{invoiceConfig.institucionPago || "PENDIENTE"}</p>
                           </div>
                       </div>
                       
                       {/* ÁREA DE FIRMA */}
-                      <div className="text-center md:text-right flex-1 md:max-w-md space-y-6 relative z-10 print:max-w-[250px] print:text-right">
-                          <div className="pt-8 flex flex-col items-center md:items-end print:pt-4">
+                      <div className="text-right flex flex-col items-end min-w-[200px] border-l border-gray-100 pl-8">
+                          <div className="pt-4 flex flex-col items-end">
                               <div className="mb-2">
-                                  <p className="text-5xl font-signature font-normal text-black px-8 py-2 print:text-4xl print:px-2">
+                                  <p className="text-5xl font-signature font-normal text-black px-4 py-2">
                                       {invoiceConfig.signatureName || ''}
                                   </p>
                               </div>
-                              <div className="w-56 h-[2px] bg-black mb-2 print:w-48"></div>
-                              <p className="text-[10px] font-black text-black uppercase tracking-[0.4em] mb-1 print:text-[9px]">Firma Autorizada</p>
-                              <p className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.2em] print:text-[8px]">{invoiceConfig.agenciaNombre}</p>
+                              <div className="w-48 h-[2px] bg-black mb-2"></div>
+                              <p className="text-[9px] font-black text-black uppercase tracking-[0.4em] mb-1">Firma Autorizada</p>
+                              <p className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.2em]">{invoiceConfig.agenciaNombre}</p>
                           </div>
                       </div>
                   </div>
               </div>
 
-              <div className="bg-gray-50 py-12 text-center border-t-2 border-gray-100 print:bg-white print:py-6">
-                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.4em] print:text-[9px]">
-                    {invoiceConfig.agenciaNombre} — {new Date().getFullYear()}
+              {/* PIE DE PÁGINA */}
+              <div className="bg-gray-50 py-10 text-center border-t border-gray-100 footer-print">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em]">
+                    {invoiceConfig.agenciaNombre} — {new Date().getFullYear()} — DOCUMENTO DE LIQUIDACIÓN PRIVADO
                   </p>
               </div>
           </div>
       )}
 
       <style>{`
+        /* --- ESTILOS DE IMPRESIÓN EXTREMOS --- */
         @media print {
+          /* 1. Ocultar absolutamente todo lo que no sea la factura */
+          html, body { height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; background: white !important; }
+          #root > div > aside, 
+          #root > div > div.fixed, 
+          #root > div > div.md\\:hidden, 
+          .print\\:hidden,
           .no-print { display: none !important; }
-          body { 
-            background: white !important; 
-            margin: 0 !important; 
-            padding: 0 !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          #root > main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
-          #invoice-document { 
-            border: none !important; 
-            box-shadow: none !important; 
-            width: 100% !important; 
+
+          /* 2. Ajustar el contenedor principal */
+          #root > main { padding: 0 !important; margin: 0 !important; max-width: none !important; width: 100% !important; }
+          .max-w-4xl { max-width: none !important; margin: 0 !important; }
+          
+          /* 3. Estilo de hoja A4 formal */
+          #invoice-document {
             display: block !important;
+            border: none !important;
+            box-shadow: none !important;
+            width: 100% !important;
+            margin: 0 !important;
             border-radius: 0 !important;
-            overflow: visible !important;
-            height: auto !important;
+            padding: 0 !important;
+            background: white !important;
+            color: black !important;
           }
-          .overflow-x-auto { overflow: visible !important; }
-          table { 
-            table-layout: fixed !important; 
-            width: 100% !important; 
-            border: 1px solid black !important;
-            page-break-inside: auto !important;
-          }
-          tr { page-break-inside: avoid !important; page-break-after: auto !important; }
+
+          /* 4. Forzar fondos negros y colores */
+          .bg-black { background-color: black !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .text-white { color: white !important; -webkit-print-color-adjust: exact; }
+          .text-primary { color: #7C3AED !important; -webkit-print-color-adjust: exact; }
+          
+          /* 5. Tabla formal (sin truncamientos) */
+          table { width: 100% !important; border-collapse: collapse !important; border: 2px solid black !important; }
+          th, td { border: 1px solid #ddd !important; }
           thead { display: table-header-group !important; }
           
-          /* Forzar fondos en navegadores */
-          .bg-black { background-color: black !important; color: white !important; }
-          .text-white { color: white !important; }
+          /* Evitar saltos de página a mitad de un bloque importante */
+          .page-break-inside-avoid { page-break-inside: avoid !important; }
           
           @page {
             size: A4;
-            margin: 1cm;
+            margin: 0.5cm;
           }
         }
+        
+        /* Estilos UI para web */
+        .invoice-container { transition: all 0.3s ease; }
       `}</style>
     </div>
   );
