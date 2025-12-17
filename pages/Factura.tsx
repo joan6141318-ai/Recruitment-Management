@@ -340,7 +340,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
               </div>
               <h3 className="text-xl font-black text-black uppercase tracking-tight mb-3">Consulta de Factura</h3>
               <p className="text-sm font-bold text-gray-500 uppercase tracking-widest leading-relaxed max-w-sm mx-auto">
-                  Lo sentimos la información no está dentro de el período de pago
+                  Lo sentimos tu consulta no está dentro de el período de pago
               </p>
           </div>
       ) : (
@@ -422,7 +422,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                                         </td>
                                         <td className="py-5 px-2 text-center border-r border-gray-100">
                                             {user.rol === 'admin' ? (
-                                                <input type="number" className="w-24 bg-gray-50 border-none rounded-lg p-2 text-center font-black no-print shadow-sm outline-none transition-all" defaultValue={e.semillas_mes} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'semillas_mes', ev.target.value)} />
+                                                <input type="number" className="w-24 bg-gray-50 border-none rounded-lg p-2 text-center font-black no-print shadow-sm outline-none transition-all" defaultValue={e.seeds_mes || e.semillas_mes} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'semillas_mes', ev.target.value)} />
                                             ) : null}
                                             <span className={user.rol === 'admin' ? 'hidden print:inline font-black' : 'inline font-black'}>{(e.semillas_mes || 0).toLocaleString()}</span>
                                         </td>
