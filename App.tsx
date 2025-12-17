@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Emisores from './pages/Emisores';
 import Reclutadores from './pages/Reclutadores';
 import Remuneracion from './pages/Remuneracion';
+import Factura from './pages/Factura';
 import { User } from './types';
 import { authService } from './services/auth'; 
 import { auth } from './services/firebase';
@@ -68,6 +69,7 @@ const App: React.FC = () => {
             <Route path="/" element={<Dashboard user={user} />} />
             <Route path="/emisores" element={<Emisores user={user} />} />
             <Route path="/remuneracion" element={<Remuneracion />} />
+            <Route path="/factura" element={<Factura user={user} />} />
             {user.rol === 'admin' ? (
               <Route path="/reclutadores" element={<Reclutadores user={user} />} />
             ) : (

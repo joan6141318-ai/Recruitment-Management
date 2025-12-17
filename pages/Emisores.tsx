@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
-import { Search, Plus, MapPin, Calendar, Clock, Edit3, X, User as UserIcon, AlertTriangle, CheckCircle, Trophy, FilterX, Trash2, Globe, Shield, Lock, Activity } from 'lucide-react';
+import { Search, Plus, MapPin, Calendar, Clock, Edit3, X, User as UserIcon, AlertTriangle, CheckCircle, Trophy, FilterX, Trash2, Globe, Shield, Lock, Activity, Coins } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 interface EmisoresProps {
@@ -39,6 +39,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   const [editCountry, setEditCountry] = useState('');
   const [editMonth, setEditMonth] = useState('');
   const [editHours, setEditHours] = useState<string | number>('');
+  const [editSeeds, setEditSeeds] = useState<string | number>('');
 
   const isAdmin = user.rol === 'admin';
 
@@ -69,8 +70,9 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       pais: newEmisorCountry, 
       mes_entrada: newEmisorMonth, 
       reclutador_id: user.id,
-      es_compartido: isAdmin ? isShared : false 
-    }, user);
+      es_compartido: isAdmin ? isShared : false,
+      semillas_mes: 0 
+    } as any, user);
     setShowAddModal(false); loadData();
     
     setNewEmisorName(''); setNewEmisorBigo(''); setNewEmisorCountry(''); setIsShared(false);
@@ -80,15 +82,14 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
     e.preventDefault();
     if (!selectedEmisor) return;
     
-    // Objeto de actualización base
     const updatePayload: Partial<Emisor> = {
         nombre: editName,
         bigo_id: editBigo,
         pais: editCountry,
         mes_entrada: editMonth,
+        semillas_mes: Number(editSeeds || 0)
     };
 
-    // Solo incluimos las horas si es Admin. 
     if (isAdmin) {
         updatePayload.horas_mes = Number(editHours);
     }
@@ -109,12 +110,12 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
   const openEmisorDetail = (emisor: Emisor) => {
       setSelectedEmisor(emisor);
-      // Cargar datos actuales en el form de edición
       setEditName(emisor.nombre);
       setEditBigo(emisor.bigo_id);
       setEditCountry(emisor.pais);
       setEditMonth(emisor.mes_entrada);
-      setEditHours(emisor.horas_mes);
+      setEditHours(emisor.horas_mes || 0);
+      setEditSeeds(emisor.semillas_mes || 0);
       
       setIsEditingMode(false); 
       setShowDetailModal(true);
@@ -131,19 +132,17 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
       return { label: 'Riesgo', color: 'text-accent', bg: 'bg-orange-100', icon: AlertTriangle, barColor: 'bg-accent' };
   };
 
-  // Cálculo de Productividad para la tarjeta del Admin
   const getProductivityStats = () => {
       if (!filterRecruiterId) return null;
-      // Usamos 'emisores' completo porque 'filtered' puede estar afectado por el buscador
       const targetEmisores = emisores.filter(e => e.reclutador_id === filterRecruiterId);
       const total = targetEmisores.length;
       if (total === 0) return { count: 0, status: 'Sin Datos', color: 'text-gray-400' };
 
-      const productiveCount = targetEmisores.filter(e => e.horas_mes >= 20).length;
+      const productiveCount = targetEmisores.filter(e => (e.horas_mes || 0) >= 20).length;
       const percentage = (productiveCount / total) * 100;
 
       let status = 'Mala';
-      let color = 'text-accent'; // Naranja/Rojo para mala
+      let color = 'text-accent'; 
       
       if (percentage >= 50) {
           status = 'Buena';
@@ -200,7 +199,6 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                   </button>
               </div>
 
-              {/* TARJETA DE PRODUCTIVIDAD (Solicitada: Gris con borde blanco) */}
               <div className="bg-gray-100 rounded-2xl p-5 border-[4px] border-white shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
                  <div className="flex items-center gap-4">
                      <div className="p-3 bg-white rounded-full shadow-sm text-gray-500">
@@ -284,13 +282,17 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                     <div className="mt-4">
                         <div className="flex justify-between text-xs mb-1.5 font-bold">
                             <span className={status.color}>{status.label}</span>
-                            <span className="text-gray-900">{emisor.horas_mes} / 44h</span>
+                            <span className="text-gray-900">{emisor.horas_mes || 0} / 44h</span>
                         </div>
                         <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
                             <div 
                                 className={`h-full rounded-full ${status.barColor}`} 
-                                style={{width: `${Math.min((emisor.horas_mes/44)*100, 100)}%`}}
+                                style={{width: `${Math.min(((emisor.horas_mes || 0)/44)*100, 100)}%`}}
                             ></div>
+                        </div>
+                        <div className="mt-2 flex items-center gap-1 text-[10px] text-gray-400 font-bold uppercase">
+                            <Coins size={10} className="text-primary"/>
+                            <span>Semillas: {(emisor.semillas_mes || 0).toLocaleString()}</span>
                         </div>
                     </div>
                     
@@ -343,7 +345,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                           <>
                             {/* VISTA NORMAL */}
                             <div className="mb-6 scale-110">
-                                <CircularProgress value={selectedEmisor.horas_mes} state={selectedEmisor.estado} />
+                                <CircularProgress value={selectedEmisor.horas_mes || 0} state={selectedEmisor.estado} />
                             </div>
                             
                             <div className="grid grid-cols-2 gap-4 w-full mb-8">
@@ -353,9 +355,9 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                     <p className="text-sm font-bold text-gray-900">{selectedEmisor.pais}</p>
                                 </div>
                                 <div className="bg-gray-50 p-3 rounded-2xl text-center">
-                                    <Calendar size={16} className="mx-auto mb-1 text-accent"/>
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase">Ingreso</p>
-                                    <p className="text-sm font-bold text-gray-900">{selectedEmisor.mes_entrada}</p>
+                                    <Coins size={16} className="mx-auto mb-1 text-accent"/>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase">Semillas</p>
+                                    <p className="text-sm font-bold text-gray-900">{(selectedEmisor.semillas_mes || 0).toLocaleString()}</p>
                                 </div>
                             </div>
 
@@ -421,7 +423,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                               <div className="text-center mb-4">
                                   <h3 className="font-bold text-lg">Modificar Emisor</h3>
                                   <p className="text-xs text-gray-400">
-                                    {isAdmin ? 'Edita cualquier dato.' : 'Corrige información de perfil.'}
+                                    Edita la información de rendimiento.
                                   </p>
                               </div>
 
@@ -455,8 +457,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                               </div>
                               
                               <div className="grid grid-cols-2 gap-3">
-                                  {/* Si es Admin, País comparte fila con Horas. Si NO es Admin, País ocupa todo el ancho */}
-                                  <div className={isAdmin ? "" : "col-span-2"}>
+                                  <div className="col-span-2">
                                       <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">País</label>
                                       <input 
                                         className="w-full bg-gray-50 p-3 rounded-xl text-sm font-medium outline-none focus:ring-1 focus:ring-black"
@@ -464,8 +465,21 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                         onChange={e => setEditCountry(e.target.value)}
                                       />
                                   </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                      <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">
+                                          Semillas
+                                      </label>
+                                      <input 
+                                          type="number"
+                                          className="w-full bg-gray-50 p-3 rounded-xl text-sm font-bold outline-none focus:ring-1 focus:ring-black"
+                                          value={editSeeds}
+                                          onChange={e => setEditSeeds(e.target.value)}
+                                      />
+                                  </div>
                                   
-                                  {/* CAMPO HORAS: SOLO VISIBLE PARA ADMIN */}
                                   {isAdmin && (
                                     <div>
                                         <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">
@@ -492,7 +506,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
           </div>
       )}
 
-      {/* Modal Agregar (Mantenido Igual) */}
+      {/* Modal Agregar */}
       {showAddModal && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
           <div className="fixed inset-0 w-screen h-screen bg-black/60 backdrop-blur-sm" onClick={() => setShowAddModal(false)}></div>

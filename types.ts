@@ -17,6 +17,7 @@ export interface Emisor {
   pais: string;
   reclutador_id: string; // ID of the user who recruited them
   horas_mes: number;
+  semillas_mes: number; // NUEVO: Semillas generadas en el mes
   mes_entrada: string; // Format: YYYY-MM
   estado: EstadoEmisor;
   fecha_registro: string;
