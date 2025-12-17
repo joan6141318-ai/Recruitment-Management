@@ -335,11 +335,11 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
 
       {!isAvailableForDownload ? (
           <div className="bg-white rounded-[2.5rem] p-24 text-center border-2 border-dashed border-gray-200 shadow-sm animate-pop-in">
-              <div className="bg-orange-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                <AlertCircle className="text-accent" size={32} />
+              <div className="bg-orange-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-8">
+                <AlertCircle className="text-accent" size={40} />
               </div>
-              <h3 className="text-xl font-black text-black uppercase tracking-tight mb-2">Acceso No Autorizado</h3>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
+              <h3 className="text-xl font-black text-black uppercase tracking-tight mb-3">Consulta de Factura</h3>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-widest leading-relaxed max-w-sm mx-auto">
                   Lo sentimos la información no está dentro de el período de pago
               </p>
           </div>
@@ -481,11 +481,11 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           </div>
                       </div>
                       
-                      {/* ÁREA DE FIRMA (CURSIVA REAL ESTILO FIRMA) */}
+                      {/* ÁREA DE FIRMA (CURSIVA REAL ESTILO FIRMA PROFESIONAL) */}
                       <div className="text-center md:text-right flex-1 md:max-w-md space-y-6 relative z-10">
                           <div className="pt-8 flex flex-col items-center md:items-end">
                               <div className="mb-2">
-                                  <p className="text-5xl font-signature font-normal text-black border-b border-black/5 px-8 py-2 lowercase first-letter:uppercase">
+                                  <p className="text-5xl font-signature font-normal text-black border-b border-black/5 px-8 py-2">
                                       {invoiceConfig.signatureName || ''}
                                   </p>
                               </div>
