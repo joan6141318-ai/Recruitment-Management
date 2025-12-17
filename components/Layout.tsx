@@ -18,7 +18,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Nav Item para Sidebar Desktop
+  // Nav Item para Sidebar Desktop / Hamburguesa
   const NavItem = ({ to, icon: Icon, label, colorClass = "text-gray-400" }: { to: string, icon: any, label: string, colorClass?: string }) => {
     const active = isActive(to);
     return (
@@ -44,7 +44,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
     );
   };
 
-  // Nav Item para Bottom Bar (Móvil)
+  // Nav Item para Bottom Bar (Móvil) - SIN FACTURA
   const BottomNavItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => {
       const active = isActive(to);
       return (
@@ -70,11 +70,11 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
           </div>
 
           <nav className="flex-1 px-4 py-8 space-y-2">
-              <NavItem to="/" icon={LayoutDashboard} label="Dashboard" colorClass="text-gray-400" />
-              <NavItem to="/emisores" icon={Radio} label="Emisores" colorClass="text-gray-400" />
-              <NavItem to="/remuneracion" icon={Banknote} label="Remuneración" colorClass="text-gray-400" />
-              <NavItem to="/factura" icon={FileText} label="Mi Factura" colorClass="text-gray-400" />
-              {user.rol === 'admin' && <NavItem to="/reclutadores" icon={Users} label="Equipo Reclutadores" colorClass="text-gray-400" />}
+              <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
+              <NavItem to="/emisores" icon={Radio} label="Emisores" />
+              <NavItem to="/remuneracion" icon={Banknote} label="Remuneración" />
+              <NavItem to="/factura" icon={FileText} label="Mi Factura" />
+              {user.rol === 'admin' && <NavItem to="/reclutadores" icon={Users} label="Equipo Reclutadores" />}
           </nav>
 
           <div className="p-6 border-t border-gray-50 bg-gray-50/50">
@@ -119,13 +119,10 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
       {/* MOBILE DRAWER (SIDEBAR) */}
       {isSidebarOpen && (
         <div className="fixed inset-0 z-[60] md:hidden">
-            {/* Overlay Oscuro */}
             <div 
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
                 onClick={() => setIsSidebarOpen(false)}
             />
-            
-            {/* Drawer */}
             <div className="absolute top-0 right-0 h-full w-[85%] max-w-[320px] bg-white shadow-2xl animate-slide-left flex flex-col">
                 <div className="absolute top-4 right-4 z-10">
                     <button onClick={() => setIsSidebarOpen(false)} className="p-2 bg-gray-100 rounded-full text-black hover:bg-gray-200">
@@ -137,16 +134,14 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
         </div>
       )}
 
-      {/* MAIN CONTENT */}
       <main className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full mt-[60px] md:mt-0 mb-24 md:mb-0">
         {children}
       </main>
 
-      {/* MOBILE BOTTOM NAVIGATION */}
+      {/* NAVIGATION BAR ORIGINAL (SIN FACTURA) */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-4 z-50 flex justify-between items-center h-[80px] shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
          <BottomNavItem to="/" icon={LayoutDashboard} label="Inicio" />
          <BottomNavItem to="/emisores" icon={Radio} label="Emisores" />
-         <BottomNavItem to="/factura" icon={FileText} label="Factura" />
          <BottomNavItem to="/remuneracion" icon={Banknote} label="Pagos" />
       </div>
 

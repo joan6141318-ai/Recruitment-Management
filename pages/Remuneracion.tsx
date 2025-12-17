@@ -115,7 +115,7 @@ const Remuneracion: React.FC = () => {
             <div className="space-y-1 flex-1">
               <p className="text-[11px] font-black text-black uppercase tracking-widest">Independencia de Pagos</p>
               <p className="text-[10px] font-bold text-gray-400 leading-relaxed uppercase">
-                Este esquema es independiente <span className="text-black">a las metas de ingresos por nuevos Emisores</span> requeridos mensualmente. La liquidación de este bono exige el cumplimiento obligatorio de las 44 horas.
+                Este esquema es independiente <span className="text-black">alas metas de de ingresos por nuevos Emisores</span> requeridos mensualmente. La liquidación de este bono exige el cumplimiento obligatorio de las 44 horas.
               </p>
             </div>
           </div>
