@@ -30,7 +30,6 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
   const instituciones = ["Paypal", "Payonner", "Western union", "Zelle", "Mercado pago", "Remitly", "Otros"];
 
   useEffect(() => {
-    // Suscripción a la configuración de factura (para ver cambios de visibilidad en tiempo real)
     const unsubscribeConfig = dataService.subscribeToInvoiceConfig((config) => {
         setInvoiceConfig(config);
     });
@@ -64,10 +63,8 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
 
   const invoiceKey = useMemo(() => `${selectedMonth}_${targetRecruiterId}`, [selectedMonth, targetRecruiterId]);
   
-  // Lógica de visibilidad
   const isAvailableForDownload = useMemo(() => {
       if (user.rol === 'admin') return true;
-      // Para el reclutador, depende de si el admin activó la visibilidad para su ID y ese mes
       return invoiceConfig?.publishedInvoices?.[invoiceKey] || false;
   }, [invoiceConfig, invoiceKey, user.rol]);
 
@@ -199,7 +196,6 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
 
               {editMode && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-slide-up">
-                      {/* IDENTIDAD */}
                       <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-4">
                           <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Configuración de Agencia</h4>
                           <div className="space-y-3">
@@ -208,7 +204,6 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           </div>
                       </div>
 
-                      {/* CANAL DE PAGO Y FIRMA */}
                       <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-4">
                           <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Información de Pago y Firma</h4>
                           <div className="space-y-4">
@@ -235,7 +230,6 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           </div>
                       </div>
 
-                      {/* MONTO TOTAL Y TOTAL EMISORES */}
                       <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-4 md:col-span-2">
                           <h4 className="text-[11px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
                              <Settings2 size={14} /> Ajustes Globales de Factura
@@ -344,44 +338,44 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
               </p>
           </div>
       ) : (
-          <div id="invoice-document" className="bg-white border border-gray-100 shadow-2xl overflow-hidden print:shadow-none print:border-none print:m-0 font-sans">
+          <div id="invoice-document" className="bg-white border border-gray-100 shadow-2xl overflow-hidden print:shadow-none print:border-none print:m-0 font-sans print:rounded-none">
               
               {/* CABECERA FORMAL */}
-              <div className="bg-black text-white p-12 print:p-8 flex justify-between items-start">
+              <div className="bg-black text-white p-12 print:p-8 flex justify-between items-start print:bg-black print:text-white" style={{WebkitPrintColorAdjust: 'exact'}}>
                   <div className="space-y-6">
-                      <h1 className="text-4xl font-black tracking-tighter uppercase leading-none font-brand border-b-4 border-white pb-2 inline-block">{invoiceConfig.agenciaNombre}</h1>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] leading-relaxed max-w-sm">{invoiceConfig.agenciaInfo}</p>
+                      <h1 className="text-4xl font-black tracking-tighter uppercase leading-none font-brand border-b-4 border-white pb-2 inline-block print:text-4xl print:text-white">{invoiceConfig.agenciaNombre}</h1>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] leading-relaxed max-w-sm print:text-[10px] print:text-gray-300">{invoiceConfig.agenciaInfo}</p>
                   </div>
                   <div className="text-right flex flex-col items-end">
                       <img src="/icon.svg" className="w-16 h-16 mb-4 grayscale brightness-200" alt="Moon" />
-                      <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/10">
-                          <p className="text-[9px] font-black text-gray-500 uppercase mb-0.5 tracking-widest">Folio de Liquidación</p>
-                          <p className="text-sm font-black tracking-[0.2em]">#MOON-{selectedMonth.replace('-','')}</p>
+                      <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/10 print:border-gray-500">
+                          <p className="text-[9px] font-black text-gray-500 uppercase mb-0.5 tracking-widest print:text-gray-400">Folio de Liquidación</p>
+                          <p className="text-sm font-black tracking-[0.2em] print:text-white">#MOON-{selectedMonth.replace('-','')}</p>
                       </div>
                   </div>
               </div>
 
-              <div className="p-12 print:p-8 space-y-12 bg-white">
+              <div className="p-12 print:p-8 space-y-12 bg-white print:space-y-8">
                   
                   {/* INFORMACIÓN DE LA FACTURA */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12 border-b-2 border-gray-100 pb-12">
-                      <div className="space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12 border-b-2 border-gray-100 pb-12 print:gap-4 print:pb-6 print:grid-cols-2">
+                      <div className="space-y-8 print:space-y-4">
                           <div>
                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Reclutador Beneficiario :</p>
-                              <p className="text-2xl font-black text-gray-900 border-l-8 border-black pl-4 uppercase tracking-tighter">{selectedRecruiter?.nombre || '...'}</p>
+                              <p className="text-2xl font-black text-gray-900 border-l-8 border-black pl-4 uppercase tracking-tighter print:text-xl">{selectedRecruiter?.nombre || '...'}</p>
                           </div>
                           <div>
                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Total de Emisores Ingresados :</p>
                               <div className="flex items-center gap-3">
                                   <Users size={16} className="text-black" />
-                                  <p className="text-lg font-black text-black">{stats.totalEmisores} Personas</p>
+                                  <p className="text-lg font-black text-black print:text-base">{stats.totalEmisores} Personas</p>
                               </div>
                           </div>
                       </div>
-                      <div className="space-y-8 flex flex-col items-end text-right">
+                      <div className="space-y-8 flex flex-col items-end text-right print:space-y-4">
                           <div>
                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Periodo Correspondiente :</p>
-                              <p className="text-lg font-black text-black uppercase tracking-widest">{selectedMonth}</p>
+                              <p className="text-lg font-black text-black uppercase tracking-widest print:text-base">{selectedMonth}</p>
                           </div>
                           <div>
                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Fecha de Emisión :</p>
@@ -390,61 +384,57 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                       </div>
                   </div>
 
-                  {/* TABLA RELACIÓN DETALLADA (INFORMATIVA) */}
-                  <div className="space-y-6">
-                      <h3 className="text-[11px] font-black text-black uppercase tracking-[0.3em] flex items-center gap-4">
-                        <span className="w-16 h-[4px] bg-black"></span> 
+                  {/* TABLA RELACIÓN DETALLADA */}
+                  <div className="space-y-6 print:space-y-4">
+                      <h3 className="text-[11px] font-black text-black uppercase tracking-[0.3em] flex items-center gap-4 print:text-[10px]">
+                        <span className="w-16 h-[4px] bg-black print:h-[2px]"></span> 
                         RELACIÓN DETALLADA DE PRODUCTIVIDAD (INFORMATIVO)
                       </h3>
-                      <div className="overflow-x-auto rounded-3xl border-2 border-black shadow-lg">
-                          <table className="w-full text-left text-[11px] min-w-[700px] border-collapse">
-                              <thead className="bg-black text-white font-black uppercase tracking-widest">
+                      <div className="overflow-x-auto rounded-3xl border-2 border-black shadow-lg print:overflow-visible print:border-2 print:rounded-none print:shadow-none">
+                          <table className="w-full text-left text-[11px] min-w-[700px] border-collapse print:min-w-full">
+                              <thead className="bg-black text-white font-black uppercase tracking-widest print:bg-black print:text-white" style={{WebkitPrintColorAdjust: 'exact'}}>
                                   <tr>
-                                      <th className="py-6 px-6 border-r border-white/10 whitespace-nowrap w-[20%]">Bigo ID</th>
-                                      <th className="py-6 px-2 text-center border-r border-white/10 whitespace-nowrap w-[15%]">Horas</th>
-                                      <th className="py-6 px-2 text-center border-r border-white/10 whitespace-nowrap w-[15%]">Semillas</th>
-                                      <th className="py-6 px-4 text-center border-r border-white/10 whitespace-nowrap w-[25%]">Bono Meta ($)</th>
-                                      <th className="py-6 px-6 text-right whitespace-nowrap w-[25%]">Bono Horas ($)</th>
+                                      <th className="py-6 px-6 border-r border-white/10 whitespace-nowrap w-[20%] print:py-3 print:px-3">Bigo ID</th>
+                                      <th className="py-6 px-2 text-center border-r border-white/10 whitespace-nowrap w-[15%] print:py-3">Horas</th>
+                                      <th className="py-6 px-2 text-center border-r border-white/10 whitespace-nowrap w-[15%] print:py-3">Semillas</th>
+                                      <th className="py-6 px-4 text-center border-r border-white/10 whitespace-nowrap w-[25%] print:py-3">Bono Meta ($)</th>
+                                      <th className="py-6 px-6 text-right whitespace-nowrap w-[25%] print:py-3 print:px-3">Bono Horas ($)</th>
                                       {user.rol === 'admin' && <th className="py-6 px-4 no-print text-center w-[5%]"></th>}
                                   </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-200">
                                   {filteredData.length > 0 ? filteredData.map(e => (
-                                    <tr key={e.id} className={`${e.isManualEntry ? 'bg-purple-50/20' : 'bg-white'} hover:bg-gray-50/50 transition-colors`}>
-                                        <td className="py-5 px-6 font-black text-gray-900 border-r border-gray-100">
+                                    <tr key={e.id} className={`${e.isManualEntry ? 'bg-purple-50/20' : 'bg-white'} hover:bg-gray-50/50 transition-colors print:bg-white`}>
+                                        <td className="py-5 px-6 font-black text-gray-900 border-r border-gray-100 print:py-3 print:px-3">
                                             <span className="uppercase tracking-tight">ID: {e.bigo_id}</span>
                                         </td>
-                                        <td className="py-5 px-2 text-center border-r border-gray-100">
+                                        <td className="py-5 px-2 text-center border-r border-gray-100 print:py-3">
                                             {user.rol === 'admin' ? (
                                                 <input type="number" className="w-20 bg-gray-50 border-none rounded-lg p-2 text-center font-black no-print shadow-sm outline-none transition-all" defaultValue={e.horas_mes} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'horas_mes', ev.target.value)} />
                                             ) : null}
-                                            <span className={user.rol === 'admin' ? 'hidden print:inline font-black' : 'inline font-black'}>{e.horas_mes || 0}</span>
+                                            <span className={user.rol === 'admin' ? 'hidden print:inline font-black text-xs' : 'inline font-black text-xs'}>{e.horas_mes || 0}</span>
                                         </td>
-                                        <td className="py-5 px-2 text-center border-r border-gray-100">
+                                        <td className="py-5 px-2 text-center border-r border-gray-100 print:py-3">
                                             {user.rol === 'admin' ? (
-                                                <input type="number" className="w-24 bg-gray-50 border-none rounded-lg p-2 text-center font-black no-print shadow-sm outline-none transition-all" defaultValue={e.seeds_mes || e.semillas_mes} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'semillas_mes', ev.target.value)} />
+                                                <input type="number" className="w-24 bg-gray-50 border-none rounded-lg p-2 text-center font-black no-print shadow-sm outline-none transition-all" defaultValue={e.semillas_mes} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'semillas_mes', ev.target.value)} />
                                             ) : null}
-                                            <span className={user.rol === 'admin' ? 'hidden print:inline font-black' : 'inline font-black'}>{(e.semillas_mes || 0).toLocaleString()}</span>
+                                            <span className={user.rol === 'admin' ? 'hidden print:inline font-black text-xs' : 'inline font-black text-xs'}>{(e.semillas_mes || 0).toLocaleString()}</span>
                                         </td>
-                                        <td className="py-5 px-4 text-center border-r border-gray-100">
+                                        <td className="py-5 px-4 text-center border-r border-gray-100 print:py-3">
                                             {user.rol === 'admin' ? (
                                                 <input type="number" className="w-28 bg-gray-50 border-none text-primary rounded-lg p-2 text-center font-black no-print shadow-sm outline-none transition-all" defaultValue={e.pago_meta || 0} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'pago_meta', ev.target.value)} />
                                             ) : null}
-                                            <span className={user.rol === 'admin' ? 'hidden print:inline font-black' : 'inline font-black text-primary'}>${(e.pago_meta || 0).toFixed(2)}</span>
+                                            <span className={user.rol === 'admin' ? 'hidden print:inline font-black text-xs' : 'inline font-black text-primary text-xs'}>${(e.pago_meta || 0).toFixed(2)}</span>
                                         </td>
-                                        <td className="py-5 px-6 text-right">
+                                        <td className="py-5 px-6 text-right print:py-3 print:px-3">
                                             {user.rol === 'admin' ? (
                                                 <input type="number" className="w-28 bg-gray-50 border-none text-primary rounded-lg p-2 text-right font-black no-print shadow-sm outline-none transition-all" defaultValue={e.pago_horas || 0} onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'pago_horas', ev.target.value)} />
                                             ) : null}
-                                            <span className={user.rol === 'admin' ? 'hidden print:inline font-black' : 'inline font-black text-primary'}>${(e.pago_horas || 0).toFixed(2)}</span>
+                                            <span className={user.rol === 'admin' ? 'hidden print:inline font-black text-xs' : 'inline font-black text-primary text-xs'}>${(e.pago_horas || 0).toFixed(2)}</span>
                                         </td>
                                         {user.rol === 'admin' && (
                                             <td className="py-5 px-4 no-print text-center">
-                                                <button 
-                                                    onClick={() => handleRemoveEmisorDirect(e.id)}
-                                                    className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Quitar de esta factura"
-                                                >
+                                                <button onClick={() => handleRemoveEmisorDirect(e.id)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                                                     <Trash2 size={16} />
                                                 </button>
                                             </td>
@@ -459,47 +449,44 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                   </div>
 
                   {/* FICHA INFORMATIVA DE RECIBO */}
-                  <div className="bg-white rounded-[3rem] p-12 border-[4px] border-black flex flex-col md:flex-row justify-between items-center gap-12 relative overflow-hidden print:p-10 print:rounded-3xl">
-                      <div className="space-y-10 w-full md:w-auto relative z-10">
+                  <div className="bg-white rounded-[3rem] p-12 border-[4px] border-black flex flex-col md:flex-row justify-between items-center gap-12 relative overflow-hidden print:p-8 print:rounded-none print:border-2 print:flex-row print:gap-4 print:mt-12" style={{pageBreakInside: 'avoid'}}>
+                      <div className="space-y-10 w-full md:w-auto relative z-10 print:space-y-4 print:flex-1">
                           <div className="space-y-2">
-                            <p className="text-[11px] font-black text-black uppercase tracking-[0.3em] mb-4 border-b border-gray-100 pb-2">Recibí la cantidad de :</p>
-                            <p className="text-6xl font-black text-black tracking-tighter leading-none">$ {stats.totalPayment.toFixed(2)} <span className="text-2xl">USD</span></p>
-                            <div className="pt-4 space-y-1">
-                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                            <p className="text-[11px] font-black text-black uppercase tracking-[0.3em] mb-4 border-b border-gray-100 pb-2 print:text-[10px]">Recibí la cantidad de :</p>
+                            <p className="text-6xl font-black text-black tracking-tighter leading-none print:text-4xl">$ {stats.totalPayment.toFixed(2)} <span className="text-2xl print:text-lg">USD</span></p>
+                            <div className="pt-4 space-y-1 print:pt-2">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest print:text-[9px]">
                                     A fecha corte en el mes de : <span className="text-black">{selectedMonth}</span>
                                 </p>
-                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest print:text-[9px]">
                                     Por prestación de mis servicios como reclutador de agencia moon 
                                 </p>
                             </div>
                           </div>
-                          <div className="space-y-4">
-                            <div>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Transferencia vía canal de pago :</p>
-                                <p className="text-lg font-black text-black uppercase border-b-4 border-black inline-block tracking-widest">{invoiceConfig.institucionPago || "PENDIENTE"}</p>
-                            </div>
+                          <div>
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 print:text-[9px]">Transferencia vía canal de pago :</p>
+                              <p className="text-lg font-black text-black uppercase border-b-4 border-black inline-block tracking-widest print:text-base print:border-b-2">{invoiceConfig.institucionPago || "PENDIENTE"}</p>
                           </div>
                       </div>
                       
-                      {/* ÁREA DE FIRMA (CURSIVA REAL ESTILO FIRMA PROFESIONAL) */}
-                      <div className="text-center md:text-right flex-1 md:max-w-md space-y-6 relative z-10">
-                          <div className="pt-8 flex flex-col items-center md:items-end">
+                      {/* ÁREA DE FIRMA */}
+                      <div className="text-center md:text-right flex-1 md:max-w-md space-y-6 relative z-10 print:max-w-[250px] print:text-right">
+                          <div className="pt-8 flex flex-col items-center md:items-end print:pt-4">
                               <div className="mb-2">
-                                  <p className="text-5xl font-signature font-normal text-black border-b border-black/5 px-8 py-2">
+                                  <p className="text-5xl font-signature font-normal text-black px-8 py-2 print:text-4xl print:px-2">
                                       {invoiceConfig.signatureName || ''}
                                   </p>
                               </div>
-                              <div className="w-56 h-[2px] bg-black mb-2"></div>
-                              <p className="text-[10px] font-black text-black uppercase tracking-[0.4em] mb-1">Firma Autorizada</p>
-                              <p className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.2em]">{invoiceConfig.agenciaNombre}</p>
+                              <div className="w-56 h-[2px] bg-black mb-2 print:w-48"></div>
+                              <p className="text-[10px] font-black text-black uppercase tracking-[0.4em] mb-1 print:text-[9px]">Firma Autorizada</p>
+                              <p className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.2em] print:text-[8px]">{invoiceConfig.agenciaNombre}</p>
                           </div>
                       </div>
                   </div>
               </div>
 
-              {/* PIE DE PÁGINA PROFESIONAL */}
-              <div className="bg-gray-50 py-12 text-center border-t-2 border-gray-100">
-                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.4em]">
+              <div className="bg-gray-50 py-12 text-center border-t-2 border-gray-100 print:bg-white print:py-6">
+                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.4em] print:text-[9px]">
                     {invoiceConfig.agenciaNombre} — {new Date().getFullYear()}
                   </p>
               </div>
@@ -509,16 +496,42 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
       <style>{`
         @media print {
           .no-print { display: none !important; }
-          body { background: white !important; margin: 0; padding: 0; }
-          #invoice-document { border: none !important; border-radius: 0 !important; width: 100% !important; display: block !important; }
-          table { width: 100% !important; border: 2.5px solid black !important; table-layout: fixed !important; }
-          th, td { padding: 14px 8px !important; border: 1.5px solid #eee !important; font-size: 10px !important; }
-          thead { background-color: black !important; -webkit-print-color-adjust: exact; }
-          @page { size: A4; margin: 10mm; }
+          body { 
+            background: white !important; 
+            margin: 0 !important; 
+            padding: 0 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          #root > main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+          #invoice-document { 
+            border: none !important; 
+            box-shadow: none !important; 
+            width: 100% !important; 
+            display: block !important;
+            border-radius: 0 !important;
+            overflow: visible !important;
+            height: auto !important;
+          }
+          .overflow-x-auto { overflow: visible !important; }
+          table { 
+            table-layout: fixed !important; 
+            width: 100% !important; 
+            border: 1px solid black !important;
+            page-break-inside: auto !important;
+          }
+          tr { page-break-inside: avoid !important; page-break-after: auto !important; }
+          thead { display: table-header-group !important; }
+          
+          /* Forzar fondos en navegadores */
+          .bg-black { background-color: black !important; color: white !important; }
+          .text-white { color: white !important; }
+          
+          @page {
+            size: A4;
+            margin: 1cm;
+          }
         }
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f9fafb; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
       `}</style>
     </div>
   );
