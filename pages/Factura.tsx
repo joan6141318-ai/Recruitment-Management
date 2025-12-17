@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
-import { Download, Calendar, Coins, Users, Clock, CheckCircle, Shield, Briefcase } from 'lucide-react';
+// Added missing FileText and ChevronDown imports
+import { Download, Calendar, Coins, Users, Clock, CheckCircle, Shield, Briefcase, UserCheck, FileText, ChevronDown } from 'lucide-react';
 
 interface FacturaProps {
   user: User;
@@ -9,17 +11,36 @@ interface FacturaProps {
 
 const Factura: React.FC<FacturaProps> = ({ user }) => {
   const [emisores, setEmisores] = useState<Emisor[]>([]);
+  const [reclutadores, setReclutadores] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  
+  // Para administradores: selección de reclutador
+  const [targetRecruiterId, setTargetRecruiterId] = useState(user.rol === 'admin' ? '' : user.id);
 
   useEffect(() => {
+    const loadInitialData = async () => {
+        if (user.rol === 'admin') {
+            const data = await dataService.getRecruiters();
+            setReclutadores(data);
+            if (data.length > 0 && !targetRecruiterId) {
+                setTargetRecruiterId(data[0].id);
+            }
+        }
+        setLoading(false);
+    };
+    loadInitialData();
+
     const unsubscribe = dataService.subscribeToEmisores(user, (data) => {
-      // Cada reclutador solo ve su propia data
-      setEmisores(data.filter(e => e.reclutador_id === user.id));
-      setLoading(false);
+      setEmisores(data);
     });
     return () => unsubscribe();
   }, [user]);
+
+  const selectedRecruiter = useMemo(() => {
+      if (user.rol === 'reclutador') return user;
+      return reclutadores.find(r => r.id === targetRecruiterId) || null;
+  }, [reclutadores, targetRecruiterId, user]);
 
   const commissionBrackets = [
     { seeds: 3000000, usd: 500.00 },
@@ -52,8 +73,8 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
   };
 
   const filteredData = useMemo(() => {
-    return emisores.filter(e => e.mes_entrada === selectedMonth);
-  }, [emisores, selectedMonth]);
+    return emisores.filter(e => e.mes_entrada === selectedMonth && e.reclutador_id === targetRecruiterId);
+  }, [emisores, selectedMonth, targetRecruiterId]);
 
   const stats = useMemo(() => {
     const total = filteredData.length;
@@ -82,173 +103,249 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20 animate-slide-up">
       
-      {/* Selector de Mes */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4 no-print">
-          <div className="flex items-center gap-3">
-              <div className="bg-black text-white p-2 rounded-xl">
-                  <Calendar size={20} />
+      {/* Controles de Administración */}
+      <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4 no-print">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="flex items-center gap-3">
+                  <div className="bg-black text-white p-2.5 rounded-2xl">
+                      <FileText size={22} />
+                  </div>
+                  <div>
+                      <h3 className="font-black text-gray-900 text-base uppercase tracking-tight">Panel de Facturación</h3>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Generar reporte mensual oficial</p>
+                  </div>
               </div>
-              <div>
-                  <h3 className="font-bold text-gray-900 text-sm">Consultar Factura</h3>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Elige el mes para descargar</p>
-              </div>
-          </div>
-          
-          <div className="flex gap-3 w-full md:w-auto">
-              <input 
-                  type="month" 
-                  className="flex-1 md:w-48 bg-gray-50 border border-gray-100 p-3 rounded-xl text-sm font-bold outline-none focus:ring-1 focus:ring-black"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-              />
               <button 
                 onClick={handlePrint}
-                className="bg-black text-white px-5 py-3 rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-lg active:scale-95 transition-transform"
+                className="w-full md:w-auto bg-black text-white px-6 py-3.5 rounded-2xl flex items-center justify-center gap-2 font-black text-sm shadow-xl active:scale-95 transition-all hover:bg-gray-900"
               >
                   <Download size={18} /> Descargar Factura
               </button>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-50">
+              <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Periodo de Liquidación</label>
+                  <div className="relative">
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                      <input 
+                          type="month" 
+                          className="w-full bg-gray-50 border border-gray-100 pl-11 pr-4 py-3.5 rounded-2xl text-sm font-black outline-none focus:ring-2 focus:ring-black/5"
+                          value={selectedMonth}
+                          onChange={(e) => setSelectedMonth(e.target.value)}
+                      />
+                  </div>
+              </div>
+
+              {user.rol === 'admin' && (
+                  <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Emitir factura para:</label>
+                      <div className="relative">
+                          <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                          <select 
+                            className="w-full bg-gray-50 border border-gray-100 pl-11 pr-10 py-3.5 rounded-2xl text-sm font-black outline-none appearance-none focus:ring-2 focus:ring-black/5"
+                            value={targetRecruiterId}
+                            onChange={(e) => setTargetRecruiterId(e.target.value)}
+                          >
+                            <option value={user.id}>{user.nombre} (Mía)</option>
+                            {reclutadores.filter(r => r.id !== user.id).map(r => (
+                                <option key={r.id} value={r.id}>{r.nombre}</option>
+                            ))}
+                          </select>
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                              <ChevronDown size={16} className="text-gray-400" />
+                          </div>
+                      </div>
+                  </div>
+              )}
+          </div>
       </div>
 
-      {/* DOCUMENTO DE FACTURA */}
-      <div id="invoice-document" className="bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-gray-100 print:shadow-none print:border-none">
+      {/* DOCUMENTO DE FACTURA FORMAL */}
+      <div id="invoice-document" className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100 print:shadow-none print:border-none print:m-0 print:rounded-none">
           
-          <div className="bg-black text-white p-10 flex justify-between items-center">
-              <div>
-                  <h1 className="text-3xl font-black tracking-tighter mb-1 uppercase">AGENCIA MOON</h1>
-                  <p className="text-[10px] font-bold text-primary uppercase tracking-[0.25em]">Socio Operativo de Bigo Live</p>
-                  <p className="text-[9px] text-gray-400 mt-4 leading-relaxed max-w-[250px] uppercase font-bold">
-                      Identidad Independiente de Gestión de Talento
-                  </p>
+          {/* Header Corporativo */}
+          <div className="bg-black text-white p-12 flex justify-between items-center print:p-8">
+              <div className="space-y-2">
+                  <h1 className="text-4xl font-black tracking-tighter uppercase leading-none">AGENCIA MOON</h1>
+                  <p className="text-[11px] font-bold text-primary uppercase tracking-[0.3em]">Socio Operativo de Bigo Live</p>
+                  <div className="pt-6 border-t border-white/10 mt-6">
+                      <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest leading-relaxed">
+                          Identidad Independiente de Gestión de Talento <br/> Digital y Reclutamiento Estratégico
+                      </p>
+                  </div>
               </div>
-              <div className="text-right">
-                  <img src="/icon.svg" className="w-14 h-14 ml-auto mb-4 grayscale brightness-200" alt="Logo" />
-                  <div className="bg-white/10 px-4 py-2 rounded-xl inline-block">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-300">Periodo</p>
-                      <p className="text-sm font-black">{selectedMonth}</p>
+              <div className="text-right flex flex-col items-end">
+                  <img src="/icon.svg" className="w-20 h-20 mb-6 grayscale brightness-200" alt="Logo" />
+                  <div className="bg-white/10 px-5 py-2.5 rounded-2xl inline-block border border-white/5">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Documento de Pago</p>
+                      <p className="text-base font-black">REF-{selectedMonth.replace('-', '')}</p>
                   </div>
               </div>
           </div>
 
-          <div className="p-10 space-y-10">
+          <div className="p-12 space-y-12 print:p-8">
               
-              {/* Información de la Factura */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10 border-b border-gray-100 pb-10">
-                  <div className="space-y-6">
+              {/* Bloque Informativo de Identidad */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 border-b border-gray-100 pb-12">
+                  <div className="space-y-8">
                       <div>
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Factura emitida a nombre de:</p>
-                          <p className="text-xl font-black text-gray-900">{user.nombre}</p>
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Reclutador Beneficiario:</p>
+                          <p className="text-2xl font-black text-gray-900 leading-tight">{selectedRecruiter?.nombre}</p>
+                          <p className="text-sm text-gray-500 font-mono mt-1">{selectedRecruiter?.correo}</p>
                       </div>
                       <div>
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Referente al periodo del mes de:</p>
-                          <p className="text-lg font-black text-black">{getFormattedMonth(selectedMonth)}</p>
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Periodo de Servicios:</p>
+                          <p className="text-xl font-black text-black">{getFormattedMonth(selectedMonth)}</p>
                       </div>
                   </div>
-                  <div className="space-y-6">
+                  <div className="space-y-8">
                       <div>
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Por el motivo de:</p>
-                          <p className="text-sm font-bold text-gray-700">Emisores reclutados durante el mes de {getFormattedMonth(selectedMonth)}</p>
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Concepto Detallado:</p>
+                          <p className="text-sm font-bold text-gray-700 leading-relaxed uppercase">
+                            Bonificación por productividad de Emisores reclutados y seguimiento de metas operativas.
+                          </p>
                       </div>
-                      <div>
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Puesto Operativo:</p>
-                          <p className="text-sm font-black text-primary uppercase">Reclutador</p>
+                      <div className="flex gap-10">
+                          <div>
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Puesto:</p>
+                              <p className="text-xs font-black text-primary uppercase bg-purple-50 px-3 py-1 rounded-lg border border-purple-100 inline-block">Reclutador Moon</p>
+                          </div>
+                          <div>
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Divisa:</p>
+                              <p className="text-xs font-black text-gray-900 uppercase">USD (Dólares)</p>
+                          </div>
                       </div>
                   </div>
               </div>
 
-              {/* Estadísticas de la Factura */}
+              {/* Métricas de Desempeño Mensual */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Emisores ingresados</p>
-                      <p className="text-2xl font-black text-gray-900">{stats.total}</p>
+                  <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 text-center">
+                      <p className="text-[10px] font-black text-gray-400 uppercase mb-3 tracking-tighter">Emisores Ingresados</p>
+                      <p className="text-3xl font-black text-gray-900">{stats.total}</p>
                   </div>
-                  <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Emisores no productivos</p>
-                      <p className="text-2xl font-black text-gray-900">{stats.nonProductive}</p>
+                  <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 text-center">
+                      <p className="text-[10px] font-black text-gray-400 uppercase mb-3 tracking-tighter">No Productivos</p>
+                      <p className="text-3xl font-black text-gray-900">{stats.nonProductive}</p>
                   </div>
-                  <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Cumplieron objetivo horas</p>
-                      <p className="text-2xl font-black text-gray-900">{stats.hourGoal}</p>
+                  <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 text-center">
+                      <p className="text-[10px] font-black text-gray-400 uppercase mb-3 tracking-tighter">Meta Horas (44h+)</p>
+                      <p className="text-3xl font-black text-gray-900">{stats.hourGoal}</p>
                   </div>
-                  <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Cumplieron meta semillas</p>
-                      <p className="text-2xl font-black text-gray-900">{stats.seedGoalCount}</p>
+                  <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 text-center">
+                      <p className="text-[10px] font-black text-gray-400 uppercase mb-3 tracking-tighter">Meta Semillas</p>
+                      <p className="text-3xl font-black text-green-600">{stats.seedGoalCount}</p>
                   </div>
               </div>
 
-              {/* Lista Detallada */}
-              <div className="space-y-4">
-                  <h3 className="text-xs font-black text-black uppercase tracking-widest">Lista detallada de Emisores con cumplimiento</h3>
+              {/* Desglose de Emisores */}
+              <div className="space-y-6">
+                  <div className="flex items-center gap-3 border-l-4 border-black pl-4">
+                      <h3 className="text-xs font-black text-black uppercase tracking-[0.2em]">Desglose Detallado de Emisores</h3>
+                  </div>
                   <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm">
-                          <thead className="border-b border-gray-100 text-[10px] font-black text-gray-400 uppercase">
+                      <table className="w-full text-left text-sm print:text-xs">
+                          <thead className="border-b-2 border-gray-100 text-[10px] font-black text-gray-400 uppercase tracking-widest">
                               <tr>
-                                  <th className="py-3">Nombre</th>
-                                  <th className="py-3">Bigo ID</th>
-                                  <th className="py-3 text-center">Horas en el mes</th>
-                                  <th className="py-3 text-center">Meta en semillas</th>
-                                  <th className="py-3 text-right">Comisión</th>
+                                  <th className="py-4 px-2">Nombre del Emisor</th>
+                                  <th className="py-4 px-2">Bigo ID</th>
+                                  <th className="py-4 px-2 text-center">Horas en el mes</th>
+                                  <th className="py-4 px-2 text-center">Objetivo Semillas</th>
+                                  <th className="py-4 px-2 text-right">Comisión</th>
                               </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-50">
                               {filteredData.length > 0 ? filteredData.map(e => (
-                                <tr key={e.id}>
-                                    <td className="py-4 font-bold">{e.nombre}</td>
-                                    <td className="py-4 font-mono text-xs">{e.bigo_id}</td>
-                                    <td className="py-4 text-center font-bold">{e.horas_mes || 0}h</td>
-                                    <td className="py-4 text-center">
-                                        <span className="text-[9px] font-black bg-gray-100 px-2 py-1 rounded-full uppercase">
+                                <tr key={e.id} className="hover:bg-gray-50/50 transition-colors">
+                                    <td className="py-5 px-2 font-black text-gray-900">{e.nombre}</td>
+                                    <td className="py-5 px-2 font-mono text-xs text-gray-500">{e.bigo_id}</td>
+                                    <td className="py-5 px-2 text-center font-bold">{e.horas_mes || 0}h</td>
+                                    <td className="py-5 px-2 text-center">
+                                        <span className="text-[10px] font-black bg-gray-100 text-gray-600 px-3 py-1 rounded-full uppercase border border-gray-200">
                                             {getSeedMeta(e.semillas_mes || 0)}
                                         </span>
                                     </td>
-                                    <td className="py-4 text-right font-black text-primary">
+                                    <td className="py-5 px-2 text-right font-black text-primary">
                                         $ {calculateCommission(e.semillas_mes || 0, e.horas_mes || 0).toFixed(2)}
                                     </td>
                                 </tr>
                               )) : (
-                                  <tr><td colSpan={5} className="py-8 text-center text-gray-400 text-xs italic">Sin registros en este mes.</td></tr>
+                                  <tr><td colSpan={5} className="py-16 text-center text-gray-300 text-xs italic uppercase tracking-widest">Sin registros operacionales en este periodo.</td></tr>
                               )}
                           </tbody>
                       </table>
                   </div>
               </div>
 
-              {/* Totales y Declaración */}
-              <div className="bg-gray-50 rounded-3xl p-10 flex flex-col md:flex-row justify-between items-center gap-8 border border-gray-100">
-                  <div className="space-y-4">
-                      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Canal de pago:</p>
-                          <p className="text-sm font-bold text-black uppercase">Transferencia / Wallet Digital</p>
+              {/* Resumen Financiero Final */}
+              <div className="bg-gray-100 rounded-[2.5rem] p-12 flex flex-col md:flex-row justify-between items-center gap-12 border-[5px] border-white shadow-2xl shadow-gray-200/50 print:p-8 print:shadow-none">
+                  <div className="space-y-6 w-full md:w-auto">
+                      <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-200 flex items-center gap-4">
+                          <Briefcase size={20} className="text-gray-400" />
+                          <div>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Canal de Liquidación:</p>
+                            <p className="text-sm font-black text-black uppercase">Transferencia / Monedero Electrónico</p>
+                          </div>
                       </div>
-                      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Pago total:</p>
-                          <p className="text-2xl font-black text-primary">$ {stats.totalPayment.toFixed(2)} USD</p>
+                      <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 border-l-8 border-l-primary flex items-center gap-4">
+                          <Coins size={20} className="text-primary" />
+                          <div>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Estatus de Pago:</p>
+                            <p className="text-sm font-black text-primary uppercase">Pendiente de Aprobación</p>
+                          </div>
                       </div>
                   </div>
-                  <div className="text-center md:text-right space-y-6">
-                      <div className="max-w-xs ml-auto">
-                          <p className="text-[11px] font-medium text-gray-500 italic leading-relaxed">
-                            "Recibí la cantidad de <span className="text-black font-bold font-sans">$ {stats.totalPayment.toFixed(2)} USD</span> por concepto de mis servicios ofrecidos a agencia moon en el puesto de Reclutador."
-                          </p>
-                      </div>
-                      <div className="pt-6 border-t border-gray-200">
-                          <p className="text-[10px] font-black text-black uppercase tracking-[0.4em]">Firma Digital Autorizada</p>
-                      </div>
+                  <div className="text-center md:text-right">
+                      <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Pago Total Neto</p>
+                      <p className="text-6xl font-black text-black leading-none print:text-5xl">$ {stats.totalPayment.toFixed(2)}</p>
+                      <p className="text-[10px] font-black text-primary mt-4 uppercase tracking-widest">Dólares Americanos (USD)</p>
+                  </div>
+              </div>
+
+              {/* Declaración de Recepción y Firma */}
+              <div className="bg-white border-4 border-dashed border-gray-100 rounded-[2.5rem] p-12 text-center space-y-6 print:p-8 print:border-2">
+                  <div className="max-w-2xl mx-auto">
+                      <p className="text-[11px] font-medium text-gray-400 uppercase leading-loose italic">
+                        "Recibí la cantidad de <span className="text-black font-black font-sans tracking-tight">$ {stats.totalPayment.toFixed(2)} USD</span> por concepto de mis servicios profesionales e independientes ofrecidos a <span className="text-black font-bold uppercase tracking-wider">Agencia Moon</span> en el puesto operativo de <span className="text-black font-bold">Reclutador</span> para el ecosistema Bigo Live."
+                      </p>
+                  </div>
+                  <div className="pt-12 flex flex-col items-center">
+                      <div className="w-64 h-px bg-gray-200 mb-4"></div>
+                      <p className="text-[10px] font-black text-black uppercase tracking-[0.5em]">Firma de Conformidad Digital</p>
+                      <p className="text-[9px] text-gray-400 font-mono mt-2 uppercase tracking-tighter">Autenticado vía: {selectedRecruiter?.correo}</p>
+                      <p className="text-[8px] text-gray-300 font-mono mt-1 uppercase">Sello de Tiempo: {new Date().toLocaleDateString()}</p>
                   </div>
               </div>
 
           </div>
 
-          <div className="bg-gray-50 py-6 text-center border-t border-gray-100">
-              <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.5em]">Agencia Moon - Documento de Liquidación Mensual</p>
+          <div className="bg-gray-50 py-8 text-center border-t border-gray-100">
+              <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.6em]">Documento Oficial de Liquidación - AGENCIA MOON - 2024</p>
           </div>
       </div>
 
       <style>{`
         @media print {
           .no-print { display: none !important; }
-          body { background: white !important; }
-          #invoice-document { border: none !important; border-radius: 0 !important; width: 100%; box-shadow: none !important; }
+          body { background: white !important; margin: 0; padding: 0; }
+          main { margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
+          #invoice-document { 
+            border: none !important; 
+            border-radius: 0 !important; 
+            width: 100% !important; 
+            box-shadow: none !important; 
+            display: block !important;
+            page-break-after: always;
+          }
+          table { page-break-inside: auto; }
+          tr { page-break-inside: avoid; page-break-after: auto; }
+          thead { display: table-header-group; }
+          tfoot { display: table-footer-group; }
+          @page {
+            size: auto;
+            margin: 10mm;
+          }
         }
       `}</style>
     </div>

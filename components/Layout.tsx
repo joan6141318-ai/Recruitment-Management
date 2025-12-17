@@ -44,7 +44,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
     );
   };
 
-  // Nav Item para Bottom Bar (Móvil) - SIN FACTURA
+  // Nav Item para Bottom Bar (Móvil)
   const BottomNavItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => {
       const active = isActive(to);
       return (
@@ -138,11 +138,15 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
         {children}
       </main>
 
-      {/* NAVIGATION BAR ORIGINAL (SIN FACTURA) */}
+      {/* NAVIGATION BAR - DINÁMICA SEGÚN ROL */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-4 z-50 flex justify-between items-center h-[80px] shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
          <BottomNavItem to="/" icon={LayoutDashboard} label="Inicio" />
          <BottomNavItem to="/emisores" icon={Radio} label="Emisores" />
-         <BottomNavItem to="/remuneracion" icon={Banknote} label="Pagos" />
+         {user.rol === 'admin' ? (
+           <BottomNavItem to="/reclutadores" icon={Users} label="Equipo" />
+         ) : (
+           <BottomNavItem to="/remuneracion" icon={Banknote} label="Pagos" />
+         )}
       </div>
 
     </div>
