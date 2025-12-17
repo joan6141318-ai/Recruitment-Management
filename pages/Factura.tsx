@@ -196,7 +196,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-slide-up">
                       {/* Datos Agencia */}
                       <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
-                          <h4 className="text-[10px] font-black text-primary uppercase tracking-widest">Identidad Corporativa de la Agencia</h4>
+                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Identidad Corporativa de la Agencia</h4>
                           <div className="space-y-3">
                               <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Nombre de Agencia:</label>
                               <input 
@@ -215,7 +215,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
 
                       {/* Canal de Pago */}
                       <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
-                          <h4 className="text-[10px] font-black text-primary uppercase tracking-widest">Configuración de Canal de Pago</h4>
+                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Configuración de Canal de Pago</h4>
                           <div className="space-y-3">
                              <p className="text-[9px] font-bold text-primary uppercase tracking-tighter">Seleccionar Institución:</p>
                              <div className="relative">
@@ -228,19 +228,13 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                                 </select>
                                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                              </div>
-                             <p className="text-[9px] font-bold text-primary uppercase tracking-tighter">Referencia ID Factura (Manual):</p>
-                             <input 
-                                className="w-full bg-gray-50 p-3.5 rounded-xl text-xs font-bold border-none outline-none focus:ring-1 focus:ring-black"
-                                value={invoiceConfig.referenciaId || ''}
-                                placeholder="Hash o Ref. de pago..."
-                                onChange={e => setInvoiceConfig({...invoiceConfig, referenciaId: e.target.value})}
-                             />
+                             {/* SE ELIMINA REFERENCIA ID MANUAL GLOBAL SEGÚN SOLICITUD */}
                           </div>
                       </div>
 
                       {/* INCLUSIÓN MANUAL DE ID CON HORAS Y SEMILLAS */}
                       <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4 md:col-span-2">
-                          <h4 className="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
                              <PlusCircle size={14} /> Opción de Agregar ID: Manualmente (Solo Visualización en Listado)
                           </h4>
                           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -286,7 +280,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                       {/* SELECCIÓN ID POR ID EXISTENTE */}
                       <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4 md:col-span-2">
                           <div className="flex justify-between items-center">
-                              <h4 className="text-[10px] font-black text-primary uppercase tracking-widest">Publicar IDs Seleccionados de la Base</h4>
+                              <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Publicar IDs Seleccionados de la Base</h4>
                               <div className="relative">
                                   <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-300" />
                                   <input 
@@ -334,12 +328,12 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
       <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4 no-print">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Periodo de Factura Mensual:</label>
+                  <label className="text-[10px] font-black text-primary uppercase ml-1 tracking-widest">Periodo de Factura Mensual:</label>
                   <input type="month" className="w-full bg-gray-50 p-3.5 rounded-2xl text-sm font-black border-none outline-none focus:ring-1 focus:ring-black" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
               </div>
               {user.rol === 'admin' && (
                   <div className="space-y-1">
-                      <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Selección de Reclutador:</label>
+                      <label className="text-[10px] font-black text-primary uppercase ml-1 tracking-widest">Selección de Reclutador:</label>
                       <select className="w-full bg-gray-50 p-3.5 rounded-2xl text-sm font-black border-none outline-none" value={targetRecruiterId} onChange={(e) => setTargetRecruiterId(e.target.value)}>
                         {reclutadores.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
                       </select>
@@ -426,45 +420,47 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                       ))}
                   </div>
 
-                  {/* Bloque: Listado de IDs */}
+                  {/* Bloque: Listado de IDs - REDISEÑO PARA ESTRUCTURA SÓLIDA */}
                   <div className="space-y-6">
                       <h3 className="text-[11px] font-black text-black uppercase tracking-[0.3em] flex items-center gap-4">
                         <span className="w-16 h-[4px] bg-black"></span> 
-                        RELACIÓN DETALLADA DE EMISORES CON CUMPLIMIENTO (LIQUIDACIÓN)
+                        RELACIÓN DETALLADA DE EMISORES CON CUMPLIMIENTO
                       </h3>
-                      <div className="overflow-hidden rounded-3xl border-2 border-gray-100 shadow-sm">
-                          <table className="w-full text-left text-xs">
+                      <div className="overflow-hidden rounded-3xl border-2 border-black shadow-lg">
+                          <table className="w-full text-left text-xs border-collapse">
                               <thead className="bg-black text-white text-[10px] font-black uppercase tracking-widest">
                                   <tr>
-                                      <th className="py-6 px-8">Identificador Bigo ID</th>
-                                      <th className="py-6 px-2 text-center">Horas en el mes</th>
+                                      <th className="py-6 px-8 border-r border-white/10">Identificador Bigo ID</th>
+                                      <th className="py-6 px-2 text-center border-r border-white/10">Horas en el mes</th>
                                       <th className="py-6 px-8 text-right">Meta en Semillas</th>
                                   </tr>
                               </thead>
-                              <tbody className="divide-y-2 divide-gray-50">
+                              <tbody className="divide-y divide-gray-200">
                                   {filteredData.length > 0 ? filteredData.map(e => (
-                                    <tr key={e.id} className={`hover:bg-gray-50/50 transition-colors ${e.isManualEntry ? 'bg-purple-50/30' : ''}`}>
-                                        <td className="py-6 px-8 font-black text-gray-900 flex items-center gap-2">
-                                            ID: {e.bigo_id}
-                                            {e.isManualEntry && <span className="text-[8px] bg-purple-100 text-primary px-1.5 rounded uppercase no-print">Manual</span>}
+                                    <tr key={e.id} className={`hover:bg-gray-50/50 transition-colors ${e.isManualEntry ? 'bg-purple-50/20' : 'bg-white'}`}>
+                                        <td className="py-5 px-8 font-black text-gray-900 border-r border-gray-100">
+                                            <div className="flex items-center gap-2">
+                                                ID: {e.bigo_id}
+                                                {e.isManualEntry && <span className="text-[8px] bg-primary text-white px-2 py-0.5 rounded-full uppercase no-print tracking-widest font-black">Manual</span>}
+                                            </div>
                                         </td>
-                                        <td className="py-6 px-2 text-center">
+                                        <td className="py-5 px-2 text-center border-r border-gray-100">
                                             {user.rol === 'admin' ? (
                                                 <input 
                                                     type="number" 
-                                                    className="w-20 bg-gray-100 border-none rounded-lg p-2 text-center font-black text-black no-print focus:ring-1 focus:ring-black" 
+                                                    className="w-20 bg-gray-50 border border-gray-200 rounded-lg p-2 text-center font-black text-black no-print focus:ring-1 focus:ring-black" 
                                                     defaultValue={e.horas_mes}
                                                     onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'horas_mes', ev.target.value)}
                                                 />
                                             ) : null}
-                                            <span className={user.rol === 'admin' ? 'hidden print:inline font-bold' : 'inline font-bold'}>{e.horas_mes || 0} h</span>
+                                            <span className={user.rol === 'admin' ? 'hidden print:inline font-black' : 'inline font-black'}>{e.horas_mes || 0} h</span>
                                         </td>
-                                        <td className="py-6 px-8 text-right">
+                                        <td className="py-5 px-8 text-right">
                                             <div className="flex flex-col items-end gap-1">
                                                 {user.rol === 'admin' ? (
                                                     <input 
                                                         type="number" 
-                                                        className="w-28 bg-gray-100 border-none rounded-lg p-2 text-right font-black text-primary no-print focus:ring-1 focus:ring-black" 
+                                                        className="w-28 bg-gray-50 border border-gray-200 rounded-lg p-2 text-right font-black text-primary no-print focus:ring-1 focus:ring-black" 
                                                         defaultValue={e.semillas_mes}
                                                         onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'semillas_mes', ev.target.value)}
                                                     />
@@ -474,7 +470,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                                         </td>
                                     </tr>
                                   )) : (
-                                      <tr><td colSpan={3} className="py-24 text-center text-gray-300 font-black uppercase tracking-[0.4em]">Sin registros de cumplimiento seleccionados.</td></tr>
+                                      <tr><td colSpan={3} className="py-24 text-center text-gray-300 font-black uppercase tracking-[0.4em]">Sin registros de cumplimiento seleccionados para este periodo.</td></tr>
                                   )}
                               </tbody>
                           </table>
@@ -487,19 +483,13 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           <div>
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Liquidación Total :</p>
                             <p className="text-6xl font-black text-black tracking-tighter leading-none">$ {stats.totalPayment.toFixed(2)} <span className="text-2xl">USD</span></p>
-                            <p className="text-[9px] text-gray-400 mt-2 italic no-print">* El total excluye los IDs agregados manualmente de forma directa.</p>
+                            <p className="text-[9px] text-gray-400 mt-2 italic no-print font-bold uppercase tracking-tighter">* Total basado exclusivamente en registros de la base de datos oficial.</p>
                           </div>
                           <div className="space-y-4">
                             <div>
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Canal de Transferencia :</p>
                                 <p className="text-lg font-black text-black uppercase border-b-4 border-black inline-block">{invoiceConfig.institucionPago || "No Definida"}</p>
                             </div>
-                            {invoiceConfig.referenciaId && (
-                                <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Referencia ID Factura :</p>
-                                    <p className="text-sm font-black text-black uppercase tracking-widest bg-gray-50 px-3 py-1 rounded-md border border-gray-100">{invoiceConfig.referenciaId}</p>
-                                </div>
-                            )}
                           </div>
                       </div>
                       
@@ -508,7 +498,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           <div className="space-y-6 text-gray-900">
                               <p className="text-[11px] font-black uppercase tracking-[0.4em] text-gray-400 mb-2">Declaración de Conformidad</p>
                               <p className="text-sm font-black leading-relaxed text-justify uppercase tracking-tighter" style={{ fontFamily: "'Inter', sans-serif" }}>
-                                RECIBÍ LA CANTIDAD DE : <span className="text-black bg-gray-50 px-2 rounded-md">$ {stats.totalPayment.toFixed(2)} USD</span> POR CONCEPTO DE PAGO DE SERVICIOS OFRECIDOS A AGENCIA MOON EN EL PUESTO DE RECLUTADOR. LA PRESENTE LIQUIDACIÓN SE EFECTÚA DE MANERA EXITOSA Y DE PLENA CONFORMIDAD CON LOS ACUERDOS ESTABLECIDOS.
+                                RECIBÍ LA CANTIDAD DE : <span className="text-black bg-gray-100 px-2 rounded-md">$ {stats.totalPayment.toFixed(2)} USD</span> POR CONCEPTO DE PAGO DE SERVICIOS OFRECIDOS A AGENCIA MOON EN EL PUESTO DE RECLUTADOR. LA PRESENTE LIQUIDACIÓN SE EFECTÚA DE MANERA EXITOSA Y DE PLENA CONFORMIDAD CON LOS ACUERDOS ESTABLECIDOS.
                               </p>
                           </div>
                           
@@ -540,9 +530,9 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
             box-shadow: none !important; 
             display: block !important;
           }
-          table { page-break-inside: auto; }
+          table { page-break-inside: auto; border: 2px solid black !important; }
           tr { page-break-inside: avoid; page-break-after: auto; }
-          thead { display: table-header-group; }
+          thead { display: table-header-group; background-color: black !important; -webkit-print-color-adjust: exact; }
           @page {
             size: A4;
             margin: 0mm;

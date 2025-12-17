@@ -19,7 +19,6 @@ export interface InvoiceConfig {
   conceptoSector: string;
   brackets: CommissionBracket[];
   institucionPago: string;
-  referenciaId?: string; // ID manual agregado por el administrador
   // Mapa de disponibilidad: "YYYY-MM_userId": boolean
   publishedInvoices?: Record<string, boolean>;
 }
@@ -57,6 +56,6 @@ export interface SystemMetadata {
 export interface DashboardStats {
   totalEmisores: number;
   activeEmisores: number;
-  totalHoras: number;
+  totalHours: number;
   topRecruiter?: string;
 }
