@@ -8,22 +8,6 @@ export interface User {
   activo: boolean; // Control de acceso
 }
 
-export type EstadoEmisor = 'activo' | 'pausado';
-
-export interface Emisor {
-  id: string;
-  nombre: string;
-  bigo_id: string;
-  pais: string;
-  reclutador_id: string; // ID of the user who recruited them
-  horas_mes: number;
-  semillas_mes: number; 
-  mes_entrada: string; // Format: YYYY-MM
-  estado: EstadoEmisor;
-  fecha_registro: string;
-  es_compartido?: boolean; 
-}
-
 export interface CommissionBracket {
   seeds: number;
   usd: number;
@@ -34,7 +18,25 @@ export interface InvoiceConfig {
   agenciaInfo: string;
   conceptoSector: string;
   brackets: CommissionBracket[];
-  institucionPago: string; // Nombre del banco o institución manual
+  institucionPago: string;
+  // Mapa de disponibilidad: "YYYY-MM_userId": boolean
+  publishedInvoices?: Record<string, boolean>;
+}
+
+export type EstadoEmisor = 'activo' | 'pausado';
+
+export interface Emisor {
+  id: string;
+  nombre: string;
+  bigo_id: string;
+  pais: string;
+  reclutador_id: string; 
+  horas_mes: number;
+  semillas_mes: number; 
+  mes_entrada: string; 
+  estado: EstadoEmisor;
+  fecha_registro: string;
+  es_compartido?: boolean; 
 }
 
 export interface HistorialHoras {
@@ -43,14 +45,13 @@ export interface HistorialHoras {
   horas_anteriores: number;
   horas_nuevas: number;
   fecha: string;
-  modificado_por: string; // User ID
+  modificado_por: string; 
 }
 
 export interface SystemMetadata {
-  lastUpdated: string; // ISO Date string
+  lastUpdated: string; 
 }
 
-// Stats for dashboard
 export interface DashboardStats {
   totalEmisores: number;
   activeEmisores: number;

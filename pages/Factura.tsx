@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Emisor, InvoiceConfig } from '../types';
 import { dataService } from '../services/db';
-import { Download, Calendar, Coins, UserCheck, FileText, Edit3, Save, Trash2, X, Search, ChevronDown, CheckSquare, Square } from 'lucide-react';
+import { Download, Calendar, Coins, UserCheck, FileText, Edit3, Save, Trash2, X, Search, ChevronDown, CheckSquare, Square, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 interface FacturaProps {
   user: User;
@@ -20,7 +20,6 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
   const [excludedEmisores, setExcludedEmisores] = useState<string[]>([]);
   const [idFilter, setIdFilter] = useState('');
 
-  // Listado oficial solicitado
   const instituciones = ["Paypal", "Payonner", "Western union", "Zelle", "Mercado pago", "Remitly", "Otros"];
 
   useEffect(() => {
@@ -49,6 +48,13 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
       if (user.rol === 'reclutador') return user;
       return reclutadores.find(r => r.id === targetRecruiterId) || null;
   }, [reclutadores, targetRecruiterId, user]);
+
+  const invoiceKey = useMemo(() => `${selectedMonth}_${targetRecruiterId}`, [selectedMonth, targetRecruiterId]);
+  
+  const isAvailableForDownload = useMemo(() => {
+      if (user.rol === 'admin') return true;
+      return invoiceConfig?.publishedInvoices?.[invoiceKey] || false;
+  }, [invoiceConfig, invoiceKey, user.rol]);
 
   const filteredData = useMemo(() => {
     return emisores.filter(e => 
@@ -82,6 +88,12 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
     return { total, nonProductive, hourGoal, seedGoalCount, totalPayment };
   }, [filteredData, invoiceConfig]);
 
+  const getFormattedMonth = (iso: string) => {
+    const [year, month] = iso.split('-');
+    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    return `${months[parseInt(month) - 1]} ${year}`;
+  };
+
   const handleUpdateEmisorDirect = async (id: string, field: string, value: string) => {
       if (user.rol !== 'admin') return;
       const numValue = Number(value);
@@ -95,12 +107,22 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
       }
   };
 
-  const handlePrint = () => { window.print(); };
+  const toggleInvoicePublication = async () => {
+      if (!invoiceConfig) return;
+      const currentMap = invoiceConfig.publishedInvoices || {};
+      const newMap = { ...currentMap, [invoiceKey]: !currentMap[invoiceKey] };
+      const updatedConfig = { ...invoiceConfig, publishedInvoices: newMap };
+      setInvoiceConfig(updatedConfig);
+      await dataService.updateInvoiceConfig(updatedConfig);
+  };
 
-  const getFormattedMonth = (iso: string) => {
-    const [year, month] = iso.split('-');
-    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    return `${months[parseInt(month) - 1]} ${year}`;
+  const handlePrint = () => { 
+    const originalTitle = document.title;
+    // Título formal para la descarga/impresión
+    document.title = `factura mes de : ${getFormattedMonth(selectedMonth)}`;
+    window.print(); 
+    // Restaurar título original después de imprimir
+    setTimeout(() => { document.title = originalTitle; }, 100);
   };
 
   if (loading || !invoiceConfig) return <div className="p-10 text-center text-gray-400 font-brand">Sincronizando factura oficial...</div>;
@@ -121,12 +143,20 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Edición manual de conceptos y emisores</p>
                       </div>
                   </div>
-                  <button 
-                    onClick={() => setEditMode(!editMode)}
-                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-colors flex items-center gap-2 ${editMode ? 'bg-orange-50 text-accent' : 'bg-gray-100 text-gray-600'}`}
-                  >
-                      {editMode ? <><X size={14} /> Cerrar Editor</> : <><Edit3 size={14} /> Abrir Editor</>}
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                        onClick={toggleInvoicePublication}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 border ${invoiceConfig?.publishedInvoices?.[invoiceKey] ? 'bg-green-50 border-green-200 text-green-600' : 'bg-gray-50 border-gray-100 text-gray-400'}`}
+                    >
+                        {invoiceConfig?.publishedInvoices?.[invoiceKey] ? <><Eye size={14} /> Publicada</> : <><EyeOff size={14} /> No Disponible</>}
+                    </button>
+                    <button 
+                        onClick={() => setEditMode(!editMode)}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-colors flex items-center gap-2 ${editMode ? 'bg-orange-50 text-accent' : 'bg-gray-100 text-gray-600'}`}
+                    >
+                        {editMode ? <><X size={14} /> Cerrar Editor</> : <><Edit3 size={14} /> Abrir Editor</>}
+                    </button>
+                  </div>
               </div>
 
               {editMode && (
@@ -218,7 +248,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
           </div>
       )}
 
-      {/* Panel de Selección General (Vista para todos) */}
+      {/* Panel de Selección General */}
       <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4 no-print">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -234,160 +264,175 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                   </div>
               )}
           </div>
-          <button onClick={handlePrint} className="w-full bg-black text-white px-6 py-4 rounded-2xl flex items-center justify-center gap-2 font-black text-sm shadow-xl hover:bg-gray-900 transition-colors">
-              <Download size={18} /> Generar Documento PDF / Imprimir
-          </button>
+          {isAvailableForDownload && (
+            <button onClick={handlePrint} className="w-full bg-black text-white px-6 py-4 rounded-2xl flex items-center justify-center gap-2 font-black text-sm shadow-xl hover:bg-gray-900 transition-colors">
+                <Download size={18} /> Descargar Factura de Página
+            </button>
+          )}
       </div>
 
-      {/* DOCUMENTO DE FACTURA OFICIAL */}
-      <div id="invoice-document" className="bg-white border border-gray-100 shadow-2xl overflow-hidden print:shadow-none print:border-none print:m-0">
-          
-          {/* Header Formal */}
-          <div className="bg-black text-white p-12 print:p-8 flex justify-between items-start">
-              <div className="space-y-6">
-                  <h1 className="text-4xl font-black tracking-tighter uppercase leading-none font-brand border-b-2 border-white pb-2 inline-block">
-                    {invoiceConfig.agenciaNombre}
-                  </h1>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed max-w-sm">
-                      {invoiceConfig.agenciaInfo}
-                  </p>
+      {/* RESTRICCIÓN PARA RECLUTADORES */}
+      {!isAvailableForDownload ? (
+          <div className="bg-white rounded-[2.5rem] p-20 text-center border-2 border-dashed border-gray-200 shadow-sm">
+              <div className="bg-orange-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+                <AlertCircle className="text-accent" size={32} />
               </div>
-              <div className="text-right flex flex-col items-end">
-                  <img src="/icon.svg" className="w-16 h-16 mb-4 grayscale brightness-200" alt="Agencia Moon" />
-                  <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/10">
-                      <p className="text-[9px] font-black text-gray-500 uppercase mb-0.5 tracking-widest">Documento de Liquidación</p>
-                      <p className="text-sm font-black tracking-widest">#{selectedMonth.replace('-','')}-{selectedRecruiter?.nombre.split(' ')[0].toUpperCase()}</p>
-                  </div>
-              </div>
+              <h3 className="text-xl font-black text-black uppercase tracking-tight mb-2">Acceso No Disponible</h3>
+              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
+                  la información no está dentro del periodo de pago
+              </p>
           </div>
-
-          <div className="p-12 print:p-10 space-y-12 bg-white">
+      ) : (
+          /* DOCUMENTO DE FACTURA OFICIAL */
+          <div id="invoice-document" className="bg-white border border-gray-100 shadow-2xl overflow-hidden print:shadow-none print:border-none print:m-0">
               
-              {/* Bloque 1: Identificación */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 border-b border-gray-100 pb-12">
-                  <div className="space-y-8">
-                      <div>
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Factura emitida a nombre de :</p>
-                          <p className="text-2xl font-black text-gray-900 border-l-4 border-black pl-4">{selectedRecruiter?.nombre || '...'}</p>
-                      </div>
-                      <div>
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Referente al periodo del mes de :</p>
-                          <p className="text-lg font-black text-black">{getFormattedMonth(selectedMonth)}</p>
-                      </div>
+              {/* Header Formal */}
+              <div className="bg-black text-white p-12 print:p-8 flex justify-between items-start">
+                  <div className="space-y-6">
+                      <h1 className="text-4xl font-black tracking-tighter uppercase leading-none font-brand border-b-2 border-white pb-2 inline-block">
+                        {invoiceConfig.agenciaNombre}
+                      </h1>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed max-w-sm">
+                          {invoiceConfig.agenciaInfo}
+                      </p>
                   </div>
-                  <div className="space-y-8">
-                      <div>
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Por el motivo de :</p>
-                          <p className="text-sm font-black text-gray-800 uppercase leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">
-                             pago de servicios correspondientes al mes de {getFormattedMonth(selectedMonth)}.
-                          </p>
+                  <div className="text-right flex flex-col items-end">
+                      <img src="/icon.svg" className="w-16 h-16 mb-4 grayscale brightness-200" alt="Agencia Moon" />
+                      <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/10">
+                          <p className="text-[9px] font-black text-gray-500 uppercase mb-0.5 tracking-widest">Documento de Liquidación</p>
+                          <p className="text-sm font-black tracking-widest">#{selectedMonth.replace('-','')}-{selectedRecruiter?.nombre.split(' ')[0].toUpperCase()}</p>
                       </div>
                   </div>
               </div>
 
-              {/* Bloque 2: Métricas Formales */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[
-                      { label: "Número de Emisores ingresados", val: stats.total },
-                      { label: "Número de Emisores no productivos", val: stats.nonProductive },
-                      { label: "Objetivo mensual en horas logrado", val: stats.hourGoal },
-                      { label: "Emisores con meta en semillas", val: stats.seedGoalCount }
-                  ].map((item, idx) => (
-                      <div key={idx} className="bg-gray-50 p-6 rounded-2xl border border-gray-100 text-center flex flex-col justify-between h-32">
-                          <p className="text-[9px] font-black text-gray-400 uppercase leading-tight">{item.label}</p>
-                          <p className="text-4xl font-black text-black">{item.val}</p>
+              <div className="p-12 print:p-10 space-y-12 bg-white">
+                  
+                  {/* Bloque 1: Identificación */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12 border-b border-gray-100 pb-12">
+                      <div className="space-y-8">
+                          <div>
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Factura emitida a nombre de :</p>
+                              <p className="text-2xl font-black text-gray-900 border-l-4 border-black pl-4">{selectedRecruiter?.nombre || '...'}</p>
+                          </div>
+                          <div>
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Referente al periodo del mes de :</p>
+                              <p className="text-lg font-black text-black">{getFormattedMonth(selectedMonth)}</p>
+                          </div>
                       </div>
-                  ))}
-              </div>
+                      <div className="space-y-8">
+                          <div>
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Por el motivo de :</p>
+                              <p className="text-sm font-black text-gray-800 uppercase leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                 pago de servicios correspondientes al mes de {getFormattedMonth(selectedMonth)}.
+                              </p>
+                          </div>
+                      </div>
+                  </div>
 
-              {/* Bloque 3: Tabla de IDs */}
-              <div className="space-y-6">
-                  <h3 className="text-[10px] font-black text-black uppercase tracking-widest flex items-center gap-3">
-                    <span className="w-10 h-[2px] bg-black"></span> 
-                    Lista detallada de Emisores con cumplimiento
-                  </h3>
-                  <div className="overflow-hidden rounded-2xl border border-gray-100">
-                      <table className="w-full text-left text-xs">
-                          <thead className="bg-black text-white text-[9px] font-black uppercase tracking-widest">
-                              <tr>
-                                  <th className="py-5 px-6">Bigo ID</th>
-                                  <th className="py-5 px-2 text-center">Horas en el mes</th>
-                                  <th className="py-5 px-6 text-right">Meta en Semillas</th>
-                              </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100">
-                              {filteredData.length > 0 ? filteredData.map(e => (
-                                <tr key={e.id} className="hover:bg-gray-50/50 transition-colors">
-                                    <td className="py-6 px-6 font-black text-gray-900">ID: {e.bigo_id}</td>
-                                    <td className="py-6 px-2 text-center">
-                                        {user.rol === 'admin' ? (
-                                            <input 
-                                                type="number" 
-                                                className="w-16 bg-gray-100 border-none rounded p-1 text-center font-bold text-black no-print" 
-                                                defaultValue={e.horas_mes}
-                                                onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'horas_mes', ev.target.value)}
-                                            />
-                                        ) : null}
-                                        <span className={user.rol === 'admin' ? 'hidden print:inline' : 'inline'}>{e.horas_mes || 0} h</span>
-                                    </td>
-                                    <td className="py-6 px-6 text-right">
-                                        <div className="flex flex-col items-end gap-1">
+                  {/* Bloque 2: Métricas Formales */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {[
+                          { label: "Número de Emisores ingresados", val: stats.total },
+                          { label: "Número de Emisores no productivos", val: stats.nonProductive },
+                          { label: "Objetivo mensual en horas logrado", val: stats.hourGoal },
+                          { label: "Emisores con meta en semillas", val: stats.seedGoalCount }
+                      ].map((item, idx) => (
+                          <div key={idx} className="bg-gray-50 p-6 rounded-2xl border border-gray-100 text-center flex flex-col justify-between h-32">
+                              <p className="text-[9px] font-black text-gray-400 uppercase leading-tight">{item.label}</p>
+                              <p className="text-4xl font-black text-black">{item.val}</p>
+                          </div>
+                      ))}
+                  </div>
+
+                  {/* Bloque 3: Tabla de IDs */}
+                  <div className="space-y-6">
+                      <h3 className="text-[10px] font-black text-black uppercase tracking-widest flex items-center gap-3">
+                        <span className="w-10 h-[2px] bg-black"></span> 
+                        Lista detallada de Emisores con cumplimiento
+                      </h3>
+                      <div className="overflow-hidden rounded-2xl border border-gray-100">
+                          <table className="w-full text-left text-xs">
+                              <thead className="bg-black text-white text-[9px] font-black uppercase tracking-widest">
+                                  <tr>
+                                      <th className="py-5 px-6">Bigo ID</th>
+                                      <th className="py-5 px-2 text-center">Horas en el mes</th>
+                                      <th className="py-5 px-6 text-right">Meta en Semillas</th>
+                                  </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                  {filteredData.length > 0 ? filteredData.map(e => (
+                                    <tr key={e.id} className="hover:bg-gray-50/50 transition-colors">
+                                        <td className="py-6 px-6 font-black text-gray-900">ID: {e.bigo_id}</td>
+                                        <td className="py-6 px-2 text-center">
                                             {user.rol === 'admin' ? (
                                                 <input 
                                                     type="number" 
-                                                    className="w-24 bg-gray-100 border-none rounded p-1 text-right font-bold text-primary no-print" 
-                                                    defaultValue={e.semillas_mes}
-                                                    onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'semillas_mes', ev.target.value)}
+                                                    className="w-16 bg-gray-100 border-none rounded p-1 text-center font-bold text-black no-print" 
+                                                    defaultValue={e.horas_mes}
+                                                    onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'horas_mes', ev.target.value)}
                                                 />
                                             ) : null}
-                                            <span className="font-bold text-gray-900">{(e.semillas_mes || 0).toLocaleString()} S.</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                              )) : (
-                                  <tr><td colSpan={3} className="py-20 text-center text-gray-300 font-bold uppercase tracking-widest">No hay identificadores seleccionados para este reporte.</td></tr>
-                              )}
-                          </tbody>
-                      </table>
+                                            <span className={user.rol === 'admin' ? 'hidden print:inline' : 'inline'}>{e.horas_mes || 0} h</span>
+                                        </td>
+                                        <td className="py-6 px-6 text-right">
+                                            <div className="flex flex-col items-end gap-1">
+                                                {user.rol === 'admin' ? (
+                                                    <input 
+                                                        type="number" 
+                                                        className="w-24 bg-gray-100 border-none rounded p-1 text-right font-bold text-primary no-print" 
+                                                        defaultValue={e.semillas_mes}
+                                                        onBlur={(ev) => handleUpdateEmisorDirect(e.id, 'semillas_mes', ev.target.value)}
+                                                    />
+                                                ) : null}
+                                                <span className="font-bold text-gray-900">{(e.semillas_mes || 0).toLocaleString()} S.</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                  )) : (
+                                      <tr><td colSpan={3} className="py-20 text-center text-gray-300 font-bold uppercase tracking-widest">No hay identificadores seleccionados para este reporte.</td></tr>
+                                  )}
+                              </tbody>
+                          </table>
+                      </div>
                   </div>
-              </div>
 
-              {/* Bloque 4: Cierre y Recibo Formal */}
-              <div className="bg-white rounded-3xl p-12 border-2 border-black flex flex-col md:flex-row justify-between items-center gap-12 relative overflow-hidden print:p-8">
-                  <div className="space-y-8 w-full md:w-auto relative z-10">
-                      <div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Pago total a liquidar :</p>
-                        <p className="text-5xl font-black text-black tracking-tighter leading-none">$ {stats.totalPayment.toFixed(2)} <span className="text-xl">USD</span></p>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Canal de pago transferencia vía :</p>
-                        <p className="text-base font-black text-black uppercase border-b-2 border-black inline-block">{invoiceConfig.institucionPago || "Institución No Definida"}</p>
-                      </div>
-                  </div>
-                  
-                  <div className="text-center md:text-right flex-1 md:max-w-md space-y-10 relative z-10">
-                      {/* LEYENDA FORMAL DE RECIBO - SIN CURSIVAS */}
-                      <div className="space-y-4 text-gray-900">
-                          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Declaración de Conformidad</p>
-                          <p className="text-sm font-bold leading-relaxed text-justify uppercase" style={{ fontFamily: "'Inter', sans-serif" }}>
-                            RECIBÍ LA CANTIDAD DE : <span className="font-black">$ {stats.totalPayment.toFixed(2)} USD</span> POR CONCEPTO DE PAGO DE SERVICIOS OFRECIDOS A AGENCIA MOON EN EL PUESTO DE RECLUTADOR. EL PAGO SE HA PROCESADO DE MANERA EXITOSA Y DE CONFORMIDAD CON LOS ACUERDOS VIGENTES.
-                          </p>
+                  {/* Bloque 4: Cierre y Recibo Formal */}
+                  <div className="bg-white rounded-3xl p-12 border-2 border-black flex flex-col md:flex-row justify-between items-center gap-12 relative overflow-hidden print:p-8">
+                      <div className="space-y-8 w-full md:w-auto relative z-10">
+                          <div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Pago total a liquidar :</p>
+                            <p className="text-5xl font-black text-black tracking-tighter leading-none">$ {stats.totalPayment.toFixed(2)} <span className="text-xl">USD</span></p>
+                          </div>
+                          <div className="space-y-2">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Canal de pago transferencia vía :</p>
+                            <p className="text-base font-black text-black uppercase border-b-2 border-black inline-block">{invoiceConfig.institucionPago || "Institución No Definida"}</p>
+                          </div>
                       </div>
                       
-                      <div className="pt-8 flex flex-col items-center md:items-end">
-                          <div className="w-48 h-[2px] bg-black mb-3"></div>
-                          <p className="text-[10px] font-black text-black uppercase tracking-[0.4em]">Firma de Conformidad Digital</p>
-                          <p className="text-[8px] text-gray-400 font-mono mt-1">Autenticación: {selectedRecruiter?.id.slice(0,10).toUpperCase()}</p>
+                      <div className="text-center md:text-right flex-1 md:max-w-md space-y-10 relative z-10">
+                          {/* LEYENDA FORMAL DE RECIBO - SIN CURSIVAS */}
+                          <div className="space-y-4 text-gray-900">
+                              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Declaración de Conformidad</p>
+                              <p className="text-sm font-bold leading-relaxed text-justify uppercase" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                RECIBÍ LA CANTIDAD DE : <span className="font-black">$ {stats.totalPayment.toFixed(2)} USD</span> POR CONCEPTO DE PAGO DE SERVICIOS OFRECIDOS A AGENCIA MOON EN EL PUESTO DE RECLUTADOR. EL PAGO SE HA PROCESADO DE MANERA EXITOSA Y DE CONFORMIDAD CON LOS ACUERDOS VIGENTES.
+                              </p>
+                          </div>
+                          
+                          <div className="pt-8 flex flex-col items-center md:items-end">
+                              <div className="w-48 h-[2px] bg-black mb-3"></div>
+                              <p className="text-[10px] font-black text-black uppercase tracking-[0.4em]">Firma de Conformidad Digital</p>
+                              <p className="text-[8px] text-gray-400 font-mono mt-1">Autenticación: {selectedRecruiter?.id.slice(0,10).toUpperCase()}</p>
+                          </div>
                       </div>
                   </div>
+
               </div>
 
+              <div className="bg-gray-50 py-10 text-center border-t border-gray-100">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.5em]">Este documento es de uso interno y confidencial - AGENCIA MOON</p>
+              </div>
           </div>
-
-          <div className="bg-gray-50 py-10 text-center border-t border-gray-100">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.5em]">Este documento es de uso interno y confidencial - AGENCIA MOON</p>
-          </div>
-      </div>
+      )}
 
       <style>{`
         @media print {
