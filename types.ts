@@ -34,7 +34,7 @@ export interface InvoiceConfig {
   agenciaInfo: string;
   conceptoSector: string;
   brackets: CommissionBracket[];
-  canalPagoDefault: string;
+  institucionPago: string; // Nombre del banco o institución manual
 }
 
 export interface HistorialHoras {

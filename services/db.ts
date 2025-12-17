@@ -1,3 +1,4 @@
+
 import { User, Emisor, HistorialHoras, SystemMetadata, InvoiceConfig } from '../types';
 import { db } from './firebase'; 
 import { 
@@ -52,7 +53,7 @@ export const dataService = {
           { seeds: 10000, usd: 7 },
           { seeds: 2000, usd: 1.5 }
         ],
-        canalPagoDefault: "Transferencia / Wallet Digital"
+        institucionPago: "Nombre del Banco / Institución"
       };
       await setDoc(docRef, defaultConfig);
       return defaultConfig;
@@ -205,6 +206,7 @@ export const dataService = {
     }
   },
 
+  // Fixed: Replaced incorrect userRef with emisorRef
   toggleShared: async (emisorId: string, currentStatus?: boolean): Promise<void> => {
     const emisorRef = doc(db, 'emisores', emisorId);
     await updateDoc(emisorRef, { es_compartido: !currentStatus });
