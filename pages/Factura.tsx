@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Emisor, InvoiceConfig } from '../types';
 import { dataService } from '../services/db';
-import { Download, Edit3, Save, X, Search, ChevronDown, CheckSquare, Square, Eye, EyeOff, AlertCircle, PlusCircle, DollarSign, Settings2, Users, Trash2 } from 'lucide-react';
+import { Download, Edit3, Save, X, Search, ChevronDown, CheckSquare, Square, Eye, EyeOff, AlertCircle, PlusCircle, DollarSign, Settings2, Users, Trash2, PenTool } from 'lucide-react';
 
 interface FacturaProps {
   user: User;
@@ -200,14 +200,30 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           </div>
                       </div>
 
-                      {/* CANAL DE PAGO */}
+                      {/* CANAL DE PAGO Y FIRMA */}
                       <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-4">
-                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Canal de Pago Oficial</h4>
-                          <div className="relative">
-                            <select className="w-full bg-white border border-gray-200 p-4 rounded-xl text-xs font-bold outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-primary shadow-sm" value={invoiceConfig.institucionPago} onChange={e => setInvoiceConfig({...invoiceConfig, institucionPago: e.target.value})}>
-                                {instituciones.map(inst => <option key={inst} value={inst}>{inst}</option>)}
-                            </select>
-                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Información de Pago y Firma</h4>
+                          <div className="space-y-4">
+                            <div className="relative">
+                                <label className="text-[9px] font-bold text-gray-400 uppercase block mb-1">Canal de Pago:</label>
+                                <select className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-bold outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-primary shadow-sm" value={invoiceConfig.institucionPago} onChange={e => setInvoiceConfig({...invoiceConfig, institucionPago: e.target.value})}>
+                                    {instituciones.map(inst => <option key={inst} value={inst}>{inst}</option>)}
+                                </select>
+                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none mt-2" size={16} />
+                            </div>
+                            <div className="relative">
+                                <label className="text-[9px] font-bold text-gray-400 uppercase block mb-1">Nombre para Firma:</label>
+                                <div className="relative">
+                                    <PenTool size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary" />
+                                    <input 
+                                        type="text" 
+                                        className="w-full bg-white border border-gray-200 pl-10 pr-4 py-3 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-primary shadow-sm"
+                                        placeholder="Nombre autorizador..."
+                                        value={invoiceConfig.signatureName || ''}
+                                        onChange={e => setInvoiceConfig({...invoiceConfig, signatureName: e.target.value})}
+                                    />
+                                </div>
+                            </div>
                           </div>
                       </div>
 
@@ -432,12 +448,11 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                       </div>
                   </div>
 
-                  {/* FICHA INFORMATIVA DE PAGO POR PRESTACION DE SERVICIOS */}
+                  {/* FICHA INFORMATIVA ACTUALIZADA */}
                   <div className="bg-white rounded-[3rem] p-12 border-[4px] border-black flex flex-col md:flex-row justify-between items-center gap-12 relative overflow-hidden print:p-10 print:rounded-3xl">
                       <div className="space-y-10 w-full md:w-auto relative z-10">
                           <div className="space-y-2">
-                            <p className="text-[11px] font-black text-black uppercase tracking-[0.3em] mb-4 border-b border-gray-100 pb-2">Ficha informativa de pago por prestación de servicios</p>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pago total:</p>
+                            <p className="text-[11px] font-black text-black uppercase tracking-[0.3em] mb-4 border-b border-gray-100 pb-2">Recibí la cantidad de :</p>
                             <p className="text-6xl font-black text-black tracking-tighter leading-none">$ {stats.totalPayment.toFixed(2)} <span className="text-2xl">USD</span></p>
                             <div className="pt-4 space-y-1">
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
@@ -456,10 +471,17 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           </div>
                       </div>
                       
-                      <div className="text-center md:text-right flex-1 md:max-w-md space-y-12 relative z-10">
-                          <div className="pt-12 flex flex-col items-center md:items-end">
-                              <div className="w-56 h-[4px] bg-black mb-4"></div>
-                              <p className="text-[11px] font-black text-black uppercase tracking-[0.6em]">Firma Autorizada</p>
+                      {/* ÁREA DE FIRMA ACTUALIZADA */}
+                      <div className="text-center md:text-right flex-1 md:max-w-md space-y-6 relative z-10">
+                          <div className="pt-8 flex flex-col items-center md:items-end">
+                              <div className="mb-2">
+                                  <p className="text-xl font-brand italic font-black text-black border-b-2 border-black/10 px-4">
+                                      {invoiceConfig.signatureName || ''}
+                                  </p>
+                              </div>
+                              <div className="w-56 h-[3px] bg-black mb-2"></div>
+                              <p className="text-[10px] font-black text-black uppercase tracking-[0.4em] mb-1">Firma Autorizada</p>
+                              <p className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.2em]">{invoiceConfig.agenciaNombre}</p>
                           </div>
                       </div>
                   </div>

@@ -19,6 +19,7 @@ export interface InvoiceConfig {
   conceptoSector: string;
   brackets: CommissionBracket[];
   institucionPago: string;
+  signatureName?: string; // Nombre para la firma personalizada
   // Mapa de disponibilidad: "YYYY-MM_userId": boolean
   publishedInvoices?: Record<string, boolean>;
   // Mapa de ajustes manuales globales: "YYYY-MM_userId": monto
