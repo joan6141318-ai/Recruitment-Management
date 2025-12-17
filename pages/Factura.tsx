@@ -340,7 +340,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
               </div>
               <h3 className="text-xl font-black text-black uppercase tracking-tight mb-2">Acceso No Autorizado</h3>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
-                  la información de este periodo se encuentra en revisión por administración
+                  Lo sentimos la información no está dentro de el período de pago
               </p>
           </div>
       ) : (
