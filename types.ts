@@ -23,6 +23,8 @@ export interface InvoiceConfig {
   publishedInvoices?: Record<string, boolean>;
   // Mapa de ajustes manuales globales: "YYYY-MM_userId": monto
   pagoAjustes?: Record<string, number>;
+  // Mapa de ajustes manuales de cantidad: "YYYY-MM_userId": total
+  totalEmisoresAjustes?: Record<string, number>;
 }
 
 export type EstadoEmisor = 'activo' | 'pausado';

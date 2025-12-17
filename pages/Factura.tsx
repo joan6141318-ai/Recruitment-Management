@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Emisor, InvoiceConfig } from '../types';
 import { dataService } from '../services/db';
-import { Download, Edit3, Save, X, Search, ChevronDown, CheckSquare, Square, Eye, EyeOff, AlertCircle, PlusCircle, DollarSign, Settings2, Users } from 'lucide-react';
+import { Download, Edit3, Save, X, Search, ChevronDown, CheckSquare, Square, Eye, EyeOff, AlertCircle, PlusCircle, DollarSign, Settings2, Users, Trash2 } from 'lucide-react';
 
 interface FacturaProps {
   user: User;
@@ -74,9 +73,14 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
 
   const stats = useMemo(() => {
     if (!invoiceConfig) return { totalEmisores: 0, totalPayment: 0 };
+    
     // Pago Total estricto desde ajuste de admin
     const totalPayment = Number(invoiceConfig.pagoAjustes?.[invoiceKey]) || 0;
-    const totalEmisores = filteredData.length;
+    
+    // Total de emisores: Priorizar ajuste manual del admin si existe
+    const manualTotal = invoiceConfig.totalEmisoresAjustes?.[invoiceKey];
+    const totalEmisores = manualTotal !== undefined ? manualTotal : filteredData.length;
+    
     return { totalEmisores, totalPayment };
   }, [filteredData, invoiceConfig, invoiceKey]);
 
@@ -94,10 +98,24 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
       setInvoiceConfig({ ...invoiceConfig, pagoAjustes: newAjustes });
   };
 
+  const handleUpdateTotalEmisoresAdjustment = (val: string) => {
+      if (!invoiceConfig) return;
+      const total = parseInt(val);
+      const currentAjustes = invoiceConfig.totalEmisoresAjustes || {};
+      const newAjustes = { ...currentAjustes, [invoiceKey]: isNaN(total) ? 0 : total };
+      setInvoiceConfig({ ...invoiceConfig, totalEmisoresAjustes: newAjustes });
+  };
+
   const handleSaveConfig = async () => {
       if (invoiceConfig) {
           await dataService.updateInvoiceConfig(invoiceConfig);
           setEditMode(false);
+      }
+  };
+
+  const handleRemoveEmisorDirect = (id: string) => {
+      if (!excludedEmisores.includes(id)) {
+          setExcludedEmisores([...excludedEmisores, id]);
       }
   };
 
@@ -193,14 +211,14 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           </div>
                       </div>
 
-                      {/* MONTO TOTAL */}
+                      {/* MONTO TOTAL Y TOTAL EMISORES */}
                       <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-4 md:col-span-2">
                           <h4 className="text-[11px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                             <Settings2 size={14} /> Definir Pago Total de Factura ($ USD)
+                             <Settings2 size={14} /> Ajustes Globales de Factura
                           </h4>
-                          <div className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col sm:flex-row items-center gap-4 shadow-sm">
-                              <div className="flex-1 w-full">
-                                  <label className="text-[9px] font-bold text-primary uppercase tracking-tighter block mb-1">CANTIDAD FINAL A PAGAR:</label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm">
+                                  <label className="text-[9px] font-bold text-primary uppercase tracking-tighter block mb-1">PAGO TOTAL ($ USD):</label>
                                   <div className="relative">
                                       <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary" />
                                       <input 
@@ -213,11 +231,18 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                                       />
                                   </div>
                               </div>
-                              <div className="bg-primary p-4 rounded-xl text-center min-w-[160px] shadow-lg">
-                                  <p className="text-[9px] font-black text-white/60 uppercase leading-none mb-1 tracking-widest">Monto de Pago</p>
-                                  <p className="text-xl font-black text-white">
-                                      $ {(Number(invoiceConfig.pagoAjustes?.[invoiceKey]) || 0).toFixed(2)}
-                                  </p>
+                              <div className="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm">
+                                  <label className="text-[9px] font-bold text-primary uppercase tracking-tighter block mb-1">TOTAL EMISORES INGRESADOS:</label>
+                                  <div className="relative">
+                                      <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary" />
+                                      <input 
+                                          type="number" 
+                                          className="w-full bg-gray-50 border border-gray-100 pl-10 pr-4 py-4 rounded-xl text-base font-black text-black outline-none focus:ring-2 focus:ring-primary shadow-inner"
+                                          placeholder="Cantidad de emisores..."
+                                          value={invoiceConfig.totalEmisoresAjustes?.[invoiceKey] || ''}
+                                          onChange={(e) => handleUpdateTotalEmisoresAdjustment(e.target.value)}
+                                      />
+                                  </div>
                               </div>
                           </div>
                       </div>
@@ -354,6 +379,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                                       <th className="py-6 px-2 text-center border-r border-white/10 whitespace-nowrap w-[15%]">Semillas</th>
                                       <th className="py-6 px-4 text-center border-r border-white/10 whitespace-nowrap w-[25%]">Bono Meta ($)</th>
                                       <th className="py-6 px-6 text-right whitespace-nowrap w-[25%]">Bono Horas ($)</th>
+                                      {user.rol === 'admin' && <th className="py-6 px-4 no-print text-center w-[5%]"></th>}
                                   </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-200">
@@ -386,9 +412,20 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                                             ) : null}
                                             <span className={user.rol === 'admin' ? 'hidden print:inline font-black' : 'inline font-black text-primary'}>${(e.pago_horas || 0).toFixed(2)}</span>
                                         </td>
+                                        {user.rol === 'admin' && (
+                                            <td className="py-5 px-4 no-print text-center">
+                                                <button 
+                                                    onClick={() => handleRemoveEmisorDirect(e.id)}
+                                                    className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                    title="Quitar de esta factura"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </td>
+                                        )}
                                     </tr>
                                   )) : (
-                                      <tr><td colSpan={5} className="py-24 text-center text-gray-300 font-black uppercase tracking-[0.4em]">Sin registros detallados para este periodo.</td></tr>
+                                      <tr><td colSpan={user.rol === 'admin' ? 6 : 5} className="py-24 text-center text-gray-300 font-black uppercase tracking-[0.4em]">Sin registros detallados para este periodo.</td></tr>
                                   )}
                               </tbody>
                           </table>
