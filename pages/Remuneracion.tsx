@@ -3,8 +3,8 @@ import {
   Timer as TimerIcon, 
   Target as TargetIcon, 
   Sparkles as SparklesIcon, 
-  Lock as LockIcon,
-  Zap as ZapIcon
+  Fingerprint as PrivateIcon,
+  BarChart3 as GoalIcon
 } from 'lucide-react';
 
 const Remuneracion: React.FC = () => {
@@ -35,7 +35,7 @@ const Remuneracion: React.FC = () => {
         <p className="text-primary text-[10px] font-black uppercase tracking-[0.25em] mt-2">Bono por Productividad del Emisor</p>
       </div>
 
-      {/* Requisitos de Base - Fondo Gris con Marco Blanco */}
+      {/* Requisitos de Base */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-gray-100 border-[5px] border-white p-5 rounded-[2.2rem] flex items-center gap-4 shadow-xl shadow-gray-200/40">
           <div className="w-12 h-12 bg-white text-primary rounded-2xl flex items-center justify-center shrink-0 shadow-sm">
@@ -58,7 +58,7 @@ const Remuneracion: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabulador Principal con Marco Blanco */}
+      {/* Tabulador Principal */}
       <div className="bg-gray-100 border-[6px] border-white rounded-[2.8rem] shadow-2xl shadow-gray-300/30 overflow-hidden">
         
         <div className="px-8 py-6 flex justify-between items-center border-b border-gray-200/30">
@@ -73,7 +73,6 @@ const Remuneracion: React.FC = () => {
             </div>
         </div>
 
-        {/* Listado en Cuadrícula Compacta */}
         <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-2.5">
           {paymentData.map((item, index) => (
             <div 
@@ -92,38 +91,38 @@ const Remuneracion: React.FC = () => {
           ))}
         </div>
 
-        {/* Sección de Notas Legales y Políticas */}
+        {/* Sección de Notas Informativas Mejoradas */}
         <div className="bg-white p-8 border-t border-gray-200/40 space-y-5">
           
-          {/* Restricción de Uso Interno */}
-          <div className="flex gap-5 items-center bg-gray-50/50 p-5 rounded-2xl border border-gray-100 group hover:border-black transition-colors">
-            <div className="w-12 h-12 rounded-xl bg-black text-white flex items-center justify-center shrink-0 shadow-md">
-               <LockIcon size={20} />
+          {/* Aviso de Confidencialidad y Exclusividad */}
+          <div className="flex gap-5 items-center bg-gray-50/50 p-5 rounded-2xl border border-gray-100 group hover:border-black transition-all">
+            <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center shrink-0 shadow-lg shadow-gray-200">
+               <PrivateIcon size={22} strokeWidth={2} />
             </div>
-            <div className="space-y-1">
-              <p className="text-[11px] font-black text-black uppercase tracking-widest">Acceso Interno Exclusivo</p>
+            <div className="space-y-1 flex-1">
+              <p className="text-[11px] font-black text-black uppercase tracking-widest">Uso de Información Privada</p>
               <p className="text-[10px] font-bold text-gray-400 leading-relaxed uppercase">
-                Este esquema de bonificación es <span className="text-black">exclusivo para el equipo de reclutadores</span>. <span className="text-red-500">No es una tabla de pagos</span> para Emisores oficiales de la agencia.
+                Esta tabla de bonificación es <span className="text-black">exclusiva para el equipo de reclutadores</span> de Agencia Moon. Se aclara que <span className="text-primary font-black">no es una tabla de pagos</span> para Emisores oficiales de la plataforma.
               </p>
             </div>
           </div>
 
-          {/* Criterios de Activación */}
-          <div className="flex gap-5 items-center bg-gray-50/50 p-5 rounded-2xl border border-gray-100 group hover:border-primary transition-colors">
-            <div className="w-12 h-12 rounded-xl bg-white text-primary flex items-center justify-center shrink-0 shadow-sm border border-gray-100">
-               <ZapIcon size={20} />
+          {/* Independencia de Metas y Requisitos */}
+          <div className="flex gap-5 items-center bg-gray-50/50 p-5 rounded-2xl border border-gray-100 group hover:border-primary transition-all">
+            <div className="w-12 h-12 rounded-2xl bg-white text-primary flex items-center justify-center shrink-0 shadow-md border border-gray-100">
+               <GoalIcon size={22} strokeWidth={2} />
             </div>
-            <div className="space-y-1">
-              <p className="text-[11px] font-black text-black uppercase tracking-widest">Criterios de Activación</p>
+            <div className="space-y-1 flex-1">
+              <p className="text-[11px] font-black text-black uppercase tracking-widest">Independencia de Pagos</p>
               <p className="text-[10px] font-bold text-gray-400 leading-relaxed uppercase">
-                Estos bonos son <span className="text-black">independientes</span> a las metas de ingreso de nuevos emisores. La liquidación depende estrictamente del cumplimiento de las 44 horas mensuales y 2 horas diarias.
+                Este esquema es independiente <span className="text-black">a las metas de ingresos por nuevos Emisores</span> requeridos mensualmente. La liquidación de este bono exige el cumplimiento obligatorio de las 44 horas.
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Identidad de Marca Simplificada */}
+      {/* Footer Marca */}
       <div className="pt-6 text-center border-t border-gray-50">
         <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.6em]">Agencia Moon</p>
       </div>
