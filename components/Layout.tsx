@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { LogOut, Users, Radio, LayoutDashboard, Menu, X, ChevronRight, Banknote, FileText } from 'lucide-react';
@@ -99,12 +98,12 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
     <div className="min-h-screen bg-[#F8FAFC] flex font-sans text-gray-900">
       
       {/* DESKTOP SIDEBAR */}
-      <aside className="hidden md:flex flex-col w-80 bg-white border-r border-gray-100 h-screen sticky top-0 z-50 shadow-[4px_0_24px_rgba(0,0,0,0.02)] print:hidden">
+      <aside className="hidden md:flex flex-col w-80 bg-white border-r border-gray-100 h-screen sticky top-0 z-50 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
           <SidebarContent />
       </aside>
 
       {/* MOBILE HEADER CON HAMBURGUESA */}
-      <div className="md:hidden fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md border-b border-gray-100 px-5 h-[60px] flex justify-between items-center z-40 shadow-sm print:hidden">
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md border-b border-gray-100 px-5 h-[60px] flex justify-between items-center z-40 shadow-sm">
           <div className="flex items-center gap-3">
               <img src="/icon.svg" alt="Moon" className="w-8 h-8 object-contain rounded-full bg-black" />
               <span className="font-bold text-base text-black uppercase tracking-widest">MOON</span>
@@ -135,12 +134,12 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
         </div>
       )}
 
-      <main className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full mt-[60px] md:mt-0 mb-24 md:mb-0 print:m-0 print:p-0">
+      <main className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full mt-[60px] md:mt-0 mb-24 md:mb-0">
         {children}
       </main>
 
       {/* NAVIGATION BAR - DINÁMICA SEGÚN ROL */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-4 z-50 flex justify-between items-center h-[80px] shadow-[0_-5px_20px_rgba(0,0,0,0.03)] print:hidden">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-4 z-50 flex justify-between items-center h-[80px] shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
          <BottomNavItem to="/" icon={LayoutDashboard} label="Inicio" />
          <BottomNavItem to="/emisores" icon={Radio} label="Emisores" />
          {user.rol === 'admin' ? (
