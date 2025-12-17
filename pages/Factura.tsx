@@ -435,13 +435,18 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                   {/* FICHA INFORMATIVA DE PAGO POR PRESTACION DE SERVICIOS */}
                   <div className="bg-white rounded-[3rem] p-12 border-[4px] border-black flex flex-col md:flex-row justify-between items-center gap-12 relative overflow-hidden print:p-10 print:rounded-3xl">
                       <div className="space-y-10 w-full md:w-auto relative z-10">
-                          <div>
+                          <div className="space-y-2">
                             <p className="text-[11px] font-black text-black uppercase tracking-[0.3em] mb-4 border-b border-gray-100 pb-2">Ficha informativa de pago por prestación de servicios</p>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Pago Total :</p>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pago total:</p>
                             <p className="text-6xl font-black text-black tracking-tighter leading-none">$ {stats.totalPayment.toFixed(2)} <span className="text-2xl">USD</span></p>
-                            <p className="text-[9px] font-black text-gray-400 uppercase mt-4 tracking-widest leading-relaxed">
-                                * MONTO FINAL LIQUIDADO SEGÚN PARÁMETROS DE PRODUCTIVIDAD DE AGENCIA MOON
-                            </p>
+                            <div className="pt-4 space-y-1">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                    A fecha corte en el mes de : <span className="text-black">{selectedMonth}</span>
+                                </p>
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                    Por prestación de mis servicios como reclutador de agencia moon 
+                                </p>
+                            </div>
                           </div>
                           <div className="space-y-4">
                             <div>
