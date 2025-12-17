@@ -17,11 +17,24 @@ export interface Emisor {
   pais: string;
   reclutador_id: string; // ID of the user who recruited them
   horas_mes: number;
-  semillas_mes: number; // NUEVO: Semillas generadas en el mes
+  semillas_mes: number; 
   mes_entrada: string; // Format: YYYY-MM
   estado: EstadoEmisor;
   fecha_registro: string;
-  es_compartido?: boolean; // NUEVO: Si es true, todos los reclutadores pueden verlo
+  es_compartido?: boolean; 
+}
+
+export interface CommissionBracket {
+  seeds: number;
+  usd: number;
+}
+
+export interface InvoiceConfig {
+  agenciaNombre: string;
+  agenciaInfo: string;
+  conceptoSector: string;
+  brackets: CommissionBracket[];
+  canalPagoDefault: string;
 }
 
 export interface HistorialHoras {

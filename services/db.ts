@@ -1,4 +1,4 @@
-import { User, Emisor, HistorialHoras, SystemMetadata } from '../types';
+import { User, Emisor, HistorialHoras, SystemMetadata, InvoiceConfig } from '../types';
 import { db } from './firebase'; 
 import { 
   collection, 
@@ -32,6 +32,38 @@ export const dataService = {
     } catch (e) {
       return { lastUpdated: new Date().toISOString().split('T')[0] };
     }
+  },
+
+  getInvoiceConfig: async (): Promise<InvoiceConfig> => {
+    try {
+      const docRef = doc(db, 'system', 'invoice_config');
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) return docSnap.data() as InvoiceConfig;
+      
+      const defaultConfig: InvoiceConfig = {
+        agenciaNombre: "AGENCIA MOON",
+        agenciaInfo: "Información de identidad independiente y socio operativo de Bigo Live",
+        conceptoSector: "Por concepto de mis servicios ofrecidos a agencia moon en el puesto de Reclutador",
+        brackets: [
+          { seeds: 3000000, usd: 500 },
+          { seeds: 2000000, usd: 400 },
+          { seeds: 1000000, usd: 300 },
+          { seeds: 500000, usd: 200 },
+          { seeds: 10000, usd: 7 },
+          { seeds: 2000, usd: 1.5 }
+        ],
+        canalPagoDefault: "Transferencia / Wallet Digital"
+      };
+      await setDoc(docRef, defaultConfig);
+      return defaultConfig;
+    } catch (e) {
+      return {} as InvoiceConfig;
+    }
+  },
+
+  updateInvoiceConfig: async (config: InvoiceConfig): Promise<void> => {
+    const docRef = doc(db, 'system', 'invoice_config');
+    await setDoc(docRef, config);
   },
 
   updateMetadata: async (newDate: string): Promise<void> => {
@@ -129,12 +161,10 @@ export const dataService = {
     return { ...newEmisor, id: docRef.id } as Emisor;
   },
 
-  // FUNCIÓN ACTUALIZADA: Permite editar datos y horas al mismo tiempo
   updateEmisorData: async (emisorId: string, data: Partial<Emisor>, adminId: string): Promise<void> => {
     const batch = writeBatch(db);
     const emisorRef = doc(db, 'emisores', emisorId);
     
-    // Si se están actualizando las horas, guardamos historial
     if (data.horas_mes !== undefined) {
         const emisorSnap = await getDoc(emisorRef);
         let oldHours = 0;
@@ -143,7 +173,6 @@ export const dataService = {
             oldHours = currentData ? currentData.horas_mes : 0;
         }
 
-        // Solo crear historial si las horas realmente cambiaron
         if (oldHours !== data.horas_mes) {
             const historialRef = doc(collection(db, 'historial'));
             batch.set(historialRef, {
@@ -160,7 +189,6 @@ export const dataService = {
     await batch.commit();
   },
 
-  // MANTENIDA POR COMPATIBILIDAD (Redirige a la nueva)
   updateHours: async (emisorId: string, newHours: number, adminId: string): Promise<void> => {
       return dataService.updateEmisorData(emisorId, { horas_mes: newHours }, adminId);
   },
