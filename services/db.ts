@@ -1,4 +1,3 @@
-
 import { User, Emisor, HistorialHoras, SystemMetadata, InvoiceConfig } from '../types';
 import { db } from './firebase'; 
 import { 
@@ -44,7 +43,7 @@ export const dataService = {
       const defaultConfig: InvoiceConfig = {
         agenciaNombre: "AGENCIA MOON",
         agenciaInfo: "Información de identidad independiente y socio operativo de Bigo Live",
-        conceptoSector: "Por concepto de mis servicios ofrecidos a agencia moon en el puesto de Reclutador",
+        conceptoSector: "pago de servicios",
         brackets: [
           { seeds: 3000000, usd: 500 },
           { seeds: 2000000, usd: 400 },
@@ -53,7 +52,7 @@ export const dataService = {
           { seeds: 10000, usd: 7 },
           { seeds: 2000, usd: 1.5 }
         ],
-        institucionPago: "Nombre del Banco / Institución"
+        institucionPago: "Paypal"
       };
       await setDoc(docRef, defaultConfig);
       return defaultConfig;
@@ -149,13 +148,15 @@ export const dataService = {
     });
   },
 
-  addEmisor: async (emisorData: Omit<Emisor, 'id' | 'fecha_registro' | 'horas_mes' | 'estado'>, currentUser: User): Promise<Emisor> => {
+  addEmisor: async (emisorData: any, currentUser: User): Promise<Emisor> => {
     const newEmisor = {
       ...emisorData,
-      horas_mes: 0,
+      horas_mes: emisorData.horas_mes !== undefined ? Number(emisorData.horas_mes) : 0,
+      semillas_mes: emisorData.semillas_mes !== undefined ? Number(emisorData.semillas_mes) : 0,
       estado: 'activo',
       fecha_registro: new Date().toISOString(),
-      es_compartido: emisorData.es_compartido || false 
+      es_compartido: emisorData.es_compartido || false,
+      isManualEntry: emisorData.isManualEntry || false
     };
     
     const docRef = await addDoc(collection(db, 'emisores'), newEmisor);
@@ -206,7 +207,6 @@ export const dataService = {
     }
   },
 
-  // Fixed: Replaced incorrect userRef with emisorRef
   toggleShared: async (emisorId: string, currentStatus?: boolean): Promise<void> => {
     const emisorRef = doc(db, 'emisores', emisorId);
     await updateDoc(emisorRef, { es_compartido: !currentStatus });

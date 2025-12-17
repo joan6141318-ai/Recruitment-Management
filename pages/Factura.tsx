@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Emisor, InvoiceConfig } from '../types';
 import { dataService } from '../services/db';
-import { Download, Calendar, Coins, UserCheck, FileText, Edit3, Save, Trash2, X, Search, ChevronDown, CheckSquare, Square, Eye, EyeOff, AlertCircle, Hash } from 'lucide-react';
+import { Download, Calendar, Coins, UserCheck, FileText, Edit3, Save, Trash2, X, Search, ChevronDown, CheckSquare, Square, Eye, EyeOff, AlertCircle, PlusCircle } from 'lucide-react';
 
 interface FacturaProps {
   user: User;
@@ -19,6 +19,12 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
   const [editMode, setEditMode] = useState(false);
   const [excludedEmisores, setExcludedEmisores] = useState<string[]>([]);
   const [idFilter, setIdFilter] = useState('');
+
+  // Estados para Registro Manual
+  const [manualId, setManualId] = useState('');
+  const [manualHours, setManualHours] = useState('');
+  const [manualSeeds, setManualSeeds] = useState('');
+  const [isSavingManual, setIsSavingManual] = useState(false);
 
   const instituciones = ["Paypal", "Payonner", "Western union", "Zelle", "Mercado pago", "Remitly", "Otros"];
 
@@ -83,7 +89,10 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
         return bracket && (e.horas_mes || 0) >= 44;
     }).length;
     
-    const totalPayment = filteredData.reduce((acc, curr) => acc + calculateCommission(curr.semillas_mes || 0, curr.horas_mes || 0), 0);
+    // FILTRADO SOLICITADO: Los IDs manuales se ven reflejados en la lista pero NO se suman a la cantidad a pagar.
+    const totalPayment = filteredData
+        .filter(e => !e.isManualEntry) // Se excluyen de la sumatoria de pago
+        .reduce((acc, curr) => acc + calculateCommission(curr.semillas_mes || 0, curr.horas_mes || 0), 0);
 
     return { total, nonProductive, hourGoal, seedGoalCount, totalPayment };
   }, [filteredData, invoiceConfig]);
@@ -107,6 +116,31 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
       }
   };
 
+  const handleSaveManualEntry = async () => {
+      if (!manualId || !targetRecruiterId || isSavingManual) return;
+      setIsSavingManual(true);
+      try {
+          await dataService.addEmisor({
+              nombre: `Manual ${manualId}`,
+              bigo_id: manualId,
+              pais: "Definido",
+              reclutador_id: targetRecruiterId,
+              horas_mes: Number(manualHours) || 0,
+              semillas_mes: Number(manualSeeds) || 0,
+              mes_entrada: selectedMonth,
+              es_compartido: false,
+              isManualEntry: true // Marcamos como entrada manual para excluir de pagos
+          }, user);
+          setManualId('');
+          setManualHours('');
+          setManualSeeds('');
+      } catch (e) {
+          console.error(e);
+      } finally {
+          setIsSavingManual(false);
+      }
+  };
+
   const toggleInvoicePublication = async () => {
       if (!invoiceConfig) return;
       const currentMap = invoiceConfig.publishedInvoices || {};
@@ -119,7 +153,6 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
   const handlePrint = () => { 
     if (!isAvailableForDownload) return;
     const originalTitle = document.title;
-    // Título formal solicitado: factura mes de : [Mes]
     document.title = `factura mes de : ${getFormattedMonth(selectedMonth)}`;
     window.print(); 
     setTimeout(() => { document.title = originalTitle; }, 100);
@@ -161,24 +194,30 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
 
               {editMode && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-slide-up">
+                      {/* Datos Agencia */}
                       <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
-                          <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Datos Agencia</h4>
-                          <input 
-                            className="w-full bg-gray-50 p-3 rounded-xl text-xs font-bold border-none outline-none focus:ring-1 focus:ring-black"
-                            value={invoiceConfig.agenciaNombre}
-                            onChange={e => setInvoiceConfig({...invoiceConfig, agenciaNombre: e.target.value})}
-                          />
-                          <textarea 
-                            className="w-full bg-gray-50 p-3 rounded-xl text-xs font-medium border-none h-20 outline-none focus:ring-1 focus:ring-black"
-                            value={invoiceConfig.agenciaInfo}
-                            onChange={e => setInvoiceConfig({...invoiceConfig, agenciaInfo: e.target.value})}
-                          />
+                          <h4 className="text-[10px] font-black text-primary uppercase tracking-widest">Identidad Corporativa de la Agencia</h4>
+                          <div className="space-y-3">
+                              <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Nombre de Agencia:</label>
+                              <input 
+                                className="w-full bg-gray-50 p-3 rounded-xl text-xs font-bold border-none outline-none focus:ring-1 focus:ring-black"
+                                value={invoiceConfig.agenciaNombre}
+                                onChange={e => setInvoiceConfig({...invoiceConfig, agenciaNombre: e.target.value})}
+                              />
+                              <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Información Legal/Fiscal:</label>
+                              <textarea 
+                                className="w-full bg-gray-50 p-3 rounded-xl text-xs font-medium border-none h-20 outline-none focus:ring-1 focus:ring-black"
+                                value={invoiceConfig.agenciaInfo}
+                                onChange={e => setInvoiceConfig({...invoiceConfig, agenciaInfo: e.target.value})}
+                              />
+                          </div>
                       </div>
 
+                      {/* Canal de Pago */}
                       <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
-                          <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Canal de Pago</h4>
+                          <h4 className="text-[10px] font-black text-primary uppercase tracking-widest">Configuración de Canal de Pago</h4>
                           <div className="space-y-3">
-                             <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Transferencia vía:</p>
+                             <p className="text-[9px] font-bold text-primary uppercase tracking-tighter">Seleccionar Institución:</p>
                              <div className="relative">
                                 <select 
                                     className="w-full bg-gray-50 p-3.5 rounded-xl text-xs font-bold border-none outline-none appearance-none cursor-pointer focus:ring-1 focus:ring-black"
@@ -189,19 +228,65 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                                 </select>
                                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                              </div>
-                             <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Agregar ID:</p>
+                             <p className="text-[9px] font-bold text-primary uppercase tracking-tighter">Referencia ID Factura (Manual):</p>
                              <input 
                                 className="w-full bg-gray-50 p-3.5 rounded-xl text-xs font-bold border-none outline-none focus:ring-1 focus:ring-black"
                                 value={invoiceConfig.referenciaId || ''}
-                                placeholder="Ingrese ID manual..."
+                                placeholder="Hash o Ref. de pago..."
                                 onChange={e => setInvoiceConfig({...invoiceConfig, referenciaId: e.target.value})}
                              />
                           </div>
                       </div>
 
+                      {/* INCLUSIÓN MANUAL DE ID CON HORAS Y SEMILLAS */}
+                      <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4 md:col-span-2">
+                          <h4 className="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                             <PlusCircle size={14} /> Opción de Agregar ID: Manualmente (Solo Visualización en Listado)
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                              <div className="space-y-1">
+                                  <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">ID a Registrar:</label>
+                                  <input 
+                                      className="w-full bg-gray-50 p-3 rounded-xl text-xs font-bold border-none outline-none focus:ring-1 focus:ring-black"
+                                      value={manualId}
+                                      placeholder="ID Bigo..."
+                                      onChange={e => setManualId(e.target.value)}
+                                  />
+                              </div>
+                              <div className="space-y-1">
+                                  <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Horas del Mes:</label>
+                                  <input 
+                                      type="number"
+                                      className="w-full bg-gray-50 p-3 rounded-xl text-xs font-bold border-none outline-none focus:ring-1 focus:ring-black"
+                                      value={manualHours}
+                                      placeholder="0"
+                                      onChange={e => setManualHours(e.target.value)}
+                                  />
+                              </div>
+                              <div className="space-y-1">
+                                  <label className="text-[9px] font-bold text-primary uppercase tracking-tighter">Cantidad Semillas:</label>
+                                  <input 
+                                      type="number"
+                                      className="w-full bg-gray-50 p-3 rounded-xl text-xs font-bold border-none outline-none focus:ring-1 focus:ring-black"
+                                      value={manualSeeds}
+                                      placeholder="0"
+                                      onChange={e => setManualSeeds(e.target.value)}
+                                  />
+                              </div>
+                              <button 
+                                  onClick={handleSaveManualEntry}
+                                  disabled={!manualId || isSavingManual}
+                                  className="w-full bg-primary text-white py-3 rounded-xl font-black text-[10px] uppercase shadow-md flex items-center justify-center gap-2 hover:bg-purple-700 disabled:bg-gray-200 transition-all active:scale-95"
+                              >
+                                  {isSavingManual ? 'Sincronizando...' : <><Save size={14} /> Guardar en Listado</>}
+                              </button>
+                          </div>
+                      </div>
+
+                      {/* SELECCIÓN ID POR ID EXISTENTE */}
                       <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4 md:col-span-2">
                           <div className="flex justify-between items-center">
-                              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Agregar ID: por ID:</h4>
+                              <h4 className="text-[10px] font-black text-primary uppercase tracking-widest">Publicar IDs Seleccionados de la Base</h4>
                               <div className="relative">
                                   <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-300" />
                                   <input 
@@ -238,7 +323,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                         onClick={handleSaveConfig}
                         className="md:col-span-2 py-4 bg-black text-white rounded-2xl font-black text-sm shadow-xl flex items-center justify-center gap-2 hover:bg-gray-900 active:scale-[0.98] transition-all"
                       >
-                          <Save size={18} /> Guardar Configuración de Factura
+                          <Save size={18} /> Aplicar Cambios Estructurales
                       </button>
                   </div>
               )}
@@ -249,12 +334,12 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
       <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4 no-print">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Periodo de Factura:</label>
+                  <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Periodo de Factura Mensual:</label>
                   <input type="month" className="w-full bg-gray-50 p-3.5 rounded-2xl text-sm font-black border-none outline-none focus:ring-1 focus:ring-black" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
               </div>
               {user.rol === 'admin' && (
                   <div className="space-y-1">
-                      <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Reclutador:</label>
+                      <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Selección de Reclutador:</label>
                       <select className="w-full bg-gray-50 p-3.5 rounded-2xl text-sm font-black border-none outline-none" value={targetRecruiterId} onChange={(e) => setTargetRecruiterId(e.target.value)}>
                         {reclutadores.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
                       </select>
@@ -263,7 +348,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
           </div>
           {isAvailableForDownload && (
             <button onClick={handlePrint} className="w-full bg-black text-white px-6 py-4 rounded-2xl flex items-center justify-center gap-2 font-black text-sm shadow-xl hover:bg-gray-900 transition-colors">
-                <Download size={18} /> Descargar Factura Mensual
+                <Download size={18} /> Descargar Factura de Página
             </button>
           )}
       </div>
@@ -274,7 +359,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
               <div className="bg-orange-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                 <AlertCircle className="text-accent" size={32} />
               </div>
-              <h3 className="text-xl font-black text-black uppercase tracking-tight mb-2">Factura No Generada</h3>
+              <h3 className="text-xl font-black text-black uppercase tracking-tight mb-2">Factura No Disponible</h3>
               <p className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
                   la información no está dentro del periodo de pago
               </p>
@@ -296,7 +381,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                   <div className="text-right flex flex-col items-end">
                       <img src="/icon.svg" className="w-16 h-16 mb-4 grayscale brightness-200" alt="Agencia Moon" />
                       <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/10">
-                          <p className="text-[9px] font-black text-gray-500 uppercase mb-0.5 tracking-widest">Periodo de Liquidación</p>
+                          <p className="text-[9px] font-black text-gray-500 uppercase mb-0.5 tracking-widest">Hash de Control</p>
                           <p className="text-sm font-black tracking-[0.2em]">#{selectedMonth.replace('-','')}-{selectedRecruiter?.nombre.split(' ')[0].toUpperCase()}</p>
                       </div>
                   </div>
@@ -345,7 +430,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                   <div className="space-y-6">
                       <h3 className="text-[11px] font-black text-black uppercase tracking-[0.3em] flex items-center gap-4">
                         <span className="w-16 h-[4px] bg-black"></span> 
-                        RELACIÓN DETALLADA DE EMISORES CON CUMPLIMIENTO
+                        RELACIÓN DETALLADA DE EMISORES CON CUMPLIMIENTO (LIQUIDACIÓN)
                       </h3>
                       <div className="overflow-hidden rounded-3xl border-2 border-gray-100 shadow-sm">
                           <table className="w-full text-left text-xs">
@@ -358,8 +443,11 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                               </thead>
                               <tbody className="divide-y-2 divide-gray-50">
                                   {filteredData.length > 0 ? filteredData.map(e => (
-                                    <tr key={e.id} className="hover:bg-gray-50/50 transition-colors">
-                                        <td className="py-6 px-8 font-black text-gray-900">ID: {e.bigo_id}</td>
+                                    <tr key={e.id} className={`hover:bg-gray-50/50 transition-colors ${e.isManualEntry ? 'bg-purple-50/30' : ''}`}>
+                                        <td className="py-6 px-8 font-black text-gray-900 flex items-center gap-2">
+                                            ID: {e.bigo_id}
+                                            {e.isManualEntry && <span className="text-[8px] bg-purple-100 text-primary px-1.5 rounded uppercase no-print">Manual</span>}
+                                        </td>
                                         <td className="py-6 px-2 text-center">
                                             {user.rol === 'admin' ? (
                                                 <input 
@@ -399,15 +487,16 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           <div>
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Liquidación Total :</p>
                             <p className="text-6xl font-black text-black tracking-tighter leading-none">$ {stats.totalPayment.toFixed(2)} <span className="text-2xl">USD</span></p>
+                            <p className="text-[9px] text-gray-400 mt-2 italic no-print">* El total excluye los IDs agregados manualmente de forma directa.</p>
                           </div>
                           <div className="space-y-4">
                             <div>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Transferencia vía :</p>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Canal de Transferencia :</p>
                                 <p className="text-lg font-black text-black uppercase border-b-4 border-black inline-block">{invoiceConfig.institucionPago || "No Definida"}</p>
                             </div>
                             {invoiceConfig.referenciaId && (
                                 <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Referencia ID :</p>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Referencia ID Factura :</p>
                                     <p className="text-sm font-black text-black uppercase tracking-widest bg-gray-50 px-3 py-1 rounded-md border border-gray-100">{invoiceConfig.referenciaId}</p>
                                 </div>
                             )}
@@ -417,7 +506,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                       <div className="text-center md:text-right flex-1 md:max-w-md space-y-12 relative z-10">
                           {/* LEYENDA FORMAL - SIN CURSIVAS */}
                           <div className="space-y-6 text-gray-900">
-                              <p className="text-[11px] font-black uppercase tracking-[0.4em] text-gray-400 mb-2">Manifestación de Recepción</p>
+                              <p className="text-[11px] font-black uppercase tracking-[0.4em] text-gray-400 mb-2">Declaración de Conformidad</p>
                               <p className="text-sm font-black leading-relaxed text-justify uppercase tracking-tighter" style={{ fontFamily: "'Inter', sans-serif" }}>
                                 RECIBÍ LA CANTIDAD DE : <span className="text-black bg-gray-50 px-2 rounded-md">$ {stats.totalPayment.toFixed(2)} USD</span> POR CONCEPTO DE PAGO DE SERVICIOS OFRECIDOS A AGENCIA MOON EN EL PUESTO DE RECLUTADOR. LA PRESENTE LIQUIDACIÓN SE EFECTÚA DE MANERA EXITOSA Y DE PLENA CONFORMIDAD CON LOS ACUERDOS ESTABLECIDOS.
                               </p>
@@ -426,7 +515,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           <div className="pt-12 flex flex-col items-center md:items-end">
                               <div className="w-56 h-[4px] bg-black mb-4"></div>
                               <p className="text-[11px] font-black text-black uppercase tracking-[0.6em]">Firma de Conformidad</p>
-                              <p className="text-[9px] text-gray-400 font-mono mt-2 uppercase tracking-widest">Hash de Seguridad: {selectedRecruiter?.id.slice(0,12).toUpperCase()}</p>
+                              <p className="text-[9px] text-gray-400 font-mono mt-2 uppercase tracking-widest">Auth Code: {selectedRecruiter?.id.slice(0,12).toUpperCase()}</p>
                           </div>
                       </div>
                   </div>
@@ -434,7 +523,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
               </div>
 
               <div className="bg-gray-50 py-12 text-center border-t-2 border-gray-100">
-                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.8em]">DOCUMENTO OFICIAL DE CONTROL INTERNO - AGENCIA MOON</p>
+                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.8em]">DOCUMENTO DE CONTROL INTERNO CONFIDENCIAL - AGENCIA MOON</p>
               </div>
           </div>
       )}

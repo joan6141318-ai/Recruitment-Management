@@ -38,6 +38,7 @@ export interface Emisor {
   estado: EstadoEmisor;
   fecha_registro: string;
   es_compartido?: boolean; 
+  isManualEntry?: boolean; // Identificador para registros agregados manualmente desde factura
 }
 
 export interface HistorialHoras {
