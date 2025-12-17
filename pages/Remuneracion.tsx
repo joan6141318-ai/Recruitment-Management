@@ -2,10 +2,9 @@ import React from 'react';
 import { 
   Timer as TimerIcon, 
   Target as TargetIcon, 
-  Info as InfoIcon, 
   Sparkles as SparklesIcon, 
-  FileText as FileIcon,
-  ShieldCheck as ShieldIcon 
+  Lock as LockIcon,
+  Zap as ZapIcon
 } from 'lucide-react';
 
 const Remuneracion: React.FC = () => {
@@ -36,7 +35,7 @@ const Remuneracion: React.FC = () => {
         <p className="text-primary text-[10px] font-black uppercase tracking-[0.25em] mt-2">Bono por Productividad del Emisor</p>
       </div>
 
-      {/* Requisitos de Base - Diseño Simétrico de Alta Densidad */}
+      {/* Requisitos de Base - Fondo Gris con Marco Blanco */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-gray-100 border-[5px] border-white p-5 rounded-[2.2rem] flex items-center gap-4 shadow-xl shadow-gray-200/40">
           <div className="w-12 h-12 bg-white text-primary rounded-2xl flex items-center justify-center shrink-0 shadow-sm">
@@ -93,31 +92,31 @@ const Remuneracion: React.FC = () => {
           ))}
         </div>
 
-        {/* Sección de Notas Legales y Políticas - Alineación Mejorada */}
+        {/* Sección de Notas Legales y Políticas */}
         <div className="bg-white p-8 border-t border-gray-200/40 space-y-5">
           
-          {/* Confidencialidad Simplificada */}
-          <div className="flex gap-5 items-center bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
-            <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center shrink-0 shadow-md">
-               <ShieldIcon size={18} />
+          {/* Restricción de Uso Interno */}
+          <div className="flex gap-5 items-center bg-gray-50/50 p-5 rounded-2xl border border-gray-100 group hover:border-black transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-black text-white flex items-center justify-center shrink-0 shadow-md">
+               <LockIcon size={20} />
             </div>
-            <div className="space-y-0.5">
-              <p className="text-[11px] font-black text-black uppercase tracking-widest">Uso de Información Privada</p>
+            <div className="space-y-1">
+              <p className="text-[11px] font-black text-black uppercase tracking-widest">Acceso Interno Exclusivo</p>
               <p className="text-[10px] font-bold text-gray-400 leading-relaxed uppercase">
-                Este esquema es <span className="text-black">estrictamente confidencial</span> para el equipo interno. Los valores pueden actualizarse según el desempeño y políticas actuales de la agencia.
+                Este esquema de bonificación es <span className="text-black">exclusivo para el equipo de reclutadores</span>. <span className="text-red-500">No es una tabla de pagos</span> para Emisores oficiales de la agencia.
               </p>
             </div>
           </div>
 
-          {/* Independencia de Metas - Título y Texto Claros */}
-          <div className="flex gap-5 items-center bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
-            <div className="w-10 h-10 rounded-xl bg-white text-primary flex items-center justify-center shrink-0 shadow-sm border border-gray-100">
-               <FileIcon size={18} />
+          {/* Criterios de Activación */}
+          <div className="flex gap-5 items-center bg-gray-50/50 p-5 rounded-2xl border border-gray-100 group hover:border-primary transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-white text-primary flex items-center justify-center shrink-0 shadow-sm border border-gray-100">
+               <ZapIcon size={20} />
             </div>
-            <div className="space-y-0.5">
-              <p className="text-[11px] font-black text-black uppercase tracking-widest">Independencia de Pagos</p>
+            <div className="space-y-1">
+              <p className="text-[11px] font-black text-black uppercase tracking-widest">Criterios de Activación</p>
               <p className="text-[10px] font-bold text-gray-400 leading-relaxed uppercase">
-                Este bono es independiente a la meta de reclutamiento de nuevos emisores. El cumplimiento de las horas (44h/2h) es <span className="text-black">indispensable</span> para procesar cualquier remuneración listada.
+                Estos bonos son <span className="text-black">independientes</span> a las metas de ingreso de nuevos emisores. La liquidación depende estrictamente del cumplimiento de las 44 horas mensuales y 2 horas diarias.
               </p>
             </div>
           </div>
