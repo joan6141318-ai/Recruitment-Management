@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Users, Clock, TrendingUp, AlertCircle, CheckCircle2, Target, Calendar, Edit2, X, Trash2, ChevronDown, ChevronUp, FolderOpen } from 'lucide-react';
+import { Users, Clock, TrendingUp, AlertCircle, CheckCircle2, Target, Calendar, Edit2, X, Trash2, ChevronDown, ChevronUp, FolderOpen, UserCheck } from 'lucide-react';
 
 interface DashboardProps {
   user: User;
@@ -10,6 +11,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [emisores, setEmisores] = useState<Emisor[]>([]);
+  const [reclutadores, setReclutadores] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Estado para la fecha
@@ -19,6 +21,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
   // Estados para Gestión Mensual (Admin)
   const [managementMonth, setManagementMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [managementRecruiterId, setManagementRecruiterId] = useState<string>('all');
   const [showManagement, setShowManagement] = useState(false);
 
   // Objetivos Dinámicos: 30 para Admin (Equipo), 15 para Reclutador individual
@@ -26,15 +29,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const PRODUCTIVITY_HOURS_GOAL = 20;
 
   useEffect(() => {
-    // 1. Obtener fecha
-    const loadMetadata = async () => {
+    const loadInitialData = async () => {
         const meta = await dataService.getMetadata();
         setLastUpdatedDate(meta.lastUpdated);
         setNewDateInput(meta.lastUpdated);
-    };
-    loadMetadata();
 
-    // 2. Suscripción en tiempo real
+        if (user.rol === 'admin') {
+            const recs = await dataService.getRecruiters();
+            setReclutadores(recs);
+        }
+    };
+    loadInitialData();
+
     const unsubscribe = dataService.subscribeToEmisores(user, (data) => {
       setEmisores(data);
       setLoading(false);
@@ -61,11 +67,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       if(!isoString) return 'Seleccionar';
       const [year, month] = isoString.split('-');
       const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-      // Parse int para quitar ceros a la izquierda y restar 1 para el index
       return `${months[parseInt(month) - 1]} ${year}`;
   };
 
-  // CORRECCIÓN: Filtrado case-insensitive
   const activeEmisores = emisores.filter(e => 
     e.estado && e.estado.toLowerCase() === 'activo'
   );
@@ -73,36 +77,25 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const totalHours = emisores.reduce((acc, curr) => acc + curr.horas_mes, 0);
   const avgHours = activeEmisores.length > 0 ? totalHours / activeEmisores.length : 0;
   
-  // Lógica de Meta Mensual
-  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const currentMonth = new Date().toISOString().slice(0, 7);
   
   const newEmisoresThisMonth = emisores.filter(e => {
-    // 1. Verificar si corresponde al mes actual
     const isDateMatch = (e.mes_entrada && e.mes_entrada === currentMonth) || 
                         (e.fecha_registro && e.fecha_registro.startsWith(currentMonth));
-    
     if (!isDateMatch) return false;
-
-    // 2. Filtrado por Rol para la Meta
-    if (user.rol === 'admin') {
-        // El admin ve el total global del mes (suyos + de otros reclutadores)
-        return true;
-    } else {
-        // El reclutador SOLO ve para su meta los que ÉL registró.
-        // Se excluyen los "compartidos" que pertenecen a otros.
-        return e.reclutador_id === user.id;
-    }
+    if (user.rol === 'admin') return true;
+    return e.reclutador_id === user.id;
   });
 
-  // Filtro para la Gestión Mensual del Admin
+  // Filtro para la Gestión Mensual del Admin (Mes + Reclutador)
   const emisoresInSelectedMonth = emisores.filter(e => {
-      // Usamos mes_entrada como referencia principal, fallback a fecha_registro
-      return (e.mes_entrada === managementMonth) || (e.fecha_registro && e.fecha_registro.startsWith(managementMonth));
+      const monthMatch = (e.mes_entrada === managementMonth) || (e.fecha_registro && e.fecha_registro.startsWith(managementMonth));
+      const recruiterMatch = managementRecruiterId === 'all' || e.reclutador_id === managementRecruiterId;
+      return monthMatch && recruiterMatch;
   });
 
   const monthlyProgress = Math.min((newEmisoresThisMonth.length / MONTHLY_EMISOR_GOAL) * 100, 100);
   
-  // Chart Data: Top 5 Emisores
   const chartData = [...emisores]
     .sort((a, b) => b.horas_mes - a.horas_mes)
     .slice(0, 5)
@@ -129,7 +122,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     <>
       <div className="space-y-6 animate-slide-up">
         
-        {/* Title & Header con Fecha */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-2">
             <div>
               <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Rendimiento en Vivo</h2>
@@ -154,9 +146,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             </div>
         </div>
 
-        {/* --- SECCIÓN META MENSUAL --- */}
         <div className="bg-gray-100 text-gray-900 p-6 rounded-3xl shadow-xl shadow-gray-200/50 border-[6px] border-white relative overflow-hidden">
-            
             <div className="relative z-10">
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-3">
@@ -174,7 +164,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                     </div>
                 </div>
 
-                {/* Barra de Progreso */}
                 <div className="w-full bg-white h-4 rounded-full overflow-hidden mb-2 border border-gray-200 shadow-inner">
                     <div 
                         className="h-full rounded-full bg-gradient-to-r from-primary to-purple-400 transition-all duration-700 ease-out relative"
@@ -190,7 +179,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             </div>
         </div>
 
-        {/* --- GESTIÓN MENSUAL (SOLO ADMIN) --- */}
         {user.rol === 'admin' && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div 
@@ -198,7 +186,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                     onClick={() => setShowManagement(!showManagement)}
                 >
                     <div className="flex items-center gap-3">
-                        {/* Icono Morado */}
                         <div className="bg-primary text-white p-2 rounded-lg">
                             <FolderOpen size={18} />
                         </div>
@@ -212,13 +199,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                 
                 {showManagement && (
                     <div className="px-5 pb-5 pt-0 animate-slide-up">
-                        <div className="bg-gray-50 p-4 rounded-xl mb-4 flex items-center justify-between gap-4 border border-gray-100">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl mb-4 border border-gray-100">
                              <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Seleccionar Mes</label>
-                                
-                                {/* SELECTOR DE MES PERSONALIZADO */}
+                                <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Filtrar por Mes</label>
                                 <div className="relative">
-                                     <div className="bg-white px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-900 shadow-sm flex items-center gap-2 min-w-[160px] hover:border-black transition-colors">
+                                     <div className="bg-white px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-900 shadow-sm flex items-center gap-2 w-full hover:border-black transition-colors">
                                         <Calendar size={16} className="text-primary"/>
                                         <span className="capitalize">{getFormattedMonth(managementMonth)}</span>
                                      </div>
@@ -230,10 +215,30 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                                      />
                                 </div>
                              </div>
+
+                             <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Filtrar por Reclutador</label>
+                                <div className="relative">
+                                     <div className="bg-white px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-900 shadow-sm flex items-center gap-2 w-full hover:border-black transition-colors">
+                                        <UserCheck size={16} className="text-accent"/>
+                                        <span className="truncate">{managementRecruiterId === 'all' ? 'Todos los Reclutadores' : (reclutadores.find(r => r.id === managementRecruiterId)?.nombre || 'Seleccionado')}</span>
+                                     </div>
+                                     <select 
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                        value={managementRecruiterId}
+                                        onChange={(e) => setManagementRecruiterId(e.target.value)}
+                                     >
+                                        <option value="all">Todos los Reclutadores</option>
+                                        {reclutadores.map(r => (
+                                            <option key={r.id} value={r.id}>{r.nombre}</option>
+                                        ))}
+                                     </select>
+                                </div>
+                             </div>
                              
-                             <div className="text-right">
-                                 <p className="text-2xl font-black text-gray-900">{emisoresInSelectedMonth.length}</p>
-                                 <p className="text-[10px] font-bold text-gray-400 uppercase">Ingresos Totales</p>
+                             <div className="md:col-span-2 text-center pt-2 border-t border-gray-200/50 mt-2">
+                                 <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Registros encontrados: </span>
+                                 <span className="text-sm font-black text-black">{emisoresInSelectedMonth.length}</span>
                              </div>
                         </div>
 
@@ -247,7 +252,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                                             </div>
                                             <div>
                                                 <p className="text-xs font-bold text-gray-900">{emisor.nombre}</p>
-                                                <p className="text-[10px] text-gray-400">Reg: {emisor.fecha_registro?.split('T')[0]}</p>
+                                                <p className="text-[10px] text-gray-400">ID: {emisor.bigo_id} | Reg: {emisor.fecha_registro?.split('T')[0]}</p>
                                             </div>
                                         </div>
                                         <button 
@@ -261,8 +266,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-8 text-gray-400 text-xs">
-                                No hay emisores registrados en este periodo.
+                            <div className="text-center py-8 text-gray-400 text-xs font-bold uppercase tracking-widest">
+                                No hay emisores registrados para este filtro.
                             </div>
                         )}
                     </div>
@@ -270,7 +275,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             </div>
         )}
 
-        {/* KPI Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard 
               title="Emisores Activos" 
@@ -307,8 +311,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Chart Section */}
             <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                <h3 className="text-sm font-bold text-gray-900 mb-6 uppercase tracking-wide">Top Productividad</h3>
                {chartData.length > 0 ? (
@@ -335,13 +337,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                       </ResponsiveContainer>
                    </div>
                ) : (
-                   <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
+                   <div className="h-64 flex items-center justify-center text-gray-400 text-sm font-bold uppercase tracking-widest">
                        Sin datos suficientes
                    </div>
                )}
             </div>
 
-            {/* Alert List */}
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col">
                <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide flex items-center gap-2">
                   <AlertCircle size={16} className="text-accent"/> Atención Requerida
@@ -362,7 +363,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                   {activeEmisores.filter(e => e.horas_mes < 10).length === 0 && (
                       <div className="flex flex-col items-center justify-center h-full py-10 text-gray-400">
                           <CheckCircle2 size={30} className="mb-2 text-green-500 opacity-50" />
-                          <p className="text-xs">Todo bajo control.</p>
+                          <p className="text-xs font-bold uppercase tracking-widest">Todo bajo control.</p>
                       </div>
                   )}
                </div>
@@ -370,7 +371,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         </div>
       </div>
 
-      {/* MODAL CAMBIAR FECHA (SOLO ADMIN) - Movido fuera del div animado */}
       {showDateModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 w-screen h-screen">
            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowDateModal(false)}></div>
