@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Emisor, InvoiceConfig } from '../types';
 import { dataService } from '../services/db';
-import { Edit3, Save, X, ChevronDown, Eye, EyeOff, AlertCircle, PlusCircle, DollarSign, Settings2, Users, FileText, ChevronUp, Trash2 } from 'lucide-react';
+import { Edit3, Save, X, ChevronDown, Eye, EyeOff, AlertCircle, PlusCircle, DollarSign, Settings2, Users, FileText, ChevronUp, Trash2, Calendar, Target } from 'lucide-react';
 
 interface FacturaProps {
   user: User;
@@ -172,11 +172,21 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
 
               {editMode && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-slide-up">
+                      {/* MODULO: FILTRO GLOBAL (MES Y RECLUTADOR) */}
                       <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3">
-                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Identidad de Agencia</h4>
-                          <p className="text-[9px] text-gray-400 uppercase font-bold">Nombre y descripción legal del encabezado</p>
-                          <input className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none" value={invoiceConfig.agenciaNombre} onChange={e => setInvoiceConfig({...invoiceConfig, agenciaNombre: e.target.value})} />
-                          <textarea className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-medium h-20 outline-none" value={invoiceConfig.agenciaInfo} onChange={e => setInvoiceConfig({...invoiceConfig, agenciaInfo: e.target.value})} />
+                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Módulo de Filtro</h4>
+                          <div className="space-y-3">
+                              <div>
+                                  <p className="text-[9px] text-gray-400 uppercase font-bold mb-1">Seleccionar Mes de Liquidación</p>
+                                  <input type="month" className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
+                              </div>
+                              <div>
+                                  <p className="text-[9px] text-gray-400 uppercase font-bold mb-1">Seleccionar Reclutador Beneficiario</p>
+                                  <select className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none" value={targetRecruiterId} onChange={(e) => setTargetRecruiterId(e.target.value)}>
+                                    {reclutadores.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                                  </select>
+                              </div>
+                          </div>
                       </div>
 
                       <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3">
@@ -189,9 +199,10 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                       </div>
 
                       <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3">
-                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Ajuste de Conteo</h4>
-                          <p className="text-[9px] text-gray-400 uppercase font-bold">Número exacto de emisores reclutados</p>
-                          <input type="number" className="w-full bg-white p-3 rounded-xl text-xs font-black outline-none" placeholder="Cantidad de emisores" value={invoiceConfig.totalEmisoresAjustes?.[invoiceKey] || ''} onChange={(e) => handleUpdateTotalEmisoresAdjustment(e.target.value)} />
+                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Identidad de Agencia</h4>
+                          <p className="text-[9px] text-gray-400 uppercase font-bold">Nombre y descripción legal del encabezado</p>
+                          <input className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none" value={invoiceConfig.agenciaNombre} onChange={e => setInvoiceConfig({...invoiceConfig, agenciaNombre: e.target.value})} />
+                          <textarea className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-medium h-20 outline-none" value={invoiceConfig.agenciaInfo} onChange={e => setInvoiceConfig({...invoiceConfig, agenciaInfo: e.target.value})} />
                       </div>
 
                       <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3">
@@ -203,6 +214,12 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                             <input className="bg-white p-2 rounded-lg text-[10px] font-bold outline-none" placeholder="Semillas" value={manualSeeds} onChange={e => setManualSeeds(e.target.value)} />
                             <button onClick={handleSaveManualEntry} disabled={isSavingManual} className="bg-black text-white p-2 rounded-lg text-[10px] font-black uppercase">Añadir</button>
                           </div>
+                      </div>
+
+                      <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3">
+                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Ajuste de Conteo</h4>
+                          <p className="text-[9px] text-gray-400 uppercase font-bold">Número exacto de emisores reclutados</p>
+                          <input type="number" className="w-full bg-white p-3 rounded-xl text-xs font-black outline-none" placeholder="Cantidad de emisores" value={invoiceConfig.totalEmisoresAjustes?.[invoiceKey] || ''} onChange={(e) => handleUpdateTotalEmisoresAdjustment(e.target.value)} />
                       </div>
 
                       <button onClick={handleSaveConfig} className="md:col-span-2 py-4 bg-black text-white rounded-2xl font-black text-xs uppercase shadow-xl transition-transform active:scale-95">Guardar Cambios de Liquidación</button>
@@ -237,18 +254,18 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
               <header className="bg-white p-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                   <div className="flex items-center gap-6">
                       <div className="bg-black p-3 rounded-2xl shadow-lg flex items-center justify-center shrink-0">
-                        <img src="/icon.svg" className="w-10 h-10 object-contain grayscale brightness-200" alt="Moon" />
+                        <img src="/icon.svg" className="w-9 h-9 object-contain grayscale brightness-200" alt="Moon" />
                       </div>
-                      <div className="space-y-1">
-                          <h1 className="text-xl font-black tracking-tight uppercase leading-none font-brand text-black" style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900 }}>{invoiceConfig.agenciaNombre}</h1>
-                          <p className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.2em] leading-tight max-w-xs">{invoiceConfig.agenciaInfo}</p>
+                      <div className="space-y-0.5">
+                          <h1 className="text-lg font-black tracking-tight uppercase leading-none font-brand text-black" style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900 }}>{invoiceConfig.agenciaNombre}</h1>
+                          <p className="text-[7px] font-bold text-gray-400 uppercase tracking-[0.2em] leading-tight max-w-xs">{invoiceConfig.agenciaInfo}</p>
                       </div>
                   </div>
                   
                   <div className="flex flex-col items-start md:items-end">
                       <div className="bg-gray-50 px-5 py-2.5 rounded-xl border border-gray-100 flex flex-col items-start md:items-end">
                           <p className="text-[7px] font-black text-gray-400 uppercase mb-0.5 tracking-widest">Folio Liquidación</p>
-                          <p className="text-base font-black tracking-[0.1em] font-brand text-black">MOON-{selectedMonth.replace('-','')}</p>
+                          <p className="text-sm font-black tracking-[0.1em] font-brand text-black">MOON-{selectedMonth.replace('-','')}</p>
                       </div>
                   </div>
               </header>
@@ -261,6 +278,14 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           <div>
                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Reclutador Beneficiario :</p>
                               <p className="text-3xl font-black text-black uppercase tracking-tighter border-l-8 border-black pl-5 leading-none">{selectedRecruiter?.nombre || '...'}</p>
+                          </div>
+                          {/* CANTIDAD DE EMISORES INGRESADOS */}
+                          <div className="pt-2">
+                             <div className="inline-flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
+                                <Target size={14} className="text-primary" />
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Emisores Ingresados:</span>
+                                <span className="text-sm font-black text-black">{stats.totalEmisores}</span>
+                             </div>
                           </div>
                       </div>
                       <div className="flex flex-col items-start md:items-end space-y-4">
@@ -328,13 +353,13 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                   </div>
 
                   {/* TARJETA DE PAGO FINAL (ESTILO GRIS CON BORDE BLANCO) */}
-                  <div className="bg-gray-100 border-[8px] border-white rounded-[3rem] p-12 shadow-xl flex flex-col items-center text-center gap-10 relative overflow-hidden">
+                  <div className="bg-gray-100 border-[8px] border-white rounded-[3rem] p-10 md:p-14 shadow-xl flex flex-col items-center text-center gap-10 relative overflow-hidden">
                       <div className="space-y-8 w-full max-w-xl">
                           <div className="space-y-1">
                             <p className="text-[11px] font-black text-black uppercase tracking-[0.25em] mb-4">Recibí la cantidad de :</p>
                             <div className="flex items-center justify-center gap-3">
-                                <span className="text-5xl font-black text-black tracking-tighter leading-none font-brand">$ {stats.totalPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                <span className="text-xl font-black text-primary tracking-[0.1em] self-end pb-1">USD</span>
+                                <span className="text-4xl md:text-5xl font-black text-black tracking-tighter leading-none font-brand">$ {stats.totalPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                <span className="text-lg md:text-xl font-black text-primary tracking-[0.1em] self-end pb-1">USD</span>
                             </div>
                             <div className="pt-8 space-y-3">
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">
@@ -355,8 +380,8 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
               </main>
 
               <footer className="py-12 text-center bg-white border-t border-gray-50">
-                  <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.6em]">
-                    {invoiceConfig.agenciaNombre} — DOCUMENTO PRIVADO E INDEPENDIENTE
+                  <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.4em]">
+                    Agencia moon 2025
                   </p>
               </footer>
           </div>
