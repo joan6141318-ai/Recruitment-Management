@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Emisor, InvoiceConfig } from '../types';
 import { dataService } from '../services/db';
-import { Edit3, Save, X, ChevronDown, Eye, EyeOff, AlertCircle, PlusCircle, DollarSign, Settings2, Users, FileText, ChevronUp } from 'lucide-react';
+import { Edit3, Save, X, ChevronDown, Eye, EyeOff, AlertCircle, PlusCircle, DollarSign, Settings2, Users, FileText, ChevronUp, Trash2 } from 'lucide-react';
 
 interface FacturaProps {
   user: User;
@@ -153,7 +153,8 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           <Settings2 size={20} />
                       </div>
                       <div>
-                          <h3 className="font-black text-sm uppercase tracking-tight">Administración</h3>
+                          <h3 className="font-black text-sm uppercase tracking-tight">Panel de Gestión</h3>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ajustes de Liquidación</p>
                       </div>
                   </div>
                   <div className="flex gap-2">
@@ -171,19 +172,40 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
 
               {editMode && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-slide-up">
-                      <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-4">
-                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Datos de Agencia</h4>
+                      <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3">
+                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Identidad de Agencia</h4>
+                          <p className="text-[9px] text-gray-400 uppercase font-bold">Nombre y descripción legal del encabezado</p>
                           <input className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none" value={invoiceConfig.agenciaNombre} onChange={e => setInvoiceConfig({...invoiceConfig, agenciaNombre: e.target.value})} />
                           <textarea className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-medium h-20 outline-none" value={invoiceConfig.agenciaInfo} onChange={e => setInvoiceConfig({...invoiceConfig, agenciaInfo: e.target.value})} />
                       </div>
-                      <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-4">
-                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Pago</h4>
+
+                      <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3">
+                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Configuración de Pago</h4>
+                          <p className="text-[9px] text-gray-400 uppercase font-bold">Canal de pago y monto total de liquidación</p>
                           <select className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none" value={invoiceConfig.institucionPago} onChange={e => setInvoiceConfig({...invoiceConfig, institucionPago: e.target.value})}>
                               {instituciones.map(inst => <option key={inst} value={inst}>{inst}</option>)}
                           </select>
-                          <input type="number" step="0.01" className="w-full bg-white p-3 rounded-xl text-xs font-black outline-none" placeholder="Pago Total $" value={invoiceConfig.pagoAjustes?.[invoiceKey] || ''} onChange={(e) => handleUpdateGlobalAdjustment(e.target.value)} />
+                          <input type="number" step="0.01" className="w-full bg-white p-3 rounded-xl text-xs font-black outline-none" placeholder="Monto total USD $" value={invoiceConfig.pagoAjustes?.[invoiceKey] || ''} onChange={(e) => handleUpdateGlobalAdjustment(e.target.value)} />
                       </div>
-                      <button onClick={handleSaveConfig} className="md:col-span-2 py-4 bg-black text-white rounded-2xl font-black text-xs uppercase shadow-xl">Aplicar Ajustes</button>
+
+                      <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3">
+                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Ajuste de Conteo</h4>
+                          <p className="text-[9px] text-gray-400 uppercase font-bold">Número exacto de emisores reclutados</p>
+                          <input type="number" className="w-full bg-white p-3 rounded-xl text-xs font-black outline-none" placeholder="Cantidad de emisores" value={invoiceConfig.totalEmisoresAjustes?.[invoiceKey] || ''} onChange={(e) => handleUpdateTotalEmisoresAdjustment(e.target.value)} />
+                      </div>
+
+                      <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3">
+                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Registro Manual</h4>
+                          <p className="text-[9px] text-gray-400 uppercase font-bold">Añadir emisor directamente a la tabla</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <input className="bg-white p-2 rounded-lg text-[10px] font-bold outline-none" placeholder="Bigo ID" value={manualId} onChange={e => setManualId(e.target.value)} />
+                            <input className="bg-white p-2 rounded-lg text-[10px] font-bold outline-none" placeholder="Horas" value={manualHours} onChange={e => setManualHours(e.target.value)} />
+                            <input className="bg-white p-2 rounded-lg text-[10px] font-bold outline-none" placeholder="Semillas" value={manualSeeds} onChange={e => setManualSeeds(e.target.value)} />
+                            <button onClick={handleSaveManualEntry} disabled={isSavingManual} className="bg-black text-white p-2 rounded-lg text-[10px] font-black uppercase">Añadir</button>
+                          </div>
+                      </div>
+
+                      <button onClick={handleSaveConfig} className="md:col-span-2 py-4 bg-black text-white rounded-2xl font-black text-xs uppercase shadow-xl transition-transform active:scale-95">Guardar Cambios de Liquidación</button>
                   </div>
               )}
           </div>
@@ -214,19 +236,19 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
               {/* ENCABEZADO MINIMALISTA PROFESIONAL */}
               <header className="bg-white p-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                   <div className="flex items-center gap-6">
-                      <div className="bg-black p-3.5 rounded-2xl shadow-lg flex items-center justify-center shrink-0">
-                        <img src="/icon.svg" className="w-12 h-12 object-contain grayscale brightness-200" alt="Moon" />
+                      <div className="bg-black p-3 rounded-2xl shadow-lg flex items-center justify-center shrink-0">
+                        <img src="/icon.svg" className="w-10 h-10 object-contain grayscale brightness-200" alt="Moon" />
                       </div>
                       <div className="space-y-1">
-                          <h1 className="text-2xl font-black tracking-tight uppercase leading-none font-brand text-black" style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900 }}>{invoiceConfig.agenciaNombre}</h1>
-                          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em] leading-tight max-w-xs">{invoiceConfig.agenciaInfo}</p>
+                          <h1 className="text-xl font-black tracking-tight uppercase leading-none font-brand text-black" style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900 }}>{invoiceConfig.agenciaNombre}</h1>
+                          <p className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.2em] leading-tight max-w-xs">{invoiceConfig.agenciaInfo}</p>
                       </div>
                   </div>
                   
                   <div className="flex flex-col items-start md:items-end">
-                      <div className="bg-gray-50 px-6 py-3 rounded-2xl border border-gray-100 flex flex-col items-start md:items-end">
-                          <p className="text-[8px] font-black text-gray-400 uppercase mb-0.5 tracking-widest">Folio Liquidación</p>
-                          <p className="text-lg font-black tracking-[0.1em] font-brand text-black">MOON-{selectedMonth.replace('-','')}</p>
+                      <div className="bg-gray-50 px-5 py-2.5 rounded-xl border border-gray-100 flex flex-col items-start md:items-end">
+                          <p className="text-[7px] font-black text-gray-400 uppercase mb-0.5 tracking-widest">Folio Liquidación</p>
+                          <p className="text-base font-black tracking-[0.1em] font-brand text-black">MOON-{selectedMonth.replace('-','')}</p>
                       </div>
                   </div>
               </header>
@@ -266,7 +288,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                               <h3 className="text-xs font-black text-black uppercase tracking-[0.2em]">Relación Detallada</h3>
                           </div>
                           <div className="flex items-center gap-3">
-                              <span className="text-[9px] font-black text-primary uppercase bg-white px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">
+                              <span className="text-[9px] font-black text-primary uppercase bg-white px-3 py-1.5 rounded-full border border-gray-100 shadow-sm transition-transform active:scale-95">
                                 {showTableDetails ? 'Ocultar' : 'Ver Detalle'}
                               </span>
                               {showTableDetails ? <ChevronUp size={16} className="text-black" /> : <ChevronDown size={16} className="text-black" />}
@@ -306,33 +328,33 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                   </div>
 
                   {/* TARJETA DE PAGO FINAL (ESTILO GRIS CON BORDE BLANCO) */}
-                  <div className="bg-gray-100 border-[8px] border-white rounded-[3rem] p-10 shadow-xl flex flex-col items-center text-center gap-8 relative overflow-hidden">
-                      <div className="space-y-6 w-full max-w-xl">
+                  <div className="bg-gray-100 border-[8px] border-white rounded-[3rem] p-12 shadow-xl flex flex-col items-center text-center gap-10 relative overflow-hidden">
+                      <div className="space-y-8 w-full max-w-xl">
                           <div className="space-y-1">
-                            <p className="text-[11px] font-black text-black uppercase tracking-[0.2em] mb-4">Recibí la cantidad de :</p>
+                            <p className="text-[11px] font-black text-black uppercase tracking-[0.25em] mb-4">Recibí la cantidad de :</p>
                             <div className="flex items-center justify-center gap-3">
-                                <span className="text-6xl font-black text-black tracking-tighter leading-none font-brand">$ {stats.totalPayment.toFixed(2)}</span>
-                                <span className="text-2xl font-black text-primary tracking-widest">USD</span>
+                                <span className="text-5xl font-black text-black tracking-tighter leading-none font-brand">$ {stats.totalPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                <span className="text-xl font-black text-primary tracking-[0.1em] self-end pb-1">USD</span>
                             </div>
-                            <div className="pt-6 space-y-2">
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
+                            <div className="pt-8 space-y-3">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">
                                     Correspondiente a liquidación del periodo <span className="text-black font-black">{selectedMonth}</span>
                                 </p>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">
                                     Por prestación de mis servicios como reclutador de agencia moon
                                 </p>
                             </div>
                           </div>
                           
-                          <div className="pt-8 border-t border-gray-200/50 flex flex-col items-center">
-                              <p className="text-[8px] font-black text-gray-400 uppercase tracking-[0.3em] mb-1">Transferencia vía canal de pago :</p>
-                              <p className="text-lg font-black text-black uppercase tracking-widest">{invoiceConfig.institucionPago || "PENDIENTE"}</p>
+                          <div className="pt-10 border-t border-gray-200/50 flex flex-col items-center">
+                              <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Canal de Transferencia :</p>
+                              <p className="text-base font-black text-black uppercase tracking-[0.2em] border-b-2 border-black inline-block pb-0.5">{invoiceConfig.institucionPago || "PENDIENTE"}</p>
                           </div>
                       </div>
                   </div>
               </main>
 
-              <footer className="py-10 text-center bg-white border-t border-gray-50">
+              <footer className="py-12 text-center bg-white border-t border-gray-50">
                   <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.6em]">
                     {invoiceConfig.agenciaNombre} — DOCUMENTO PRIVADO E INDEPENDIENTE
                   </p>
