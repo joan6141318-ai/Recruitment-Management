@@ -18,6 +18,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
   
   const [invoiceConfig, setInvoiceConfig] = useState<InvoiceConfig | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [showMgmtIDs, setShowMgmtIDs] = useState(false); // Estado para desplegar IDs
   const [excludedEmisores, setExcludedEmisores] = useState<string[]>([]);
 
   // Estados para Registro Manual
@@ -205,19 +206,33 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           <input type="number" step="0.01" className="w-full bg-white p-3 rounded-xl text-xs font-black outline-none" placeholder="Monto total USD $" value={invoiceConfig.pagoAjustes?.[invoiceKey] || ''} onChange={(e) => handleUpdateGlobalAdjustment(e.target.value)} />
                       </div>
 
-                      <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3">
-                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Gestión de Registros</h4>
-                          <p className="text-[9px] text-gray-400 uppercase font-bold">Elimina IDs vinculados a este periodo y reclutador</p>
-                          <div className="max-h-44 overflow-y-auto space-y-1.5 bg-white p-3 rounded-xl border border-gray-200">
-                             {filteredData.length > 0 ? filteredData.map(e => (
-                                 <div key={e.id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded-lg group">
-                                     <span className="text-[10px] font-black text-gray-700 uppercase">ID: {e.bigo_id}</span>
-                                     <button onClick={() => handleDeleteEmisor(e.id)} className="text-gray-300 hover:text-red-500 transition-colors">
-                                         <Trash2 size={14} />
-                                     </button>
-                                 </div>
-                             )) : <p className="text-[9px] text-center text-gray-300 font-bold uppercase py-2">Sin registros activos</p>}
-                          </div>
+                      {/* MODULO: GESTIÓN DE REGISTROS (COLAPSABLE) */}
+                      <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3 flex flex-col">
+                          <button 
+                            onClick={() => setShowMgmtIDs(!showMgmtIDs)}
+                            className="flex justify-between items-center group w-full text-left outline-none"
+                          >
+                            <div>
+                                <h4 className="text-[11px] font-black text-primary uppercase tracking-widest group-hover:text-black transition-colors">Gestión de Registros</h4>
+                                <p className="text-[9px] text-gray-400 uppercase font-bold">Elimina IDs vinculados a este periodo</p>
+                            </div>
+                            <div className={`p-1.5 rounded-lg bg-white border border-gray-200 text-gray-400 group-hover:text-black transition-all ${showMgmtIDs ? 'rotate-180 shadow-inner' : 'shadow-sm'}`}>
+                                <ChevronDown size={14} />
+                            </div>
+                          </button>
+                          
+                          {showMgmtIDs && (
+                            <div className="max-h-44 overflow-y-auto space-y-1.5 bg-white p-3 rounded-xl border border-gray-200 animate-slide-up mt-1">
+                                {filteredData.length > 0 ? filteredData.map(e => (
+                                    <div key={e.id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded-lg group border-b border-gray-50 last:border-0">
+                                        <span className="text-[10px] font-black text-gray-700 uppercase">ID: {e.bigo_id}</span>
+                                        <button onClick={() => handleDeleteEmisor(e.id)} className="text-gray-300 hover:text-red-500 transition-colors">
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                )) : <p className="text-[9px] text-center text-gray-300 font-bold uppercase py-2">Sin registros activos</p>}
+                            </div>
+                          )}
                       </div>
 
                       <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3">
