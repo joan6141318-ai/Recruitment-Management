@@ -174,14 +174,15 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-slide-up">
                       {/* MODULO: FILTRO GLOBAL (MES Y RECLUTADOR) */}
                       <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3">
-                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Módulo de Filtro</h4>
+                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Módulo de Consulta</h4>
+                          <p className="text-[9px] text-gray-400 uppercase font-bold">Define el periodo y el beneficiario de la factura</p>
                           <div className="space-y-3">
                               <div>
-                                  <p className="text-[9px] text-gray-400 uppercase font-bold mb-1">Seleccionar Mes de Liquidación</p>
+                                  <label className="text-[9px] text-gray-500 uppercase font-black mb-1 block">Mes de Liquidación</label>
                                   <input type="month" className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
                               </div>
                               <div>
-                                  <p className="text-[9px] text-gray-400 uppercase font-bold mb-1">Seleccionar Reclutador Beneficiario</p>
+                                  <label className="text-[9px] text-gray-500 uppercase font-black mb-1 block">Reclutador Beneficiario</label>
                                   <select className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none" value={targetRecruiterId} onChange={(e) => setTargetRecruiterId(e.target.value)}>
                                     {reclutadores.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
                                   </select>
@@ -228,17 +229,14 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
           </div>
       )}
 
-      {/* FILTROS (NO PRINT) */}
-      <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4 no-print">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input type="month" className="w-full bg-gray-50 border-none p-4 rounded-2xl text-sm font-black outline-none shadow-sm" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
-              {user.rol === 'admin' && (
-                  <select className="w-full bg-gray-50 border-none p-4 rounded-2xl text-sm font-black outline-none shadow-sm" value={targetRecruiterId} onChange={(e) => setTargetRecruiterId(e.target.value)}>
-                    {reclutadores.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-                  </select>
-              )}
-          </div>
-      </div>
+      {/* FILTROS (NO PRINT) - RECLUTADOR ONLY (Para admin ya están en el panel superior) */}
+      {user.rol === 'reclutador' && (
+        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4 no-print">
+            <div className="grid grid-cols-1 gap-4">
+                <input type="month" className="w-full bg-gray-50 border-none p-4 rounded-2xl text-sm font-black outline-none shadow-sm" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
+            </div>
+        </div>
+      )}
 
       {!isAvailableForView ? (
           <div className="bg-white rounded-[2.5rem] p-20 text-center border-2 border-dashed border-gray-200 shadow-sm animate-pop-in">
