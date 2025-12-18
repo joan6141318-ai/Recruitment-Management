@@ -208,7 +208,7 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                       <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3">
                           <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Gestión de Registros</h4>
                           <p className="text-[9px] text-gray-400 uppercase font-bold">Elimina IDs vinculados a este periodo y reclutador</p>
-                          <div className="max-h-40 overflow-y-auto space-y-1.5 bg-white p-3 rounded-xl border border-gray-200">
+                          <div className="max-h-44 overflow-y-auto space-y-1.5 bg-white p-3 rounded-xl border border-gray-200">
                              {filteredData.length > 0 ? filteredData.map(e => (
                                  <div key={e.id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded-lg group">
                                      <span className="text-[10px] font-black text-gray-700 uppercase">ID: {e.bigo_id}</span>
@@ -218,6 +218,13 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                                  </div>
                              )) : <p className="text-[9px] text-center text-gray-300 font-bold uppercase py-2">Sin registros activos</p>}
                           </div>
+                      </div>
+
+                      <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3">
+                          <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Total de Emisores ingresados</h4>
+                          <p className="text-[9px] text-gray-400 uppercase font-bold">Número exacto de emisores reclutados</p>
+                          <input type="number" className="w-full bg-white p-3 rounded-xl text-xs font-black outline-none text-center" placeholder="Cantidad de emisores" value={invoiceConfig.totalEmisoresAjustes?.[invoiceKey] || ''} onChange={(e) => handleUpdateTotalEmisoresAdjustment(e.target.value)} />
+                          <p className="text-[8px] text-gray-400 font-bold uppercase text-center mt-2">Este valor sobreescribe el conteo automático de la tabla</p>
                       </div>
 
                       <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3">
@@ -231,14 +238,11 @@ const Factura: React.FC<FacturaProps> = ({ user }) => {
                           </div>
                       </div>
 
-                      <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3 md:col-span-2">
+                      <div className="bg-gray-100 p-6 rounded-3xl border-2 border-white shadow-sm space-y-3">
                           <h4 className="text-[11px] font-black text-primary uppercase tracking-widest">Identidad de Agencia</h4>
                           <p className="text-[9px] text-gray-400 uppercase font-bold">Nombre y descripción legal del encabezado</p>
-                          <div className="flex gap-3">
-                            <input className="flex-1 bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none" value={invoiceConfig.agenciaNombre} onChange={e => setInvoiceConfig({...invoiceConfig, agenciaNombre: e.target.value})} />
-                            <input type="number" className="w-32 bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none text-center" placeholder="Cant. Emisores" value={invoiceConfig.totalEmisoresAjustes?.[invoiceKey] || ''} onChange={(e) => handleUpdateTotalEmisoresAdjustment(e.target.value)} />
-                          </div>
-                          <textarea className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-medium h-16 outline-none resize-none" value={invoiceConfig.agenciaInfo} onChange={e => setInvoiceConfig({...invoiceConfig, agenciaInfo: e.target.value})} />
+                          <input className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-black outline-none" value={invoiceConfig.agenciaNombre} onChange={e => setInvoiceConfig({...invoiceConfig, agenciaNombre: e.target.value})} />
+                          <textarea className="w-full bg-white border border-gray-200 p-3 rounded-xl text-xs font-medium h-12 outline-none resize-none" value={invoiceConfig.agenciaInfo} onChange={e => setInvoiceConfig({...invoiceConfig, agenciaInfo: e.target.value})} />
                       </div>
 
                       <button onClick={handleSaveConfig} className="md:col-span-2 py-4 bg-black text-white rounded-2xl font-black text-xs uppercase shadow-xl transition-transform active:scale-95">Guardar Cambios de Liquidación</button>
