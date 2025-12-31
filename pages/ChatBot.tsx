@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User as UserIcon, Bot as BotIcon, X } from 'lucide-react';
+import { Send, User as UserIcon, Bot as BotIcon, X, Sparkles, Lock } from 'lucide-react';
 import { User, Emisor } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { GoogleGenAI } from "@google/genai";
@@ -18,13 +18,17 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
+  const isRecruiter = user.rol === 'reclutador';
+
   useEffect(() => {
+    if (isRecruiter) return; // No cargar datos si es reclutador
+
     const loadContext = async () => {
       const data = await dataService.getEmisores(user);
       setUserEmisores(data);
     };
     loadContext();
-  }, [user]);
+  }, [user, isRecruiter]);
 
   const getGreetingByTime = () => {
     const hour = new Date().getHours();
@@ -53,8 +57,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     6. Tus respuestas deben ser visualmente impecables, entendibles y estéticas sin símbolos basura.`;
   };
 
-  // Mensaje inicial - Corregido: directo y sin frases innecesarias
   useEffect(() => {
+    if (isRecruiter) return;
+
     const timer = setTimeout(() => {
       const name = user.nombre.split(' ')[0];
       const greeting = getGreetingByTime();
@@ -71,7 +76,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [user.nombre]);
+  }, [user.nombre, isRecruiter]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -84,12 +89,11 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim() || isTyping) return;
+    if (!inputValue.trim() || isTyping || isRecruiter) return;
 
     const userText = inputValue;
     const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // Guardamos el mensaje del usuario
     setMessages(prev => [...prev, { id: Date.now(), type: 'user', text: userText, time: timeString }]);
     setInputValue('');
     setIsTyping(true);
@@ -97,9 +101,6 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
-      // FILTRO DE SEGURIDAD PARA LA API:
-      // Construimos un historial que alterne estrictamente: user -> model -> user...
-      // Ignoramos el mensaje de bienvenida (id: 1) para cumplir la regla de empezar con 'user'.
       const rawHistory = messages
         .filter(m => m.id !== 1 && !m.isError)
         .map(m => ({
@@ -109,7 +110,6 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
 
       const validatedHistory = [];
       let lastRole = null;
-      
       for (const turn of rawHistory) {
         if (turn.role !== lastRole) {
           validatedHistory.push(turn);
@@ -117,7 +117,6 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
         }
       }
 
-      // El mensaje actual siempre debe ser de 'user' al final
       const contents = [...validatedHistory, { role: 'user', parts: [{ text: userText }] }];
 
       const response = await ai.models.generateContent({
@@ -125,18 +124,17 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
         contents: contents,
         config: {
           systemInstruction: buildSystemInstruction(),
-          temperature: 0.1, // Menos aleatoriedad para mayor precisión profesional
+          temperature: 0.1,
         },
       });
 
       const responseText = response.text || "";
-      // Limpieza exhaustiva de cualquier símbolo que la IA intente colar
       const cleanedText = responseText.replace(/[*_#\-]/g, '').trim();
 
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         type: 'bot',
-        text: cleanedText || "He procesado su solicitud pero la respuesta está vacía. ¿Podría reformular su pregunta?",
+        text: cleanedText || "He procesado su solicitud pero la respuesta está vacía.",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }]);
     } catch (error) {
@@ -144,7 +142,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         type: 'bot',
-        text: "He tenido un inconveniente técnico al procesar su solicitud. Por favor, intente enviar su mensaje nuevamente.",
+        text: "Error de conexión. Intente nuevamente.",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isError: true
       }]);
@@ -153,6 +151,48 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     }
   };
 
+  // VISTA "PRÓXIMAMENTE" PARA RECLUTADORES
+  if (isRecruiter) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 md:p-6">
+        <div className="w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-slide-up flex flex-col items-center text-center p-10 relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-bl-full -mr-10 -mt-10 opacity-50"></div>
+          
+          <div className="w-20 h-20 bg-black rounded-3xl flex items-center justify-center shadow-xl mb-8 relative z-10">
+            <Sparkles size={36} className="text-primary animate-pulse" />
+          </div>
+
+          <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight mb-4 leading-tight">
+            Soporte <span className="text-primary">agencIA</span>
+          </h2>
+          
+          <div className="inline-flex items-center gap-2 bg-gray-100 px-4 py-1.5 rounded-full mb-6">
+            <Lock size={14} className="text-gray-400" />
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Acceso Restringido</span>
+          </div>
+
+          <p className="text-gray-400 text-sm font-medium leading-relaxed mb-8 px-4">
+            Estamos afinando los algoritmos de asistencia personalizada para nuestro equipo de reclutadores. 
+            <br/><br/>
+            Esta función estará <span className="text-black font-bold uppercase tracking-widest text-[10px]">disponible pronto</span> para ayudarte con la gestión automatizada de tu equipo.
+          </p>
+
+          <button 
+            onClick={() => navigate('/')}
+            className="w-full py-4 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary transition-all shadow-lg active:scale-95"
+          >
+            Volver al Inicio
+          </button>
+
+          <div className="mt-8">
+            <p className="text-[8px] font-black text-gray-300 uppercase tracking-[0.6em]">Agencia Moon 2025</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // VISTA REAL PARA ADMINISTRADORES
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-0 md:p-6">
       <div className="w-full h-full max-w-2xl bg-white md:rounded-[2rem] shadow-2xl flex flex-col overflow-hidden animate-slide-up">
@@ -180,25 +220,13 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
 
         {/* Chat Area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:px-10 md:py-8 space-y-8 bg-white scroll-smooth pb-16">
-          {messages.length === 0 && !isTyping && (
-             <div className="h-full flex flex-col items-center justify-center text-center p-10 opacity-30">
-                <BotIcon size={48} className="mb-4 text-gray-400" />
-                <p className="text-xs font-black uppercase tracking-[0.3em]">Conectando...</p>
-             </div>
-          )}
-
           {messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'} animate-pop-in`}>
               <div className={`flex items-start gap-3.5 max-w-[92%] ${msg.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-gray-100 mt-0.5 transition-all
                   ${msg.type === 'user' ? 'bg-black text-white' : 'bg-primary text-white shadow-purple-100'}
                 `}>
-                  {msg.type === 'user' ? (
-                    <UserIcon size={18} strokeWidth={2.5} />
-                  ) : (
-                    <BotIcon size={18} strokeWidth={2.5} />
-                  )}
+                  {msg.type === 'user' ? <UserIcon size={18} strokeWidth={2.5} /> : <BotIcon size={18} strokeWidth={2.5} />}
                 </div>
 
                 <div className={`flex flex-col space-y-2 ${msg.type === 'user' ? 'items-end' : 'items-start'}`}>
@@ -213,7 +241,6 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
                     {msg.time}
                   </p>
                 </div>
-
               </div>
             </div>
           ))}

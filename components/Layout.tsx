@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
-import { LogOut, Users, Radio, LayoutDashboard, Menu, X, ChevronRight, Banknote, FileText, Sparkles } from 'lucide-react';
+import { LogOut, Users, Radio, LayoutDashboard, Menu, X, ChevronRight, Banknote, FileText, Sparkles, Lock } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 interface LayoutProps {
@@ -14,32 +14,40 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Cerrar sidebar al cambiar de ruta
   useEffect(() => { setIsSidebarOpen(false); }, [location]);
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Nav Item para Sidebar Desktop / Hamburguesa
-  const NavItem = ({ to, icon: Icon, label, colorClass = "text-gray-400", disabled = false }: { to: string, icon: any, label: string, colorClass?: string, disabled?: boolean }) => {
+  const NavItem = ({ 
+    to, 
+    icon: Icon, 
+    label, 
+    colorClass = "text-gray-400", 
+    disabled = false,
+    badge = null
+  }: { 
+    to: string, 
+    icon: any, 
+    label: string, 
+    colorClass?: string, 
+    disabled?: boolean,
+    badge?: string | null
+  }) => {
     const active = isActive(to);
     
-    const content = (
-      <>
-        {active && <div className="absolute left-0 top-0 bottom-0 w-1 bg-black rounded-r-full"></div>}
-        <Icon 
-            size={22} 
-            strokeWidth={active ? 2.5 : 2} 
-            className={`mr-4 transition-colors ${active ? 'text-primary' : colorClass} ${!disabled && 'group-hover:text-primary'}`} 
-        />
-        <span className="text-sm tracking-wide">{label}</span>
-        {active && <ChevronRight size={16} className="ml-auto text-gray-300" />}
-      </>
-    );
-
     if (disabled) {
       return (
-        <div className="flex items-center px-4 py-4 rounded-xl mb-1 text-gray-300 cursor-not-allowed opacity-60">
-          {content}
+        <div className="flex items-center px-4 py-4 rounded-xl mb-1 text-gray-300 cursor-not-allowed opacity-60 grayscale group relative">
+          <Icon size={22} className={`mr-4 ${colorClass}`} />
+          <div className="flex flex-col">
+            <span className="text-sm tracking-wide font-medium">{label}</span>
+            {badge && (
+              <span className="text-[7px] font-black bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-md mt-0.5 tracking-[0.2em] w-fit">
+                {badge}
+              </span>
+            )}
+          </div>
+          <Lock size={14} className="ml-auto opacity-40" />
         </div>
       );
     }
@@ -55,18 +63,24 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
           }
         `}
       >
-        {content}
+        {active && <div className="absolute left-0 top-0 bottom-0 w-1 bg-black rounded-r-full"></div>}
+        <Icon 
+            size={22} 
+            strokeWidth={active ? 2.5 : 2} 
+            className={`mr-4 transition-colors ${active ? 'text-primary' : colorClass} group-hover:text-primary`} 
+        />
+        <span className="text-sm tracking-wide">{label}</span>
+        {active && <ChevronRight size={16} className="ml-auto text-gray-300" />}
       </Link>
     );
   };
 
-  // Nav Item para Bottom Bar (Móvil)
   const BottomNavItem = ({ to, icon: Icon, label, disabled = false }: { to: string, icon: any, label: string, disabled?: boolean }) => {
       const active = isActive(to);
       
       if (disabled) {
           return (
-              <div className="flex flex-col items-center justify-center w-full py-1 text-gray-200 opacity-40">
+              <div className="flex flex-col items-center justify-center w-full py-1 text-gray-200 opacity-40 cursor-not-allowed">
                   <div className="p-2 rounded-xl mb-0.5 bg-transparent">
                     <Icon size={20} />
                   </div>
@@ -106,7 +120,9 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
                 to="/chatbot" 
                 icon={Sparkles} 
                 label="Soporte agencIA" 
-                colorClass="text-primary" 
+                colorClass="text-primary"
+                disabled={user.rol === 'reclutador'}
+                badge={user.rol === 'reclutador' ? "PRÓXIMAMENTE" : null}
               />
               {user.rol === 'admin' && <NavItem to="/reclutadores" icon={Users} label="Equipo Reclutadores" />}
           </nav>
@@ -169,13 +185,12 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
         {children}
       </main>
 
-      {/* NAVEGACIÓN INFERIOR RESTAURADA AL ORDEN SOLICITADO: Inicio, Emisores, Equipo, Salir */}
+      {/* NAVEGACIÓN INFERIOR */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-4 z-50 flex justify-around items-center h-[80px] shadow-[0_-5px_20px_rgba(0,0,0,0.03)] print:hidden">
          <BottomNavItem to="/" icon={LayoutDashboard} label="Inicio" />
          <BottomNavItem to="/emisores" icon={Radio} label="Emisores" />
          <BottomNavItem to="/reclutadores" icon={Users} label="Equipo" disabled={user.rol !== 'admin'} />
 
-         {/* Botón Salir */}
          <button onClick={onLogout} className="flex flex-col items-center justify-center w-full py-1 text-gray-400">
             <div className="p-2 rounded-xl mb-0.5 transition-all bg-transparent">
               <LogOut size={20} strokeWidth={2} />

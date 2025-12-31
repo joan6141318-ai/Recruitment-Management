@@ -117,7 +117,7 @@ const App: React.FC = () => {
             <Route path="/remuneracion" element={<Remuneracion />} />
             <Route path="/factura" element={<Factura user={user} />} />
             
-            {/* Habilitado para todos los usuarios autenticados */}
+            {/* El componente ChatBot maneja internamente la restricción por rol y muestra Próximamente */}
             <Route 
               path="/chatbot" 
               element={<ChatBot user={user} />} 
