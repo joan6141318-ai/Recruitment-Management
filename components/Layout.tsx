@@ -20,8 +20,30 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
   const isActive = (path: string) => location.pathname === path;
 
   // Nav Item para Sidebar Desktop / Hamburguesa
-  const NavItem = ({ to, icon: Icon, label, colorClass = "text-gray-400" }: { to: string, icon: any, label: string, colorClass?: string }) => {
+  const NavItem = ({ to, icon: Icon, label, colorClass = "text-gray-400", disabled = false }: { to: string, icon: any, label: string, colorClass?: string, disabled?: boolean }) => {
     const active = isActive(to);
+    
+    const content = (
+      <>
+        {active && <div className="absolute left-0 top-0 bottom-0 w-1 bg-black rounded-r-full"></div>}
+        <Icon 
+            size={22} 
+            strokeWidth={active ? 2.5 : 2} 
+            className={`mr-4 transition-colors ${active ? 'text-primary' : colorClass} ${!disabled && 'group-hover:text-primary'}`} 
+        />
+        <span className="text-sm tracking-wide">{label}</span>
+        {active && <ChevronRight size={16} className="ml-auto text-gray-300" />}
+      </>
+    );
+
+    if (disabled) {
+      return (
+        <div className="flex items-center px-4 py-4 rounded-xl mb-1 text-gray-300 cursor-not-allowed opacity-60">
+          {content}
+        </div>
+      );
+    }
+
     return (
       <Link
         to={to}
@@ -33,21 +55,26 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
           }
         `}
       >
-        {active && <div className="absolute left-0 top-0 bottom-0 w-1 bg-black rounded-r-full"></div>}
-        <Icon 
-            size={22} 
-            strokeWidth={active ? 2.5 : 2} 
-            className={`mr-4 transition-colors ${active ? 'text-primary' : colorClass} group-hover:text-primary`} 
-        />
-        <span className="text-sm tracking-wide">{label}</span>
-        {active && <ChevronRight size={16} className="ml-auto text-gray-300" />}
+        {content}
       </Link>
     );
   };
 
   // Nav Item para Bottom Bar (Móvil)
-  const BottomNavItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => {
+  const BottomNavItem = ({ to, icon: Icon, label, disabled = false }: { to: string, icon: any, label: string, disabled?: boolean }) => {
       const active = isActive(to);
+      
+      if (disabled) {
+          return (
+              <div className="flex flex-col items-center justify-center w-full py-1 text-gray-200 opacity-40 cursor-not-allowed">
+                  <div className="p-2 rounded-xl mb-0.5 bg-transparent">
+                    <Icon size={20} />
+                  </div>
+                  <span className="text-[10px] font-bold tracking-tight">{label}</span>
+              </div>
+          );
+      }
+
       return (
           <Link to={to} className={`flex flex-col items-center justify-center w-full py-1 ${active ? 'text-black' : 'text-gray-400'}`}>
               <div className={`p-2 rounded-xl mb-0.5 transition-all ${active ? 'bg-black text-white shadow-lg shadow-purple-200' : 'bg-transparent'}`}>
@@ -75,7 +102,13 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
               <NavItem to="/emisores" icon={Radio} label="Emisores" />
               <NavItem to="/remuneracion" icon={Banknote} label="Remuneración" />
               <NavItem to="/factura" icon={FileText} label="Mi Factura" />
-              <NavItem to="/chatbot" icon={Sparkles} label="Soporte agencIA" colorClass="text-primary" />
+              <NavItem 
+                to="/chatbot" 
+                icon={Sparkles} 
+                label="Soporte agencIA (Próximamente)" 
+                colorClass="text-primary" 
+                disabled={user.rol !== 'admin'}
+              />
               {user.rol === 'admin' && <NavItem to="/reclutadores" icon={Users} label="Equipo Reclutadores" />}
           </nav>
 
@@ -140,14 +173,17 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
         {children}
       </main>
 
-      {/* NAVIGATION BAR - LIMPIA SIN FACTURA NI CHATBOT */}
+      {/* NAVIGATION BAR */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-4 z-50 flex justify-around items-center h-[80px] shadow-[0_-5px_20px_rgba(0,0,0,0.03)] print:hidden">
          <BottomNavItem to="/" icon={LayoutDashboard} label="Inicio" />
          <BottomNavItem to="/emisores" icon={Radio} label="Emisores" />
          <BottomNavItem to="/remuneracion" icon={Banknote} label="Pagos" />
-         {user.rol === 'admin' && (
-           <BottomNavItem to="/reclutadores" icon={Users} label="Equipo" />
-         )}
+         <BottomNavItem 
+            to="/chatbot" 
+            icon={Sparkles} 
+            label="agencIA" 
+            disabled={user.rol !== 'admin'}
+         />
       </div>
 
     </div>
