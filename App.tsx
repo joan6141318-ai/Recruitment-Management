@@ -117,7 +117,7 @@ const App: React.FC = () => {
             <Route path="/emisores" element={<Emisores user={user} />} />
             <Route path="/remuneracion" element={<Remuneracion />} />
             <Route path="/factura" element={<Factura user={user} />} />
-            <Route path="/chatbot" element={<ChatBot />} />
+            <Route path="/chatbot" element={<ChatBot user={user} />} />
             {user.rol === 'admin' ? (
               <Route path="/reclutadores" element={<Reclutadores user={user} />} />
             ) : (
