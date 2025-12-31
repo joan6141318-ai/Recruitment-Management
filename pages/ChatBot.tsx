@@ -1,10 +1,8 @@
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Send, Bot, User as UserIcon, X, Sparkles } from 'lucide-react';
-import { User, Emisor } from '../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Bot, User as UserIcon, X } from 'lucide-react';
+import { User } from '../types';
 import { useNavigate } from 'react-router-dom';
-import { dataService } from '../services/db';
-import { GoogleGenAI } from "@google/genai";
 
 interface ChatBotProps {
   user: User;
@@ -14,171 +12,203 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
   const [messages, setMessages] = useState<any[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [userEmisores, setUserEmisores] = useState<Emisor[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Carga el contexto de los emisores para que la IA sepa de qué hablas
   useEffect(() => {
-    const loadContext = async () => {
-      const data = await dataService.getEmisores(user);
-      setUserEmisores(data);
+    const getGreeting = () => {
+      const hour = new Date().getHours();
+      if (hour >= 5 && hour < 12) return 'buenos días';
+      if (hour >= 12 && hour < 19) return 'buenas tardes';
+      return 'buenas noches';
     };
-    loadContext();
-  }, [user]);
 
-  const contextString = useMemo(() => {
-    if (userEmisores.length === 0) return "No hay emisores registrados aún.";
-    return userEmisores.map(e => 
-      `- ${e.nombre} (ID: ${e.bigo_id}): ${e.horas_mes}h, ${e.semillas_mes} semillas, Estado: ${e.estado}`
-    ).join('\n');
-  }, [userEmisores]);
-
-  useEffect(() => {
-    if (messages.length === 0) {
-      setIsTyping(true);
-      setTimeout(() => {
-        setMessages([{ 
+    const firstName = user.nombre.split(' ')[0];
+    const initialGreeting = `Hola ${firstName}, ${getGreeting()}, ¿en qué puedo asistirte hoy?`;
+    
+    setIsTyping(true);
+    const timer = setTimeout(() => {
+      setMessages([
+        { 
           id: 1, 
           type: 'bot', 
-          text: `¡Hola ${user.nombre.split(' ')[0]}! Soy agencIA. Estoy lista para analizar tu base de datos de ${userEmisores.length} emisores. ¿Qué necesitas saber?`,
+          text: initialGreeting,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }]);
-        setIsTyping(false);
-      }, 1000);
-    }
-  }, [user.nombre, userEmisores.length]);
+        }
+      ]);
+      setIsTyping(false);
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [user.nombre]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
   }, [messages, isTyping]);
 
-  const handleSend = async (e: React.FormEvent) => {
+  const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isTyping) return;
 
     const userText = inputValue;
-    setMessages(prev => [...prev, {
+    const newUserMsg = {
       id: Date.now(),
       type: 'user',
       text: userText,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }]);
+    };
+
+    setMessages(prev => [...prev, newUserMsg]);
     setInputValue('');
     setIsTyping(true);
-
-    try {
-      // IMPORTANTE: Aquí se usa la variable de entorno de forma segura
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: userText,
-        config: {
-          systemInstruction: `Eres agencIA, el asistente experto de Agencia Moon. 
-          Tu objetivo es ayudar al reclutador ${user.nombre} a gestionar sus emisores.
-          DATOS DISPONIBLES:
-          ${contextString}
-          
-          Instrucciones:
-          1. Responde de forma ejecutiva y amable.
-          2. Si te piden datos, analízalos (ej. quién tiene más horas).
-          3. Si no conoces la respuesta o no está en los datos, admítelo.
-          4. Usa un tono profesional pero cercano.`,
-        },
-      });
-
-      setMessages(prev => [...prev, {
+    
+    setTimeout(() => {
+      const botResponse = {
         id: Date.now() + 1,
         type: 'bot',
-        text: response.text || "No pude procesar esa solicitud.",
+        text: `Entendido. Estoy procesando tu consulta sobre "${userText}". Como tu asistente de Agencia Moon, mi prioridad es optimizar tu gestión de reclutamiento.`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }]);
-    } catch (error) {
-      console.error("AI Error:", error);
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
-        type: 'bot',
-        text: "Hubo un error al conectar con el cerebro de agencIA. Reintenta en unos segundos.",
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }]);
-    } finally {
+      };
+      setMessages(prev => [...prev, botResponse]);
       setIsTyping(false);
-    }
+    }, 2000);
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 md:p-8 overflow-hidden bg-black/20 backdrop-blur-md">
-      <div className="relative w-full h-full max-w-4xl bg-white sm:rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-slide-up">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-6 md:p-12 overflow-hidden">
+      {/* Fondo translúcido grisáceo cinematográfico */}
+      <div 
+        className="absolute inset-0 bg-gray-950/40 backdrop-blur-3xl animate-fade-in"
+        onClick={() => navigate('/')}
+      ></div>
+      
+      {/* Contenedor del Chat - Luxury Styling */}
+      <div className="relative w-full h-full max-w-2xl bg-white sm:rounded-[3rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden animate-slide-up border border-white/20">
         
-        {/* Header */}
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-white">
+        {/* HEADER - MINIMALISMO SUIZO */}
+        <div className="bg-white p-6 md:p-8 flex items-center justify-between border-b border-gray-50 relative z-10">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center shadow-lg relative">
-              <img src="/icon.svg" className="w-8 h-8 brightness-200" alt="Moon" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
+            <div className="relative">
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-black rounded-2xl flex items-center justify-center shadow-2xl overflow-hidden transition-all duration-500 hover:rotate-6">
+                <img src="/icon.svg" alt="Moon" className="w-8 h-8 md:w-10 md:h-10 object-contain brightness-200 grayscale" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 border-[3px] border-white rounded-full"></div>
             </div>
             <div>
-              <h2 className="font-brand font-black text-black tracking-widest uppercase text-sm">agencIA</h2>
-              <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Inteligencia Moon Activa</p>
+              <h2 className="font-brand font-black text-sm md:text-base uppercase tracking-[0.3em] leading-none text-black">agencIA</h2>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className={`text-[9px] font-bold uppercase tracking-widest ${isTyping ? 'text-primary animate-pulse' : 'text-gray-400'}`}>
+                  {isTyping ? 'Procesando respuesta...' : 'Soporte Activo'}
+                </span>
+              </div>
             </div>
           </div>
-          <button onClick={() => navigate('/')} className="p-3 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-black">
-            <X size={20} />
+
+          <button 
+            onClick={() => navigate('/')}
+            className="w-10 h-10 md:w-11 md:h-11 bg-gray-50 hover:bg-black hover:text-white text-gray-400 rounded-full flex items-center justify-center transition-all duration-300 active:scale-90"
+          >
+            <X size={20} strokeWidth={3} />
           </button>
         </div>
 
-        {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 bg-[#FAFAFA]">
+        {/* ÁREA DE MENSAJES */}
+        <div 
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 bg-[#FDFDFD]"
+        >
           {messages.map((msg) => (
-            <div key={msg.id} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'} animate-pop-in`}>
+            <div 
+              key={msg.id} 
+              className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'} animate-pop-in`}
+            >
               <div className={`flex gap-4 max-w-[85%] ${msg.type === 'user' ? 'flex-row-reverse' : ''}`}>
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-md ${msg.type === 'user' ? 'bg-black text-white' : 'bg-primary text-white'}`}>
-                  {msg.type === 'user' ? <UserIcon size={18} /> : <Bot size={20} />}
+                
+                {/* Bot Icon Styling */}
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg border-2 border-white transition-transform hover:scale-110
+                  ${msg.type === 'user' 
+                    ? 'bg-black text-white' 
+                    : 'bg-gradient-to-br from-primary to-purple-600 text-white'}
+                `}>
+                  {msg.type === 'user' ? <UserIcon size={18} strokeWidth={2.5} /> : <Bot size={20} strokeWidth={2} />}
                 </div>
+                
                 <div className="space-y-2">
-                  <div className={`p-5 rounded-2xl text-sm font-semibold leading-relaxed shadow-sm ${msg.type === 'user' ? 'bg-black text-white rounded-tr-none' : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'}`}>
+                  <div className={`p-5 md:p-6 rounded-[2.2rem] text-sm md:text-[15px] font-medium leading-relaxed
+                    ${msg.type === 'user' 
+                      ? 'bg-black text-white rounded-tr-none shadow-xl shadow-black/5' 
+                      : 'bg-primary text-white rounded-tl-none shadow-xl shadow-primary/20'}
+                  `}>
                     {msg.text}
                   </div>
-                  <p className={`text-[9px] font-black text-gray-400 uppercase tracking-widest px-1 ${msg.type === 'user' ? 'text-right' : 'text-left'}`}>
+                  {/* Timestamp con contraste mejorado */}
+                  <p className={`text-[9px] font-bold uppercase text-gray-500 tracking-widest px-2 ${msg.type === 'user' ? 'text-right' : 'text-left'}`}>
                     {msg.time}
                   </p>
                 </div>
               </div>
             </div>
           ))}
+          
           {isTyping && (
-            <div className="flex justify-start animate-pulse">
-              <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-none flex gap-1.5">
-                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"></div>
-                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{animationDelay:'0.2s'}}></div>
-                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{animationDelay:'0.4s'}}></div>
-              </div>
-            </div>
+             <div className="flex justify-start animate-pulse">
+               <div className="flex gap-4">
+                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white shadow-lg border-2 border-white">
+                   <Bot size={20} />
+                 </div>
+                 <div className="bg-primary/10 p-5 rounded-[2.2rem] rounded-tl-none flex items-center gap-1.5 border border-primary/10">
+                   <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+                   <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                   <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                 </div>
+               </div>
+             </div>
           )}
         </div>
 
-        {/* Input Form */}
-        <div className="p-6 md:p-10 bg-white border-t border-gray-50">
-          <form onSubmit={handleSend} className="flex items-center gap-4 max-w-3xl mx-auto">
-            <input 
-              type="text" 
-              placeholder="Pregunta algo sobre tus emisores..." 
-              className="flex-1 bg-gray-50 border border-gray-100 px-6 py-4 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              disabled={isTyping}
-            />
+        {/* INPUT SECTION - ULTRA CLEAN */}
+        <div className="p-6 md:p-10 bg-white z-10">
+          <form onSubmit={handleSend} className="relative group max-w-3xl mx-auto flex items-center gap-4">
+            <div className="relative flex-1">
+              <input 
+                type="text" 
+                placeholder="Escribe tu consulta aquí..."
+                className="w-full bg-gray-50 border-none px-8 py-5 rounded-full text-sm md:text-base font-bold text-gray-900 outline-none focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-gray-300 placeholder:font-medium shadow-inner"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                disabled={isTyping}
+              />
+            </div>
             <button 
               type="submit"
-              disabled={!inputValue.trim() || isTyping}
-              className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all shadow-xl active:scale-95 ${!inputValue.trim() || isTyping ? 'bg-gray-100 text-gray-300' : 'bg-black text-white hover:bg-primary'}`}
+              disabled={isTyping || !inputValue.trim()}
+              className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all shrink-0 active:scale-90
+                ${isTyping || !inputValue.trim() 
+                  ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
+                  : 'bg-black text-white hover:bg-primary shadow-gray-200'}
+              `}
             >
-              <Send size={20} />
+              <Send size={22} strokeWidth={2.5} />
             </button>
           </form>
+          
+          <div className="flex justify-center items-center gap-3 mt-8 opacity-40 select-none">
+             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.5em]">
+               Agencia Moon 2026
+             </p>
+          </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #F3F4F6; border-radius: 10px; }
+      `}</style>
     </div>
   );
 };
