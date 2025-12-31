@@ -20,8 +20,30 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
   const isActive = (path: string) => location.pathname === path;
 
   // Nav Item para Sidebar Desktop / Hamburguesa
-  const NavItem = ({ to, icon: Icon, label, colorClass = "text-gray-400" }: { to: string, icon: any, label: string, colorClass?: string }) => {
+  const NavItem = ({ to, icon: Icon, label, colorClass = "text-gray-400", disabled = false }: { to: string, icon: any, label: string, colorClass?: string, disabled?: boolean }) => {
     const active = isActive(to);
+    
+    const content = (
+      <>
+        {active && <div className="absolute left-0 top-0 bottom-0 w-1 bg-black rounded-r-full"></div>}
+        <Icon 
+            size={22} 
+            strokeWidth={active ? 2.5 : 2} 
+            className={`mr-4 transition-colors ${active ? 'text-primary' : colorClass} ${!disabled && 'group-hover:text-primary'}`} 
+        />
+        <span className="text-sm tracking-wide">{label}</span>
+        {active && <ChevronRight size={16} className="ml-auto text-gray-300" />}
+      </>
+    );
+
+    if (disabled) {
+      return (
+        <div className="flex items-center px-4 py-4 rounded-xl mb-1 text-gray-300 cursor-not-allowed opacity-60">
+          {content}
+        </div>
+      );
+    }
+
     return (
       <Link
         to={to}
@@ -33,14 +55,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
           }
         `}
       >
-        {active && <div className="absolute left-0 top-0 bottom-0 w-1 bg-black rounded-r-full"></div>}
-        <Icon 
-            size={22} 
-            strokeWidth={active ? 2.5 : 2} 
-            className={`mr-4 transition-colors ${active ? 'text-primary' : colorClass} group-hover:text-primary`} 
-        />
-        <span className="text-sm tracking-wide">{label}</span>
-        {active && <ChevronRight size={16} className="ml-auto text-gray-300" />}
+        {content}
       </Link>
     );
   };
@@ -50,7 +65,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
       const active = isActive(to);
       return (
           <Link to={to} className={`flex flex-col items-center justify-center w-full py-1 ${active ? 'text-black' : 'text-gray-400'}`}>
-              <div className={`p-2 rounded-xl mb-0.5 transition-all ${active ? 'bg-black text-white shadow-lg shadow-purple-200' : 'bg-transparent'}`}>
+              <div className={`p-2 rounded-xl mb-0.5 transition-all ${active ? 'bg-black text-white shadow-lg' : 'bg-transparent'}`}>
                 <Icon size={20} strokeWidth={active ? 2.5 : 2} />
               </div>
               <span className={`text-[10px] font-bold tracking-tight ${active ? 'text-black' : 'text-gray-400'}`}>{label}</span>
@@ -64,18 +79,24 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
              <div className="flex items-center gap-3">
                  <img src="/icon.svg" alt="Moon" className="w-10 h-10 object-contain rounded-full bg-black" />
                  <div>
-                    <h1 className="font-bold text-lg text-black uppercase tracking-widest leading-none">AGENCIA MOON</h1>
+                    <h1 className="font-brand font-black text-lg text-black uppercase tracking-widest leading-none">MOON</h1>
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Gestor de Reclutamiento</p>
                  </div>
              </div>
           </div>
 
           <nav className="flex-1 px-4 py-8 space-y-2">
-              <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
+              <NavItem to="/" icon={LayoutDashboard} label="Inicio" />
               <NavItem to="/emisores" icon={Radio} label="Emisores" />
               <NavItem to="/remuneracion" icon={Banknote} label="Remuneración" />
               <NavItem to="/factura" icon={FileText} label="Mi Factura" />
-              <NavItem to="/chatbot" icon={Sparkles} label="Soporte agencIA" colorClass="text-primary" />
+              <NavItem 
+                to="/chatbot" 
+                icon={Sparkles} 
+                label="Soporte agencIA (Próximamente)" 
+                colorClass="text-primary" 
+                disabled={user.rol !== 'admin'}
+              />
               {user.rol === 'admin' && <NavItem to="/reclutadores" icon={Users} label="Equipo Reclutadores" />}
           </nav>
 
@@ -86,7 +107,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
                 </div>
                 <div className="flex-1 overflow-hidden">
                     <p className="text-sm font-bold text-black truncate">{user.nombre}</p>
-                    <p className="text-[10px] text-accent font-bold uppercase">{user.rol}</p>
+                    <p className="text-[10px] text-primary font-black uppercase tracking-widest">{user.rol}</p>
                 </div>
                 <button onClick={onLogout} className="p-2 bg-white rounded-full shadow-sm text-gray-400 hover:text-red-500 transition-colors">
                     <LogOut size={18} />
@@ -104,28 +125,25 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
           <SidebarContent />
       </aside>
 
-      {/* MOBILE HEADER CON HAMBURGUESA */}
+      {/* MOBILE HEADER */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md border-b border-gray-100 px-5 h-[60px] flex justify-between items-center z-40 shadow-sm print:hidden">
           <div className="flex items-center gap-3">
               <img src="/icon.svg" alt="Moon" className="w-8 h-8 object-contain rounded-full bg-black" />
-              <span className="font-bold text-base text-black uppercase tracking-widest">MOON</span>
+              <span className="font-brand font-black text-base text-black uppercase tracking-widest">MOON</span>
           </div>
           <button 
             onClick={() => setIsSidebarOpen(true)}
-            className="w-9 h-9 bg-gray-50 text-black border border-gray-100 rounded-full flex items-center justify-center active:bg-gray-100 transition-colors"
+            className="w-9 h-9 bg-gray-50 text-black border border-gray-100 rounded-full flex items-center justify-center"
           >
              <Menu size={20} />
           </button>
       </div>
 
-      {/* MOBILE DRAWER (SIDEBAR) */}
+      {/* MOBILE DRAWER */}
       {isSidebarOpen && (
         <div className="fixed inset-0 z-[60] md:hidden print:hidden">
-            <div 
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-                onClick={() => setIsSidebarOpen(false)}
-            />
-            <div className="absolute top-0 right-0 h-full w-[85%] max-w-[320px] bg-white shadow-2xl animate-slide-left flex flex-col">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
+            <div className="absolute top-0 right-0 h-full w-[85%] max-w-[320px] bg-white shadow-2xl flex flex-col">
                 <div className="absolute top-4 right-4 z-10">
                     <button onClick={() => setIsSidebarOpen(false)} className="p-2 bg-gray-100 rounded-full text-black hover:bg-gray-200">
                         <X size={20} />
@@ -140,14 +158,25 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
         {children}
       </main>
 
-      {/* NAVIGATION BAR - LIMPIA SIN FACTURA NI CHATBOT */}
+      {/* NAVEGACIÓN INFERIOR (ORDEN SOLICITADO): Inicio, Emisores, Equipo, Salir */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-4 z-50 flex justify-around items-center h-[80px] shadow-[0_-5px_20px_rgba(0,0,0,0.03)] print:hidden">
          <BottomNavItem to="/" icon={LayoutDashboard} label="Inicio" />
          <BottomNavItem to="/emisores" icon={Radio} label="Emisores" />
-         <BottomNavItem to="/remuneracion" icon={Banknote} label="Pagos" />
-         {user.rol === 'admin' && (
+         
+         {/* Equipo solo para Admin según lógica de negocio, o disponible si se desea el botón siempre */}
+         {user.rol === 'admin' ? (
            <BottomNavItem to="/reclutadores" icon={Users} label="Equipo" />
+         ) : (
+           <BottomNavItem to="/remuneracion" icon={Banknote} label="Pagos" />
          )}
+
+         {/* Botón Salir */}
+         <button onClick={onLogout} className="flex flex-col items-center justify-center w-full py-1 text-gray-400">
+            <div className="p-2 rounded-xl mb-0.5 transition-all bg-transparent">
+              <LogOut size={20} strokeWidth={2} />
+            </div>
+            <span className="text-[10px] font-bold tracking-tight">Salir</span>
+         </button>
       </div>
 
     </div>
