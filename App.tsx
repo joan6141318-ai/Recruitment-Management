@@ -63,6 +63,7 @@ const App: React.FC = () => {
         unsubscribeProfile = dataService.subscribeToUserProfile(firebaseUser.uid, (profile) => {
           if (profile) {
             if (profile.activo === false) {
+              console.warn("Acceso revocado por el administrador.");
               setIsRevoked(true);
               setUser(profile);
             } else {
@@ -116,13 +117,7 @@ const App: React.FC = () => {
             <Route path="/emisores" element={<Emisores user={user} />} />
             <Route path="/remuneracion" element={<Remuneracion />} />
             <Route path="/factura" element={<Factura user={user} />} />
-            
-            {/* Solo el Administrador puede entrar al ChatBot mientras se perfecciona */}
-            <Route 
-              path="/chatbot" 
-              element={user.rol === 'admin' ? <ChatBot user={user} /> : <Navigate to="/" />} 
-            />
-
+            <Route path="/chatbot" element={<ChatBot user={user} />} />
             {user.rol === 'admin' ? (
               <Route path="/reclutadores" element={<Reclutadores user={user} />} />
             ) : (
