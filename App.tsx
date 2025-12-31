@@ -8,6 +8,7 @@ import Emisores from './pages/Emisores';
 import Reclutadores from './pages/Reclutadores';
 import Remuneracion from './pages/Remuneracion';
 import Factura from './pages/Factura';
+import ChatBot from './pages/ChatBot';
 import { User } from './types';
 import { authService } from './services/auth'; 
 import { dataService } from './services/db';
@@ -116,6 +117,7 @@ const App: React.FC = () => {
             <Route path="/emisores" element={<Emisores user={user} />} />
             <Route path="/remuneracion" element={<Remuneracion />} />
             <Route path="/factura" element={<Factura user={user} />} />
+            <Route path="/chatbot" element={<ChatBot />} />
             {user.rol === 'admin' ? (
               <Route path="/reclutadores" element={<Reclutadores user={user} />} />
             ) : (
