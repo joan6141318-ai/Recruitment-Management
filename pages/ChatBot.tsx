@@ -89,6 +89,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     const userText = inputValue;
     const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+    // Añadir mensaje del usuario localmente
     setMessages(prev => [...prev, { id: Date.now(), type: 'user', text: userText, time: timeString }]);
     setInputValue('');
     setIsTyping(true);
@@ -96,37 +97,42 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
-      // Filtrar historial para asegurar que comience correctamente para la API
-      // Solo incluimos mensajes si hay más de uno (el inicial del bot se ignora para la primera consulta del usuario)
-      const chatHistory = messages.length > 1 ? messages.map(m => ({
-        role: m.type === 'user' ? 'user' : 'model',
-        parts: [{ text: m.text }]
-      })) : [];
+      /** 
+       * CORRECCIÓN TÉCNICA: 
+       * La API de Gemini requiere que el historial comience con el rol 'user'.
+       * Filtramos el mensaje de bienvenida (id: 1) que es rol 'model' para no romper la secuencia.
+       */
+      const historyForApi = messages
+        .filter(m => m.id !== 1) // Omitimos el saludo inicial en el historial técnico
+        .map(m => ({
+          role: m.type === 'user' ? 'user' : 'model',
+          parts: [{ text: m.text }]
+        }));
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: [...chatHistory, { role: 'user', parts: [{ text: userText }] }],
+        contents: [...historyForApi, { role: 'user', parts: [{ text: userText }] }],
         config: {
           systemInstruction: buildSystemInstruction(),
-          temperature: 0.2, // Más bajo para mayor consistencia en el formato
+          temperature: 0.2,
         },
       });
 
-      // Limpieza preventiva de símbolos
+      // Limpieza extra de cualquier símbolo Markdown que el modelo genere por hábito
       const cleanedText = (response.text || "").replace(/[*_#-]/g, '').trim();
 
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         type: 'bot',
-        text: cleanedText || "He procesado su solicitud, pero no he podido generar una respuesta clara. ¿Podría reformular su consulta?",
+        text: cleanedText || "He recibido su consulta pero he tenido un problema al redactar la respuesta. ¿Podría intentarlo de nuevo?",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }]);
     } catch (error) {
-      console.error("API Error:", error);
+      console.error("ChatBot API Error:", error);
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         type: 'bot',
-        text: "He tenido un inconveniente técnico al conectar con el servidor. Por favor, intente enviar su mensaje nuevamente en unos instantes.",
+        text: "He tenido un inconveniente técnico al conectar con mis servicios. Por favor, intente enviar su mensaje de nuevo.",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isError: true
       }]);
@@ -160,7 +166,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
           </button>
         </div>
 
-        {/* Chat Area - Espaciado optimizado para no "morder" mensajes */}
+        {/* Chat Area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:px-10 md:py-8 space-y-8 bg-white scroll-smooth pb-16">
           {messages.length === 0 && !isTyping && (
              <div className="h-full flex flex-col items-center justify-center text-center p-10 opacity-30">
@@ -173,7 +179,6 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
             <div key={msg.id} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'} animate-pop-in`}>
               <div className={`flex items-start gap-3.5 max-w-[92%] ${msg.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                 
-                {/* Iconos de Mensaje - Posición fija y profesional */}
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-gray-100 mt-0.5 transition-all
                   ${msg.type === 'user' ? 'bg-black text-white' : 'bg-primary text-white shadow-purple-100'}
                 `}>
@@ -184,7 +189,6 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
                   )}
                 </div>
 
-                {/* Contenedor de Burbuja */}
                 <div className={`flex flex-col space-y-2 ${msg.type === 'user' ? 'items-end' : 'items-start'}`}>
                   <div className={`p-4 md:p-5 rounded-[1.4rem] text-sm font-medium leading-relaxed shadow-sm whitespace-pre-wrap
                     ${msg.type === 'user' 
@@ -193,7 +197,6 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
                   `}>
                     {msg.text}
                   </div>
-                  {/* Marca de tiempo con contraste ajustado */}
                   <p className="text-[9px] font-black uppercase text-gray-600 tracking-widest px-1">
                     {msg.time}
                   </p>
@@ -219,7 +222,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
           )}
         </div>
 
-        {/* Input Area - Compacta y profesional */}
+        {/* Input Area */}
         <div className="px-6 py-3 md:px-10 md:py-4 bg-white border-t border-gray-50 shrink-0">
           <form onSubmit={handleSend} className="flex gap-3">
             <input 
