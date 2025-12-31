@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
-import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Users, Clock, TrendingUp, AlertCircle, CheckCircle2, Target, Calendar, Edit2, X, Trash2, ChevronDown, ChevronUp, FolderOpen, UserCheck } from 'lucide-react';
+import { Users, Clock, TrendingUp, Calendar, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface DashboardProps {
   user: User;
@@ -11,393 +11,73 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [emisores, setEmisores] = useState<Emisor[]>([]);
-  const [reclutadores, setReclutadores] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Estado para la fecha
-  const [lastUpdatedDate, setLastUpdatedDate] = useState<string>('');
-  const [showDateModal, setShowDateModal] = useState(false);
-  const [newDateInput, setNewDateInput] = useState('');
-
-  // Estados para Gestión Mensual (Admin)
-  const [managementMonth, setManagementMonth] = useState(new Date().toISOString().slice(0, 7));
-  const [managementRecruiterId, setManagementRecruiterId] = useState<string>('all');
-  const [showManagement, setShowManagement] = useState(false);
-
-  // Objetivos Dinámicos: 30 para Admin (Equipo), 15 para Reclutador individual
-  const MONTHLY_EMISOR_GOAL = user.rol === 'admin' ? 30 : 15;
-  const PRODUCTIVITY_HOURS_GOAL = 20;
 
   useEffect(() => {
-    const loadInitialData = async () => {
-        const meta = await dataService.getMetadata();
-        setLastUpdatedDate(meta.lastUpdated);
-        setNewDateInput(meta.lastUpdated);
-
-        if (user.rol === 'admin') {
-            const recs = await dataService.getRecruiters();
-            setReclutadores(recs);
-        }
-    };
-    loadInitialData();
-
     const unsubscribe = dataService.subscribeToEmisores(user, (data) => {
       setEmisores(data);
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, [user]);
 
-  const handleUpdateDate = async (e: React.FormEvent) => {
-      e.preventDefault();
-      await dataService.updateMetadata(newDateInput);
-      setLastUpdatedDate(newDateInput);
-      setShowDateModal(false);
-  };
+  const activeCount = emisores.filter(e => e.estado === 'activo').length;
+  const totalHours = emisores.reduce((acc, curr) => acc + (curr.horas_mes || 0), 0);
 
-  const handleDeleteEmisor = async (id: string) => {
-      if(confirm('¿Estás seguro de eliminar este registro permanentemente?')) {
-          await dataService.deleteEmisor(id);
-      }
-  };
-
-  // Helper para mostrar mes bonito
-  const getFormattedMonth = (isoString: string) => {
-      if(!isoString) return 'Seleccionar';
-      const [year, month] = isoString.split('-');
-      const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-      return `${months[parseInt(month) - 1]} ${year}`;
-  };
-
-  const activeEmisores = emisores.filter(e => 
-    e.estado && e.estado.toLowerCase() === 'activo'
-  );
-  
-  const totalHours = emisores.reduce((acc, curr) => acc + curr.horas_mes, 0);
-  const avgHours = activeEmisores.length > 0 ? totalHours / activeEmisores.length : 0;
-  
-  const currentMonth = new Date().toISOString().slice(0, 7);
-  
-  const newEmisoresThisMonth = emisores.filter(e => {
-    const isDateMatch = (e.mes_entrada && e.mes_entrada === currentMonth) || 
-                        (e.fecha_registro && e.fecha_registro.startsWith(currentMonth));
-    if (!isDateMatch) return false;
-    if (user.rol === 'admin') return true;
-    return e.reclutador_id === user.id;
-  });
-
-  // Filtro para la Gestión Mensual del Admin (Mes + Reclutador)
-  const emisoresInSelectedMonth = emisores.filter(e => {
-      const monthMatch = (e.mes_entrada === managementMonth) || (e.fecha_registro && e.fecha_registro.startsWith(managementMonth));
-      const recruiterMatch = managementRecruiterId === 'all' || e.reclutador_id === managementRecruiterId;
-      return monthMatch && recruiterMatch;
-  });
-
-  const monthlyProgress = Math.min((newEmisoresThisMonth.length / MONTHLY_EMISOR_GOAL) * 100, 100);
-  
-  const chartData = [...emisores]
-    .sort((a, b) => b.horas_mes - a.horas_mes)
-    .slice(0, 5)
-    .map(e => ({ name: e.nombre.split(' ')[0], hours: e.horas_mes }));
-
-  if (loading) return <div className="p-10 text-center text-sm text-gray-400">Sincronizando métricas...</div>;
-
-  const StatCard = ({ title, value, sub, icon: Icon, color, iconColor }: any) => (
-      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex justify-between items-start mb-4">
-              <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{title}</p>
-                  <h3 className="text-3xl font-bold text-gray-900 mt-1 tracking-tight">{value}</h3>
-              </div>
-              <div className={`p-2 rounded-xl ${color}`}>
-                  <Icon size={20} className={iconColor} />
-              </div>
-          </div>
-          <p className="text-xs text-gray-500 font-medium">{sub}</p>
+  const StatCard = ({ label, value, icon: Icon, detail }: any) => (
+    <div className="bg-white border border-gray-100 p-8 rounded-[2.5rem] group hover:border-black transition-all duration-500">
+      <div className="flex items-start justify-between mb-6">
+        <div className="p-3 bg-gray-50 rounded-2xl group-hover:bg-black group-hover:text-white transition-colors">
+          <Icon size={20} />
+        </div>
+        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{detail}</span>
       </div>
+      <div className="space-y-1">
+        <p className="text-[10px] font-black text-primary uppercase tracking-widest">{label}</p>
+        <p className="text-4xl font-brand font-black text-black tracking-tighter">{value}</p>
+      </div>
+    </div>
   );
+
+  if (loading) return null;
 
   return (
-    <>
-      <div className="space-y-6 animate-slide-up">
-        
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-2">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Rendimiento en Vivo</h2>
-              <p className="text-gray-500 text-sm mt-1">Resumen general y metas del mes.</p>
-            </div>
-            
-            <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 rounded-full shadow-sm">
-                    <Calendar size={14} className="text-gray-400"/>
-                    <span className="text-xs font-bold text-gray-500 uppercase">Información al día: <span className="text-black">{lastUpdatedDate || '...'}</span></span>
-                </div>
-                
-                {user.rol === 'admin' && (
-                    <button 
-                      onClick={() => setShowDateModal(true)}
-                      className="p-1.5 bg-black text-white rounded-full hover:bg-gray-800 transition-colors shadow-sm"
-                      title="Editar fecha"
-                    >
-                        <Edit2 size={12} />
-                    </button>
-                )}
-            </div>
+    <div className="space-y-12">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-2">Agencia Moon / {user.rol}</h2>
+          <h1 className="text-5xl font-brand font-black text-black tracking-tighter">Panel Central</h1>
         </div>
-
-        <div className="bg-gray-100 text-gray-900 p-6 rounded-3xl shadow-xl shadow-gray-200/50 border-[6px] border-white relative overflow-hidden">
-            <div className="relative z-10">
-                <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white rounded-xl shadow-sm">
-                          <Target size={24} className="text-primary" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-black">Meta de Reclutamiento</h3>
-                            <p className="text-xs text-gray-500 font-medium">Objetivo: {MONTHLY_EMISOR_GOAL} Nuevos Emisores</p>
-                        </div>
-                    </div>
-                    <div className="text-right">
-                        <span className="text-3xl font-black text-primary">{newEmisoresThisMonth.length}</span>
-                        <span className="text-sm text-gray-400 font-bold"> / {MONTHLY_EMISOR_GOAL}</span>
-                    </div>
-                </div>
-
-                <div className="w-full bg-white h-4 rounded-full overflow-hidden mb-2 border border-gray-200 shadow-inner">
-                    <div 
-                        className="h-full rounded-full bg-gradient-to-r from-primary to-purple-400 transition-all duration-700 ease-out relative"
-                        style={{width: `${monthlyProgress}%`}}
-                    >
-                    </div>
-                </div>
-                
-                <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                    <span>Progreso Actual</span>
-                    <span>{Math.round(monthlyProgress)}% Completado</span>
-                </div>
-            </div>
-        </div>
-
-        {user.rol === 'admin' && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div 
-                    className="p-5 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors"
-                    onClick={() => setShowManagement(!showManagement)}
-                >
-                    <div className="flex items-center gap-3">
-                        <div className="bg-primary text-white p-2 rounded-lg">
-                            <FolderOpen size={18} />
-                        </div>
-                        <div>
-                            <h3 className="font-bold text-gray-900 text-sm">Gestión de Altas Mensuales</h3>
-                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wide">Mantener base de datos</p>
-                        </div>
-                    </div>
-                    {showManagement ? <ChevronUp size={20} className="text-gray-400" /> : <ChevronDown size={20} className="text-gray-400" />}
-                </div>
-                
-                {showManagement && (
-                    <div className="px-5 pb-5 pt-0 animate-slide-up">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl mb-4 border border-gray-100">
-                             <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Filtrar por Mes</label>
-                                <div className="relative">
-                                     <div className="bg-white px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-900 shadow-sm flex items-center gap-2 w-full hover:border-black transition-colors">
-                                        <Calendar size={16} className="text-primary"/>
-                                        <span className="capitalize">{getFormattedMonth(managementMonth)}</span>
-                                     </div>
-                                     <input 
-                                        type="month" 
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                        value={managementMonth}
-                                        onChange={(e) => setManagementMonth(e.target.value)}
-                                     />
-                                </div>
-                             </div>
-
-                             <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Filtrar por Reclutador</label>
-                                <div className="relative">
-                                     <div className="bg-white px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-900 shadow-sm flex items-center gap-2 w-full hover:border-black transition-colors">
-                                        <UserCheck size={16} className="text-accent"/>
-                                        <span className="truncate">{managementRecruiterId === 'all' ? 'Todos los Reclutadores' : (reclutadores.find(r => r.id === managementRecruiterId)?.nombre || 'Seleccionado')}</span>
-                                     </div>
-                                     <select 
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                        value={managementRecruiterId}
-                                        onChange={(e) => setManagementRecruiterId(e.target.value)}
-                                     >
-                                        <option value="all">Todos los Reclutadores</option>
-                                        {reclutadores.map(r => (
-                                            <option key={r.id} value={r.id}>{r.nombre}</option>
-                                        ))}
-                                     </select>
-                                </div>
-                             </div>
-                             
-                             <div className="md:col-span-2 text-center pt-2 border-t border-gray-200/50 mt-2">
-                                 <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Registros encontrados: </span>
-                                 <span className="text-sm font-black text-black">{emisoresInSelectedMonth.length}</span>
-                             </div>
-                        </div>
-
-                        {emisoresInSelectedMonth.length > 0 ? (
-                            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                                {emisoresInSelectedMonth.map(emisor => (
-                                    <div key={emisor.id} className="flex justify-between items-center p-3 bg-white rounded-xl border border-gray-100 hover:border-gray-300 transition-colors group">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">
-                                                {emisor.nombre.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-bold text-gray-900">{emisor.nombre}</p>
-                                                <p className="text-[10px] text-gray-400">ID: {emisor.bigo_id} | Reg: {emisor.fecha_registro?.split('T')[0]}</p>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            onClick={() => handleDeleteEmisor(emisor.id)}
-                                            className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                            title="Borrar Emisor"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-8 text-gray-400 text-xs font-bold uppercase tracking-widest">
-                                No hay emisores registrados para este filtro.
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard 
-              title="Emisores Activos" 
-              value={activeEmisores.length} 
-              sub="Cartera Total" 
-              icon={Users} 
-              color="bg-purple-50" 
-              iconColor="text-primary"
-            />
-            <StatCard 
-              title="Horas Totales" 
-              value={totalHours.toFixed(0)} 
-              sub="Acumulado del mes" 
-              icon={Clock} 
-              color="bg-orange-50" 
-              iconColor="text-accent"
-            />
-            <StatCard 
-              title="Promedio / Emisor" 
-              value={avgHours.toFixed(1)} 
-              sub="Horas por persona" 
-              icon={TrendingUp} 
-              color="bg-purple-50" 
-              iconColor="text-primary"
-            />
-            <StatCard 
-              title="Productivos" 
-              value={`${Math.round((activeEmisores.filter(e => e.horas_mes >= PRODUCTIVITY_HOURS_GOAL).length / (activeEmisores.length || 1)) * 100)}%`} 
-              sub="Emisores > 20 Horas" 
-              icon={CheckCircle2} 
-              color="bg-green-50" 
-              iconColor="text-green-600"
-            />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-               <h3 className="text-sm font-bold text-gray-900 mb-6 uppercase tracking-wide">Top Productividad</h3>
-               {chartData.length > 0 ? (
-                   <div className="h-64 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={chartData}>
-                              <XAxis 
-                                  dataKey="name" 
-                                  axisLine={false} 
-                                  tickLine={false} 
-                                  tick={{fill: '#9CA3AF', fontSize: 11, fontWeight: 600}} 
-                                  dy={10} 
-                              />
-                              <Tooltip 
-                                  cursor={{fill: '#F3F4F6'}}
-                                  contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
-                              />
-                              <Bar dataKey="hours" radius={[6, 6, 6, 6]} barSize={40}>
-                                  {chartData.map((entry, index) => (
-                                      <Cell key={`cell-${index}`} fill={index === 0 ? '#7C3AED' : '#E5E7EB'} />
-                                  ))}
-                              </Bar>
-                          </BarChart>
-                      </ResponsiveContainer>
-                   </div>
-               ) : (
-                   <div className="h-64 flex items-center justify-center text-gray-400 text-sm font-bold uppercase tracking-widest">
-                       Sin datos suficientes
-                   </div>
-               )}
-            </div>
-
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col">
-               <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide flex items-center gap-2">
-                  <AlertCircle size={16} className="text-accent"/> Atención Requerida
-               </h3>
-               <div className="flex-1 overflow-y-auto pr-2 space-y-3 max-h-[250px]">
-                  {activeEmisores
-                      .filter(e => e.horas_mes < 10)
-                      .sort((a,b) => a.horas_mes - b.horas_mes)
-                      .map(emisor => (
-                      <div key={emisor.id} className="flex items-center justify-between p-3 bg-orange-50/50 rounded-xl border border-orange-100">
-                          <div>
-                              <p className="font-bold text-xs text-gray-900">{emisor.nombre}</p>
-                              <p className="text-[10px] text-gray-500 font-mono mt-0.5">ID: {emisor.bigo_id}</p>
-                          </div>
-                          <span className="text-xs font-black text-accent">{emisor.horas_mes}h</span>
-                      </div>
-                  ))}
-                  {activeEmisores.filter(e => e.horas_mes < 10).length === 0 && (
-                      <div className="flex flex-col items-center justify-center h-full py-10 text-gray-400">
-                          <CheckCircle2 size={30} className="mb-2 text-green-500 opacity-50" />
-                          <p className="text-xs font-bold uppercase tracking-widest">Todo bajo control.</p>
-                      </div>
-                  )}
-               </div>
-            </div>
+        <div className="bg-black text-white px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+          <Calendar size={14} className="text-primary" />
+          {new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
         </div>
       </div>
 
-      {showDateModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 w-screen h-screen">
-           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowDateModal(false)}></div>
-           <div className="bg-white rounded-2xl w-full max-w-xs p-6 shadow-2xl relative z-10 animate-pop-in">
-              <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold text-gray-900">Actualizar Fecha</h3>
-                  <button onClick={() => setShowDateModal(false)}><X size={20} className="text-gray-400 hover:text-black"/></button>
-              </div>
-              <form onSubmit={handleUpdateDate} className="space-y-4">
-                 <div>
-                    <label className="text-xs font-bold text-gray-500 block mb-1 uppercase">Fecha de Corte</label>
-                    <input 
-                        required 
-                        type="date"
-                        className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm font-medium outline-none focus:border-black" 
-                        value={newDateInput} 
-                        onChange={e => setNewDateInput(e.target.value)} 
-                    />
-                 </div>
-                 <button className="w-full bg-black text-white py-3 rounded-xl text-sm font-bold hover:bg-gray-800 transition-colors">
-                     Guardar Fecha
-                 </button>
-              </form>
-           </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard label="Gestión Activa" value={activeCount} icon={Users} detail="Emisores" />
+        <StatCard label="Rendimiento" value={`${totalHours.toFixed(0)}h`} icon={Clock} detail="Mes Actual" />
+        <StatCard label="Crecimiento" value={emisores.length} icon={TrendingUp} detail="Total Histórico" />
+      </div>
+
+      <div className="bg-black rounded-[3rem] p-12 relative overflow-hidden group">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="max-w-md space-y-4">
+            <h3 className="text-primary text-[10px] font-black uppercase tracking-[0.3em]">IA Assist Activa</h3>
+            <p className="text-3xl font-brand font-black text-white tracking-tight leading-tight">
+              Optimiza tu reclutamiento con análisis inteligente de datos.
+            </p>
+          </div>
+          <Link 
+            to="/chatbot" 
+            className="bg-white text-black px-8 py-5 rounded-full font-black text-xs uppercase tracking-widest flex items-center gap-3 hover:scale-105 transition-all"
+          >
+            Hablar con agencIA <ChevronRight size={16} />
+          </Link>
         </div>
-       )}
-    </>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-[120px] -mr-48 -mt-48 transition-opacity opacity-50 group-hover:opacity-100"></div>
+      </div>
+    </div>
   );
 };
 

@@ -5,28 +5,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     
-    <!-- CACHE CONTROL: Forzar actualización -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-
     <title>Agencia Moon</title>
     
-    <!-- PWA / Mobile Capable -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#ffffff" />
     
-    <!-- PWA Icons - RUTAS RELATIVAS -->
     <link rel="icon" type="image/svg+xml" href="icon.svg" />
-    <link rel="apple-touch-icon" href="icon.svg">
     <link rel="manifest" href="manifest.json" />
     
-    <!-- FONTS: Inter (UI), Outfit (Marca), Great Vibes (Firma Real) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Great+Vibes&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -35,35 +26,22 @@
         theme: {
           extend: {
             colors: {
-              primary: '#7C3AED', // Morado
-              accent: '#F97316', // NARANJA PURO
-              black: '#09090B', // Negro
-              surface: '#FFFFFF', 
-              background: '#F8FAFC', 
+              primary: '#7C3AED', // Morado Moon
+              black: '#09090B',   // Negro Profundo
+              white: '#FFFFFF',   // Blanco Puro
+              surface: '#F9FAFB', 
             },
             fontFamily: {
-              sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-              brand: ['Outfit', 'Inter', 'sans-serif'], 
-              signature: ['Great Vibes', 'cursive'], 
-            },
-            boxShadow: {
-              'card': '0 0 0 1px rgba(0,0,0,0.03), 0 4px 20px -2px rgba(0,0,0,0.05)',
-              'glow-accent': '0 0 30px -5px rgba(249, 115, 22, 0.4)',
-              'glow-primary': '0 0 30px -5px rgba(124, 58, 237, 0.4)',
+              sans: ['Inter', 'sans-serif'],
+              brand: ['Outfit', 'sans-serif'],
             },
             animation: {
-              'pop-in': 'popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards', 
-              'slide-up': 'slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
+              'fade-in': 'fadeIn 0.5s ease-out',
+              'slide-up': 'slideUp 0.4s ease-out',
             },
             keyframes: {
-              popIn: {
-                '0%': { opacity: '0', transform: 'scale(0.95)' },
-                '100%': { opacity: '1', transform: 'scale(1)' },
-              },
-              slideUp: {
-                '0%': { opacity: '0', transform: 'translateY(20px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
-              }
+              fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+              slideUp: { '0%': { transform: 'translateY(10px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }
             }
           }
         }
@@ -72,11 +50,19 @@
     <style>
       body {
         -webkit-tap-highlight-color: transparent;
-        background-color: #F8FAFC;
-        font-family: 'Inter', sans-serif; 
+        background-color: #FFFFFF;
+        color: #09090B;
+        font-family: 'Inter', sans-serif;
       }
+      .glass-nav {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #09090B; border-radius: 10px; }
     </style>
-<script type="importmap">
+    <script type="importmap">
 {
   "imports": {
     "react/": "https://esm.sh/react@^19.2.3/",
@@ -86,14 +72,14 @@
     "recharts": "https://esm.sh/recharts@^3.5.1",
     "vite": "https://esm.sh/vite@^7.2.7",
     "react-router-dom": "https://esm.sh/react-router-dom@^7.10.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
     "firebase/": "https://esm.sh/firebase@^12.6.0/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0"
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
-</head>
-  <body class="bg-background text-black antialiased">
+  </head>
+  <body class="antialiased overflow-x-hidden">
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
   </body>
