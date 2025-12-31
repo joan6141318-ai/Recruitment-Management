@@ -61,8 +61,20 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
   };
 
   // Nav Item para Bottom Bar (Móvil)
-  const BottomNavItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => {
+  const BottomNavItem = ({ to, icon: Icon, label, disabled = false }: { to: string, icon: any, label: string, disabled?: boolean }) => {
       const active = isActive(to);
+      
+      if (disabled) {
+          return (
+              <div className="flex flex-col items-center justify-center w-full py-1 text-gray-200 opacity-40">
+                  <div className="p-2 rounded-xl mb-0.5 bg-transparent">
+                    <Icon size={20} />
+                  </div>
+                  <span className="text-[10px] font-bold tracking-tight">{label}</span>
+              </div>
+          );
+      }
+
       return (
           <Link to={to} className={`flex flex-col items-center justify-center w-full py-1 ${active ? 'text-black' : 'text-gray-400'}`}>
               <div className={`p-2 rounded-xl mb-0.5 transition-all ${active ? 'bg-black text-white shadow-lg' : 'bg-transparent'}`}>
@@ -158,17 +170,11 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
         {children}
       </main>
 
-      {/* NAVEGACIÓN INFERIOR (ORDEN SOLICITADO): Inicio, Emisores, Equipo, Salir */}
+      {/* NAVEGACIÓN INFERIOR RESTAURADA AL ORDEN SOLICITADO: Inicio, Emisores, Equipo, Salir */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-4 z-50 flex justify-around items-center h-[80px] shadow-[0_-5px_20px_rgba(0,0,0,0.03)] print:hidden">
          <BottomNavItem to="/" icon={LayoutDashboard} label="Inicio" />
          <BottomNavItem to="/emisores" icon={Radio} label="Emisores" />
-         
-         {/* Equipo solo para Admin según lógica de negocio, o disponible si se desea el botón siempre */}
-         {user.rol === 'admin' ? (
-           <BottomNavItem to="/reclutadores" icon={Users} label="Equipo" />
-         ) : (
-           <BottomNavItem to="/remuneracion" icon={Banknote} label="Pagos" />
-         )}
+         <BottomNavItem to="/reclutadores" icon={Users} label="Equipo" disabled={user.rol !== 'admin'} />
 
          {/* Botón Salir */}
          <button onClick={onLogout} className="flex flex-col items-center justify-center w-full py-1 text-gray-400">

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User as UserIcon, X } from 'lucide-react';
+import { Send, Bot, User as UserIcon, X, AlertCircle } from 'lucide-react';
 import { User } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { GoogleGenAI } from "@google/genai";
@@ -16,7 +16,6 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Instrucción de sistema para definir la personalidad de la IA
   const systemInstruction = `Eres agencIA, el asistente inteligente oficial de Agencia Moon. 
   Tu objetivo es ayudar a los reclutadores a gestionar sus equipos, entender el tabulador de comisiones 
   y navegar por la plataforma. Eres sofisticado, profesional y eficiente. 
@@ -75,11 +74,16 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     setIsTyping(true);
     
     try {
-      // Inicializar la IA con la API KEY del entorno
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Vercel convierte espacios en guiones bajos (CLAVE API -> CLAVE_API)
+      // Buscamos API_KEY o CLAVE_API para que funcione con tu configuración actual
+      const apiKey = process.env.API_KEY || (process.env as any).CLAVE_API;
       
-      // Mapear historial para que la IA tenga contexto (formato Gemini)
-      // Excluimos el primer mensaje de saludo si es necesario, o lo incluimos como modelo
+      if (!apiKey) {
+        throw new Error("MISSING_API_KEY");
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+      
       const history = messages.map(m => ({
         role: m.type === 'user' ? 'user' : 'model',
         parts: [{ text: m.text }]
@@ -91,12 +95,10 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
         config: {
           systemInstruction: systemInstruction,
           temperature: 0.7,
-          topP: 0.95,
-          topK: 40,
         },
       });
 
-      const botText = response.text || "Lo siento, tuve un problema procesando tu mensaje. ¿Podrías repetirlo?";
+      const botText = response.text || "No pude generar una respuesta.";
 
       const botResponse = {
         id: Date.now() + 1,
@@ -106,13 +108,20 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
       };
       
       setMessages(prev => [...prev, botResponse]);
-    } catch (error) {
-      console.error("Error calling Gemini API:", error);
+    } catch (error: any) {
+      console.error("Error en ChatBot:", error);
+      let errorMessage = "Hubo un error de conexión con agencIA. Por favor, inténtalo de nuevo.";
+      
+      if (error.message === "MISSING_API_KEY") {
+        errorMessage = "Error de configuración: No se detecta la clave de IA. Por favor, asegúrate de haber hecho un 'Redeploy' en Vercel después de configurar la variable 'CLAVE API'.";
+      }
+
       const errorMsg = {
         id: Date.now() + 1,
         type: 'bot',
-        text: "Hubo un error de conexión con mis sistemas. Por favor, inténtalo de nuevo en unos momentos.",
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        text: errorMessage,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isError: true
       };
       setMessages(prev => [...prev, errorMsg]);
     } finally {
@@ -122,20 +131,14 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-6 md:p-12 overflow-hidden">
-      {/* Fondo translúcido grisáceo cinematográfico */}
-      <div 
-        className="absolute inset-0 bg-gray-950/40 backdrop-blur-3xl animate-fade-in"
-        onClick={() => navigate('/')}
-      ></div>
+      <div className="absolute inset-0 bg-gray-950/40 backdrop-blur-3xl animate-fade-in" onClick={() => navigate('/')}></div>
       
-      {/* Contenedor del Chat - Luxury Styling */}
       <div className="relative w-full h-full max-w-2xl bg-white sm:rounded-[3rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden animate-slide-up border border-white/20">
         
-        {/* HEADER - MINIMALISMO SUIZO */}
         <div className="bg-white p-6 md:p-8 flex items-center justify-between border-b border-gray-50 relative z-10">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="w-12 h-12 md:w-14 md:h-14 bg-black rounded-2xl flex items-center justify-center shadow-2xl overflow-hidden transition-all duration-500 hover:rotate-6">
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-black rounded-2xl flex items-center justify-center shadow-2xl overflow-hidden">
                 <img src="/icon.svg" alt="Moon" className="w-8 h-8 md:w-10 md:h-10 object-contain brightness-200 grayscale" />
               </div>
               <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 border-[3px] border-white rounded-full"></div>
@@ -149,45 +152,26 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
               </div>
             </div>
           </div>
-
-          <button 
-            onClick={() => navigate('/')}
-            className="w-10 h-10 md:w-11 md:h-11 bg-gray-50 hover:bg-black hover:text-white text-gray-400 rounded-full flex items-center justify-center transition-all duration-300 active:scale-90"
-          >
+          <button onClick={() => navigate('/')} className="w-10 h-10 md:w-11 md:h-11 bg-gray-50 hover:bg-black hover:text-white text-gray-400 rounded-full flex items-center justify-center transition-all duration-300">
             <X size={20} strokeWidth={3} />
           </button>
         </div>
 
-        {/* ÁREA DE MENSAJES */}
-        <div 
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 bg-[#FDFDFD]"
-        >
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 bg-[#FDFDFD]">
           {messages.map((msg) => (
-            <div 
-              key={msg.id} 
-              className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'} animate-pop-in`}
-            >
+            <div key={msg.id} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'} animate-pop-in`}>
               <div className={`flex gap-4 max-w-[85%] ${msg.type === 'user' ? 'flex-row-reverse' : ''}`}>
-                
-                {/* Bot Icon Styling */}
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg border-2 border-white transition-transform hover:scale-110
-                  ${msg.type === 'user' 
-                    ? 'bg-black text-white' 
-                    : 'bg-gradient-to-br from-primary to-purple-600 text-white'}
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg border-2 border-white
+                  ${msg.type === 'user' ? 'bg-black text-white' : (msg.isError ? 'bg-red-500 text-white' : 'bg-gradient-to-br from-primary to-purple-600 text-white')}
                 `}>
-                  {msg.type === 'user' ? <UserIcon size={18} strokeWidth={2.5} /> : <Bot size={20} strokeWidth={2} />}
+                  {msg.type === 'user' ? <UserIcon size={18} /> : (msg.isError ? <AlertCircle size={20} /> : <Bot size={20} />)}
                 </div>
-                
                 <div className="space-y-2">
                   <div className={`p-5 md:p-6 rounded-[2.2rem] text-sm md:text-[15px] font-medium leading-relaxed
-                    ${msg.type === 'user' 
-                      ? 'bg-black text-white rounded-tr-none shadow-xl shadow-black/5' 
-                      : 'bg-primary text-white rounded-tl-none shadow-xl shadow-primary/20'}
+                    ${msg.type === 'user' ? 'bg-black text-white rounded-tr-none' : (msg.isError ? 'bg-red-50 text-red-700 border border-red-100 rounded-tl-none' : 'bg-primary text-white rounded-tl-none')}
                   `}>
                     {msg.text}
                   </div>
-                  {/* Timestamp con contraste mejorado */}
                   <p className={`text-[9px] font-bold uppercase text-gray-500 tracking-widest px-2 ${msg.type === 'user' ? 'text-right' : 'text-left'}`}>
                     {msg.time}
                   </p>
@@ -195,11 +179,10 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
               </div>
             </div>
           ))}
-          
           {isTyping && (
              <div className="flex justify-start animate-pulse">
                <div className="flex gap-4">
-                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white shadow-lg border-2 border-white">
+                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white border-2 border-white shadow-lg">
                    <Bot size={20} />
                  </div>
                  <div className="bg-primary/10 p-5 rounded-[2.2rem] rounded-tl-none flex items-center gap-1.5 border border-primary/10">
@@ -212,14 +195,13 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
           )}
         </div>
 
-        {/* INPUT SECTION - ULTRA CLEAN */}
         <div className="p-6 md:p-10 bg-white z-10">
           <form onSubmit={handleSend} className="relative group max-w-3xl mx-auto flex items-center gap-4">
             <div className="relative flex-1">
               <input 
                 type="text" 
                 placeholder="Escribe tu consulta aquí..."
-                className="w-full bg-gray-50 border-none px-8 py-5 rounded-full text-sm md:text-base font-bold text-gray-900 outline-none focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-gray-300 placeholder:font-medium shadow-inner"
+                className="w-full bg-gray-50 border-none px-8 py-5 rounded-full text-sm md:text-base font-bold text-gray-900 outline-none focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all shadow-inner"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 disabled={isTyping}
@@ -229,30 +211,17 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
               type="submit"
               disabled={isTyping || !inputValue.trim()}
               className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all shrink-0 active:scale-90
-                ${isTyping || !inputValue.trim() 
-                  ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
-                  : 'bg-black text-white hover:bg-primary shadow-gray-200'}
+                ${isTyping || !inputValue.trim() ? 'bg-gray-100 text-gray-300' : 'bg-black text-white hover:bg-primary'}
               `}
             >
               <Send size={22} strokeWidth={2.5} />
             </button>
           </form>
-          
-          <div className="flex justify-center items-center gap-3 mt-8 opacity-40 select-none">
-             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.5em]">
-               Agencia Moon 2026
-             </p>
+          <div className="flex justify-center mt-8 opacity-40">
+             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.5em]">Agencia Moon 2026</p>
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-        .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #F3F4F6; border-radius: 10px; }
-      `}</style>
     </div>
   );
 };
