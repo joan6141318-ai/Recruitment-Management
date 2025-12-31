@@ -27,7 +27,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     loadContext();
   }, [user]);
 
-  // Generar el contexto de texto para la IA
+  // Generar el contexto de texto para la IA - Única fuente de verdad
   const contextString = useMemo(() => {
     if (userEmisores.length === 0) return "No hay emisores registrados actualmente en tu base de datos.";
     return userEmisores.map(e => 
@@ -140,7 +140,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
               <div className="w-14 h-14 bg-black rounded-3xl flex items-center justify-center shadow-xl">
                 <img src="/icon.svg" alt="Moon" className="w-9 h-9 brightness-200 grayscale" />
               </div>
-              {/* Punto verde con parpadeo intermitente sutil y refinado */}
+              {/* Punto verde con parpadeo intermitente sutil (3s para mayor elegancia) */}
               <div className="absolute -top-1 -right-1 flex h-4 w-4">
                 <span className="animate-subtle-pulse absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60"></span>
                 <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500 border-[3px] border-white shadow-sm"></span>
@@ -160,6 +160,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
           <button 
             onClick={() => navigate('/')}
             className="w-12 h-12 bg-black hover:bg-gray-800 text-white rounded-full flex items-center justify-center transition-all duration-300 active:scale-90 shadow-lg shadow-black/20"
+            title="Cerrar chat"
           >
             <X size={22} strokeWidth={2.5} />
           </button>
@@ -217,13 +218,13 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
           )}
         </div>
 
-        {/* INPUT SECTION - CONTRASTE OSCURECIDO */}
+        {/* INPUT SECTION - CONTRASTE OSCURECIDO (placeholder:text-gray-700) */}
         <div className="p-8 md:p-12 bg-white z-10 border-t border-gray-50">
           <form onSubmit={handleSend} className="relative group max-w-4xl mx-auto flex items-center gap-5">
             <div className="relative flex-1">
               <input 
                 type="text" 
-                placeholder="Pregunta sobre tu base de datos..."
+                placeholder="Escribe tu consulta sobre la base de datos..."
                 className="w-full bg-gray-100 border border-gray-200/40 px-10 py-6 rounded-full text-sm md:text-base font-bold text-gray-900 outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-gray-700 placeholder:font-semibold shadow-inner"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
@@ -258,7 +259,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
           50% { transform: scale(1.3); opacity: 0; }
         }
         .animate-fade-in { animation: fade-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .animate-subtle-pulse { animation: subtle-pulse 2.5s ease-in-out infinite; }
+        .animate-subtle-pulse { animation: subtle-pulse 3s ease-in-out infinite; }
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 20px; }
