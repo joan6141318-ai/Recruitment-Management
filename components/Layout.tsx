@@ -114,7 +114,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
           <nav className="flex-1 px-4 py-8 space-y-2">
               <NavItem to="/" icon={LayoutDashboard} label="Inicio" />
               <NavItem to="/emisores" icon={Radio} label="Emisores" />
-              <NavItem to="/remuneracion" icon={Banknote} label="Pagos" />
+              <NavItem to="/remuneracion" icon={Banknote} label="Remuneración" />
               <NavItem to="/factura" icon={FileText} label="Mi Factura" />
               <NavItem 
                 to="/chatbot" 
@@ -189,18 +189,14 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-4 z-50 flex justify-around items-center h-[80px] shadow-[0_-5px_20px_rgba(0,0,0,0.03)] print:hidden">
          <BottomNavItem to="/" icon={LayoutDashboard} label="Inicio" />
          <BottomNavItem to="/emisores" icon={Radio} label="Emisores" />
-         <BottomNavItem to="/remuneracion" icon={Banknote} label="Pagos" />
-         
-         {user.rol === 'admin' ? (
-           <BottomNavItem to="/reclutadores" icon={Users} label="Equipo" />
-         ) : (
-           <button onClick={onLogout} className="flex flex-col items-center justify-center w-full py-1 text-gray-400">
-              <div className="p-2 rounded-xl mb-0.5 transition-all bg-transparent">
-                <LogOut size={20} strokeWidth={2} />
-              </div>
-              <span className="text-[10px] font-bold tracking-tight">Salir</span>
-           </button>
-         )}
+         <BottomNavItem to="/reclutadores" icon={Users} label="Equipo" disabled={user.rol !== 'admin'} />
+
+         <button onClick={onLogout} className="flex flex-col items-center justify-center w-full py-1 text-gray-400">
+            <div className="p-2 rounded-xl mb-0.5 transition-all bg-transparent">
+              <LogOut size={20} strokeWidth={2} />
+            </div>
+            <span className="text-[10px] font-bold tracking-tight">Salir</span>
+         </button>
       </div>
 
     </div>
