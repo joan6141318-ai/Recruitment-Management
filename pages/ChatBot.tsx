@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User as UserIcon, X } from 'lucide-react';
 import { User } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { GoogleGenAI } from "@google/genai";
 
 interface ChatBotProps {
   user: User;
@@ -14,6 +15,12 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // Instrucción de sistema para definir la personalidad de la IA
+  const systemInstruction = `Eres agencIA, el asistente inteligente oficial de Agencia Moon. 
+  Tu objetivo es ayudar a los reclutadores a gestionar sus equipos, entender el tabulador de comisiones 
+  y navegar por la plataforma. Eres sofisticado, profesional y eficiente. 
+  Hablas en nombre de Agencia Moon. El usuario actual se llama ${user.nombre} y tiene el rol de ${user.rol}.`;
 
   useEffect(() => {
     const getGreeting = () => {
@@ -48,32 +55,69 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     }
   }, [messages, isTyping]);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isTyping) return;
 
     const userText = inputValue;
+    const now = new Date();
+    const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     const newUserMsg = {
       id: Date.now(),
       type: 'user',
       text: userText,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      time: timeString
     };
 
     setMessages(prev => [...prev, newUserMsg]);
     setInputValue('');
     setIsTyping(true);
     
-    setTimeout(() => {
+    try {
+      // Inicializar la IA con la API KEY del entorno
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      
+      // Mapear historial para que la IA tenga contexto (formato Gemini)
+      // Excluimos el primer mensaje de saludo si es necesario, o lo incluimos como modelo
+      const history = messages.map(m => ({
+        role: m.type === 'user' ? 'user' : 'model',
+        parts: [{ text: m.text }]
+      }));
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: [...history, { role: 'user', parts: [{ text: userText }] }],
+        config: {
+          systemInstruction: systemInstruction,
+          temperature: 0.7,
+          topP: 0.95,
+          topK: 40,
+        },
+      });
+
+      const botText = response.text || "Lo siento, tuve un problema procesando tu mensaje. ¿Podrías repetirlo?";
+
       const botResponse = {
         id: Date.now() + 1,
         type: 'bot',
-        text: `Entendido. Estoy procesando tu consulta sobre "${userText}". Como tu asistente de Agencia Moon, mi prioridad es optimizar tu gestión de reclutamiento.`,
+        text: botText,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
+      
       setMessages(prev => [...prev, botResponse]);
+    } catch (error) {
+      console.error("Error calling Gemini API:", error);
+      const errorMsg = {
+        id: Date.now() + 1,
+        type: 'bot',
+        text: "Hubo un error de conexión con mis sistemas. Por favor, inténtalo de nuevo en unos momentos.",
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages(prev => [...prev, errorMsg]);
+    } finally {
       setIsTyping(false);
-    }, 2000);
+    }
   };
 
   return (
