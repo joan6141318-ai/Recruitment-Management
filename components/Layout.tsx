@@ -105,9 +105,8 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
               <NavItem 
                 to="/chatbot" 
                 icon={Sparkles} 
-                label="Soporte agencIA (Próximamente)" 
+                label="Soporte agencIA" 
                 colorClass="text-primary" 
-                disabled={user.rol !== 'admin'}
               />
               {user.rol === 'admin' && <NavItem to="/reclutadores" icon={Users} label="Equipo Reclutadores" />}
           </nav>

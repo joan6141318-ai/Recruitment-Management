@@ -117,10 +117,10 @@ const App: React.FC = () => {
             <Route path="/remuneracion" element={<Remuneracion />} />
             <Route path="/factura" element={<Factura user={user} />} />
             
-            {/* Solo el Administrador puede entrar al ChatBot mientras se perfecciona */}
+            {/* Habilitado para todos los usuarios autenticados */}
             <Route 
               path="/chatbot" 
-              element={user.rol === 'admin' ? <ChatBot user={user} /> : <Navigate to="/" />} 
+              element={<ChatBot user={user} />} 
             />
 
             {user.rol === 'admin' ? (
