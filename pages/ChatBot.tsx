@@ -74,15 +74,12 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     setIsTyping(true);
     
     try {
-      // Vercel convierte espacios en guiones bajos (CLAVE API -> CLAVE_API)
-      // Buscamos API_KEY o CLAVE_API para que funcione con tu configuración actual
-      const apiKey = process.env.API_KEY || (process.env as any).CLAVE_API;
-      
-      if (!apiKey) {
+      // Usamos la variable inyectada por Vite desde las Environment Variables de Vercel
+      if (!process.env.API_KEY) {
         throw new Error("MISSING_API_KEY");
       }
 
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const history = messages.map(m => ({
         role: m.type === 'user' ? 'user' : 'model',
