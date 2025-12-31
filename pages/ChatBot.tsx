@@ -108,7 +108,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-0 md:p-6">
       <div className="w-full h-full max-w-2xl bg-white md:rounded-[2rem] shadow-2xl flex flex-col overflow-hidden animate-slide-up">
         
-        {/* Header con Icono Oficial */}
+        {/* Header - Se mantiene según diseño profesional de la app */}
         <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-white">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center shadow-lg">
@@ -129,14 +129,14 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
           </button>
         </div>
 
-        {/* Chat Area - Burbujas Profesionales */}
+        {/* Chat Area - Burbujas e Iconos solicitados */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 bg-white">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'} animate-pop-in`}>
               <div className={`flex items-end gap-3 max-w-[90%] ${msg.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                 
-                {/* Iconos de Mensaje */}
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-md border border-gray-100
+                {/* Icono al lado de la conversación */}
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-md border border-gray-100 overflow-hidden
                   ${msg.type === 'user' ? 'bg-black text-white' : 'bg-primary'}
                 `}>
                   {msg.type === 'user' ? (
@@ -146,12 +146,12 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
                   )}
                 </div>
 
-                {/* Burbuja de Mensaje */}
+                {/* Burbuja de Mensaje con Sombra Inferior */}
                 <div className="flex flex-col space-y-1.5">
                   <div className={`p-5 rounded-[1.5rem] text-sm font-medium leading-relaxed whitespace-pre-wrap
                     ${msg.type === 'user' 
-                      ? 'bg-black text-white rounded-br-none shadow-[0_8px_15px_-3px_rgba(0,0,0,0.15)]' 
-                      : 'bg-primary text-white rounded-bl-none shadow-[0_8px_20px_-4px_rgba(124,58,237,0.4)]'}
+                      ? 'bg-black text-white rounded-br-none shadow-[0_10px_20px_-5px_rgba(0,0,0,0.2)]' 
+                      : 'bg-primary text-white rounded-bl-none shadow-[0_10px_25px_-5px_rgba(124,58,237,0.45)]'}
                   `}>
                     {msg.text}
                   </div>
@@ -167,7 +167,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
           {isTyping && (
             <div className="flex justify-start">
               <div className="flex items-end gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-md">
+                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-md overflow-hidden">
                    <img src="/icon.svg" className="w-6 h-6 brightness-200 grayscale" alt="IA" />
                 </div>
                 <div className="bg-primary/5 p-4 rounded-[1.5rem] rounded-bl-none flex gap-1.5 shadow-inner border border-primary/10">
@@ -180,13 +180,13 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
           )}
         </div>
 
-        {/* Input Area Minimalista */}
+        {/* Input Area - Se mantiene el diseño original de la app */}
         <div className="p-8 md:p-10 bg-white border-t border-gray-50">
           <form onSubmit={handleSend} className="flex gap-4">
             <input 
               type="text" 
               placeholder="Realizar consulta profesional..."
-              className="flex-1 bg-gray-50 border-none px-6 py-4 rounded-2xl text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-primary/5 focus:bg-white transition-all placeholder-gray-400"
+              className="flex-1 bg-gray-50 border-none px-6 py-4 rounded-2xl text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-primary/5 focus:bg-white transition-all placeholder-gray-400 shadow-inner"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               disabled={isTyping}
