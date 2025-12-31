@@ -53,12 +53,12 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     6. Tus respuestas deben ser visualmente impecables, entendibles y estéticas sin símbolos basura.`;
   };
 
-  // Mensaje inicial corregido - Minimalista y sin frases de "tiempo real"
+  // Mensaje inicial - Se ha eliminado la frase "en tiempo real"
   useEffect(() => {
     const timer = setTimeout(() => {
       const name = user.nombre.split(' ')[0];
       const greeting = getGreetingByTime();
-      const initialText = `Hola ${name}, ${greeting}. ¿En qué puedo apoyarte con la gestión de Agencia Moon hoy?`;
+      const initialText = `Hola ${name}, ${greeting}. Estaré asistiendo tus dudas. ¿En qué puedo ayudarte hoy?`;
       
       setMessages([
         { 
@@ -94,51 +94,45 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     setIsTyping(true);
     
     try {
+      // Inicialización recomendada
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
-      /**
-       * SOLUCIÓN TÉCNICA:
-       * El historial DEBE comenzar con un rol 'user'. 
-       * El mensaje inicial del bot (id: 1) se omite del historial enviado a la API
-       * para asegurar una secuencia válida [user, model, user...].
-       */
-      const conversationHistory = messages
+      // Construir historial válido: ignorar el primer saludo del bot para cumplir con la secuencia [user, model, user...]
+      const history = messages
         .filter(m => m.id !== 1)
         .map(m => ({
           role: m.type === 'user' ? 'user' : 'model',
           parts: [{ text: m.text }]
         }));
 
-      // Añadimos el turno actual del usuario
-      conversationHistory.push({
-        role: 'user',
-        parts: [{ text: userText }]
-      });
-
-      const response = await ai.models.generateContent({
+      // Usar interfaz de Chat para manejo automático de turnos y errores de secuencia
+      const chat = ai.chats.create({
         model: 'gemini-3-flash-preview',
-        contents: conversationHistory,
         config: {
           systemInstruction: buildSystemInstruction(),
           temperature: 0.2,
         },
+        history: history as any
       });
 
-      const responseText = response.text;
+      const result = await chat.sendMessage({ message: userText });
+      const responseText = result.text;
+
+      // Limpieza de símbolos basura generados por la IA
       const cleanedText = (responseText || "").replace(/[*_#-]/g, '').trim();
 
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         type: 'bot',
-        text: cleanedText || "He procesado su consulta pero no se ha generado un reporte. ¿Podría ser más específico?",
+        text: cleanedText || "He recibido su consulta, pero no he podido formular una respuesta. ¿Puede repetir su pregunta?",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }]);
     } catch (error) {
-      console.error("ChatBot Technical Error:", error);
+      console.error("ChatBot Failure:", error);
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         type: 'bot',
-        text: "He tenido un inconveniente técnico al procesar su solicitud. Por favor, inténtelo de nuevo en unos segundos.",
+        text: "He tenido un inconveniente técnico al conectar con mis servicios. Por favor, intente enviar su mensaje de nuevo.",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isError: true
       }]);
