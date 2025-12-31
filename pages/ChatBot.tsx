@@ -53,12 +53,12 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     6. Tus respuestas deben ser visualmente impecables, entendibles y estéticas sin símbolos basura.`;
   };
 
-  // Mensaje inicial - Corregido: directo y sin frases innecesarias
+  // Mensaje inicial - CORREGIDO: Sin frase de tiempo real
   useEffect(() => {
     const timer = setTimeout(() => {
       const name = user.nombre.split(' ')[0];
       const greeting = getGreetingByTime();
-      const initialText = `Hola ${name}, ${greeting}. ¿En qué puedo ayudarte con Agencia Moon hoy?`;
+      const initialText = `Hola ${name}, ${greeting}. ¿En qué puedo apoyarte con la gestión de Agencia Moon hoy?`;
       
       setMessages([
         { 
@@ -89,7 +89,6 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     const userText = inputValue;
     const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // Guardamos el mensaje del usuario
     setMessages(prev => [...prev, { id: Date.now(), type: 'user', text: userText, time: timeString }]);
     setInputValue('');
     setIsTyping(true);
@@ -97,54 +96,43 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
-      // FILTRO DE SEGURIDAD PARA LA API:
-      // Construimos un historial que alterne estrictamente: user -> model -> user...
-      // Ignoramos el mensaje de bienvenida (id: 1) para cumplir la regla de empezar con 'user'.
-      const rawHistory = messages
-        .filter(m => m.id !== 1 && !m.isError)
+      // SOLUCIÓN AL ERROR DE SECUENCIA:
+      // Filtramos el historial para que la IA NO vea el saludo inicial del bot como primer mensaje.
+      // La API requiere que el primer mensaje del historial sea de 'user'.
+      const historyToPay = messages
+        .filter(m => m.id !== 1 && !m.isError) // Saltamos el mensaje con id 1 (el saludo del bot)
         .map(m => ({
           role: m.type === 'user' ? 'user' : 'model',
           parts: [{ text: m.text }]
         }));
 
-      const validatedHistory = [];
-      let lastRole = null;
-      
-      for (const turn of rawHistory) {
-        if (turn.role !== lastRole) {
-          validatedHistory.push(turn);
-          lastRole = turn.role;
-        }
-      }
-
-      // El mensaje actual siempre debe ser de 'user' al final
-      const contents = [...validatedHistory, { role: 'user', parts: [{ text: userText }] }];
+      // Añadimos el mensaje actual del usuario al final del historial
+      const contents = [...historyToPay, { role: 'user', parts: [{ text: userText }] }];
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: contents,
         config: {
           systemInstruction: buildSystemInstruction(),
-          temperature: 0.1, // Menos aleatoriedad para mayor precisión profesional
+          temperature: 0.1,
         },
       });
 
       const responseText = response.text || "";
-      // Limpieza exhaustiva de cualquier símbolo que la IA intente colar
       const cleanedText = responseText.replace(/[*_#\-]/g, '').trim();
 
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         type: 'bot',
-        text: cleanedText || "He procesado su solicitud pero la respuesta está vacía. ¿Podría reformular su pregunta?",
+        text: cleanedText || "He procesado su solicitud pero no obtuve respuesta. ¿Puede intentar de nuevo?",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }]);
     } catch (error) {
-      console.error("ChatBot Technical Failure:", error);
+      console.error("ChatBot Sequence Error:", error);
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         type: 'bot',
-        text: "He tenido un inconveniente técnico al procesar su solicitud. Por favor, intente enviar su mensaje nuevamente.",
+        text: "He tenido un error técnico de conexión. Por favor, envíe su mensaje nuevamente para reconectar.",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isError: true
       }]);
