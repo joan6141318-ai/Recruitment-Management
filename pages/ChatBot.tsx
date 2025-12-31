@@ -31,19 +31,20 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
       `- ${e.nombre} (ID: ${e.bigo_id}): ${e.horas_mes}h, ${e.semillas_mes} semillas`
     ).join('\n');
 
-    return `Eres el asistente de Agencia Moon.
-    Tu objetivo es ayudar a ${user.nombre} a gestionar sus emisores.
-    Datos actuales del reclutador:
-    ${emisoresSummary || "No hay emisores registrados."}
+    return `Eres agencIA, el asistente de soporte de Agencia Moon.
+    Tu objetivo es ayudar a ${user.nombre} a gestionar sus emisores de forma profesional.
     
-    Instrucciones:
-    - Sé breve, profesional y directo.
-    - No uses un lenguaje excesivamente entusiasta.
-    - Responde solo dudas sobre los datos proporcionados o reglas de la agencia.`;
+    Datos actuales del reclutador:
+    ${emisoresSummary || "No hay emisores registrados actualmente."}
+    
+    Instrucciones de estilo:
+    - Sé breve, directo y sumamente profesional.
+    - Utiliza un tono ejecutivo.
+    - Responde únicamente sobre temas de la agencia y los datos proporcionados.`;
   };
 
   useEffect(() => {
-    const initialGreeting = `Hola ${user.nombre.split(' ')[0]}, ¿en qué puedo ayudarte hoy con la gestión de tus emisores?`;
+    const initialGreeting = `Hola ${user.nombre.split(' ')[0]}. Estoy listo para analizar tu base de datos de emisores. ¿En qué puedo asistirte?`;
     setMessages([
       { 
         id: 1, 
@@ -81,21 +82,21 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
         })), { role: 'user', parts: [{ text: userText }] }],
         config: {
           systemInstruction: buildSystemInstruction(),
-          temperature: 0.5,
+          temperature: 0.4,
         },
       });
 
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         type: 'bot',
-        text: response.text || "Lo siento, no pude procesar la solicitud.",
+        text: response.text || "No pude procesar la consulta en este momento.",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }]);
     } catch (error) {
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         type: 'bot',
-        text: "Error de conexión. Inténtalo de nuevo.",
+        text: "Error de conexión con el servidor. Por favor, intenta de nuevo.",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isError: true
       }]);
@@ -105,58 +106,84 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/20 backdrop-blur-sm p-0 md:p-6">
-      <div className="w-full h-full max-w-2xl bg-white md:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/40 backdrop-blur-md p-0 md:p-6">
+      <div className="w-full h-full max-w-2xl bg-white md:rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-slide-up border border-white/20">
         
         {/* Header Minimalista */}
-        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center">
-              <Sparkles size={20} className="text-white" />
+        <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center shadow-lg">
+              <Sparkles size={24} className="text-white" />
             </div>
             <div>
-              <h2 className="font-brand font-bold text-sm uppercase tracking-wider text-black">Asistente Moon</h2>
-              <p className="text-[10px] text-primary font-bold uppercase tracking-widest flex items-center gap-1.5">
-                {isTyping ? <span className="flex gap-0.5"><span className="w-1 h-1 bg-primary rounded-full animate-bounce"></span><span className="w-1 h-1 bg-primary rounded-full animate-bounce delay-100"></span></span> : <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>}
-                {isTyping ? 'Escribiendo' : 'En línea'}
-              </p>
+              <h2 className="font-brand font-black text-sm uppercase tracking-[0.2em] text-black">agencIA</h2>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${isTyping ? 'bg-primary animate-pulse' : 'bg-green-500'}`}></div>
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  {isTyping ? 'Procesando' : 'Activo'}
+                </span>
+              </div>
             </div>
           </div>
-          <button onClick={() => navigate('/')} className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
-            <X size={20} />
+          <button onClick={() => navigate('/')} className="p-3 hover:bg-gray-100 rounded-2xl text-gray-400 transition-all active:scale-90">
+            <X size={24} strokeWidth={2.5} />
           </button>
         </div>
 
         {/* Chat Area */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-white">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 bg-[#FDFDFD]">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'} animate-pop-in`}>
-              <div className={`max-w-[85%] ${msg.type === 'user' ? 'bg-black text-white rounded-2xl rounded-tr-none' : 'bg-white border border-gray-100 text-gray-800 rounded-2xl rounded-tl-none'} p-4 shadow-sm`}>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                <p className={`text-[8px] font-bold uppercase mt-2 opacity-40 ${msg.type === 'user' ? 'text-right' : 'text-left'}`}>
-                  {msg.time}
-                </p>
+              <div className={`flex items-end gap-3 max-w-[90%] ${msg.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                
+                {/* Iconos de burbuja */}
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-md 
+                  ${msg.type === 'user' ? 'bg-black text-white' : 'bg-primary text-white'}
+                `}>
+                  {msg.type === 'user' ? <UserIcon size={18} /> : <Bot size={18} />}
+                </div>
+
+                {/* Contenido del mensaje */}
+                <div className="flex flex-col space-y-1">
+                  <div className={`p-5 rounded-[1.5rem] text-sm font-medium leading-relaxed whitespace-pre-wrap shadow-xl
+                    ${msg.type === 'user' 
+                      ? 'bg-black text-white rounded-br-none shadow-gray-200' 
+                      : 'bg-primary text-white rounded-bl-none shadow-purple-200'}
+                  `}>
+                    {msg.text}
+                  </div>
+                  <p className={`text-[9px] font-black uppercase text-gray-300 tracking-widest px-1 ${msg.type === 'user' ? 'text-right' : 'text-left'}`}>
+                    {msg.time}
+                  </p>
+                </div>
+
               </div>
             </div>
           ))}
+          
           {isTyping && (
             <div className="flex justify-start">
-              <div className="bg-gray-50 p-4 rounded-2xl rounded-tl-none flex gap-1">
-                <div className="w-1 h-1 bg-gray-300 rounded-full animate-bounce"></div>
-                <div className="w-1 h-1 bg-gray-300 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-                <div className="w-1 h-1 bg-gray-300 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+              <div className="flex items-end gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-md">
+                  <Bot size={18} />
+                </div>
+                <div className="bg-primary/10 p-5 rounded-[1.5rem] rounded-bl-none flex gap-1.5 shadow-sm">
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"></div>
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                </div>
               </div>
             </div>
           )}
         </div>
 
         {/* Input Area Minimalista */}
-        <div className="p-6 border-t border-gray-50">
-          <form onSubmit={handleSend} className="flex gap-3">
+        <div className="p-8 md:p-10 bg-white border-t border-gray-50">
+          <form onSubmit={handleSend} className="flex gap-4">
             <input 
               type="text" 
-              placeholder="Escribe tu consulta..."
-              className="flex-1 bg-gray-50 border-none px-5 py-3.5 rounded-xl text-sm font-medium focus:ring-1 focus:ring-black outline-none transition-all"
+              placeholder="Consultar datos de emisores..."
+              className="flex-1 bg-gray-50 border-none px-6 py-4 rounded-2xl text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-primary/10 focus:bg-white transition-all placeholder-gray-400 shadow-inner"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               disabled={isTyping}
@@ -164,11 +191,12 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
             <button 
               type="submit"
               disabled={isTyping || !inputValue.trim()}
-              className="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center hover:bg-gray-800 disabled:bg-gray-100 disabled:text-gray-300 transition-all active:scale-95 shadow-lg"
+              className="w-14 h-14 bg-black text-white rounded-2xl flex items-center justify-center hover:bg-primary disabled:bg-gray-100 disabled:text-gray-300 transition-all active:scale-90 shadow-2xl shadow-gray-200"
             >
-              <Send size={18} />
+              <Send size={22} strokeWidth={2.5} />
             </button>
           </form>
+          <p className="text-center mt-6 text-[9px] font-black text-gray-200 uppercase tracking-[0.5em]">Agencia Moon Assistant</p>
         </div>
       </div>
     </div>
