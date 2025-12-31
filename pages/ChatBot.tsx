@@ -7,7 +7,7 @@ const ChatBot: React.FC = () => {
     { 
       id: 1, 
       type: 'bot', 
-      text: '¡Hola! Soy Moon AI, tu asistente personal de Agencia Moon. ¿En qué puedo ayudarte hoy?',
+      text: '¡Hola! Soy Soporte agencIA, tu asistente especializado de Agencia Moon. ¿En qué puedo ayudarte hoy?',
       time: 'Ahora' 
     }
   ]);
@@ -52,7 +52,7 @@ const ChatBot: React.FC = () => {
             <Sparkles size={20} className="text-white" />
           </div>
           <div>
-            <h2 className="font-black text-sm uppercase tracking-widest">Moon AI</h2>
+            <h2 className="font-black text-sm uppercase tracking-widest">Soporte agencIA</h2>
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">En Línea • Asistente</span>
@@ -119,7 +119,7 @@ const ChatBot: React.FC = () => {
         <form onSubmit={handleSend} className="relative">
           <input 
             type="text" 
-            placeholder="Escribe tu mensaje aquí..."
+            placeholder="Escribe tu consulta aquí..."
             className="w-full bg-gray-50 border-none pl-5 pr-14 py-4 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-primary/5 transition-all"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
@@ -132,7 +132,7 @@ const ChatBot: React.FC = () => {
           </button>
         </form>
         <p className="text-center text-[9px] font-bold text-gray-300 uppercase tracking-widest mt-3">
-          Moon AI puede cometer errores. Verifica la información importante.
+          Soporte agencIA puede cometer errores. Verifica la información importante.
         </p>
       </div>
     </div>

@@ -75,7 +75,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
               <NavItem to="/emisores" icon={Radio} label="Emisores" />
               <NavItem to="/remuneracion" icon={Banknote} label="Remuneración" />
               <NavItem to="/factura" icon={FileText} label="Mi Factura" />
-              <NavItem to="/chatbot" icon={Sparkles} label="Moon AI" colorClass="text-primary" />
+              <NavItem to="/chatbot" icon={Sparkles} label="Soporte agencIA" colorClass="text-primary" />
               {user.rol === 'admin' && <NavItem to="/reclutadores" icon={Users} label="Equipo Reclutadores" />}
           </nav>
 
@@ -144,11 +144,16 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-4 z-50 flex justify-between items-center h-[80px] shadow-[0_-5px_20px_rgba(0,0,0,0.03)] print:hidden">
          <BottomNavItem to="/" icon={LayoutDashboard} label="Inicio" />
          <BottomNavItem to="/emisores" icon={Radio} label="Emisores" />
-         <BottomNavItem to="/chatbot" icon={Sparkles} label="Moon AI" />
          {user.rol === 'admin' ? (
-           <BottomNavItem to="/reclutadores" icon={Users} label="Equipo" />
+           <>
+            <BottomNavItem to="/reclutadores" icon={Users} label="Equipo" />
+            <BottomNavItem to="/remuneracion" icon={Banknote} label="Pagos" />
+           </>
          ) : (
-           <BottomNavItem to="/remuneracion" icon={Banknote} label="Pagos" />
+           <>
+            <BottomNavItem to="/remuneracion" icon={Banknote} label="Pagos" />
+            <BottomNavItem to="/factura" icon={FileText} label="Factura" />
+           </>
          )}
       </div>
 
