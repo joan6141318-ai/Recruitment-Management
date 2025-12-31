@@ -76,16 +76,16 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
              <div className="flex items-center gap-3">
                  <img src="/icon.svg" alt="Moon" className="w-10 h-10 object-contain rounded-full bg-black" />
                  <div>
-                    <h1 className="font-bold text-lg text-black uppercase tracking-widest leading-none">AGENCIA MOON</h1>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Gestor de Reclutamiento</p>
+                    <h1 className="font-brand font-black text-lg text-black uppercase tracking-widest leading-none">MOON</h1>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Gestor Luxury</p>
                  </div>
              </div>
           </div>
 
           <nav className="flex-1 px-4 py-8 space-y-2">
-              <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
+              <NavItem to="/" icon={LayoutDashboard} label="Inicio" />
               <NavItem to="/emisores" icon={Radio} label="Emisores" />
-              <NavItem to="/remuneracion" icon={Banknote} label="Remuneración" />
+              <NavItem to="/remuneracion" icon={Banknote} label="Pagos" />
               <NavItem to="/factura" icon={FileText} label="Mi Factura" />
               <NavItem 
                 to="/chatbot" 
@@ -117,20 +117,23 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex font-sans text-gray-900">
       
+      {/* SIDEBAR DESKTOP */}
       <aside className="hidden md:flex flex-col w-80 bg-white border-r border-gray-100 h-screen sticky top-0 z-50 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
           <SidebarContent />
       </aside>
 
+      {/* HEADER MOBILE */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md border-b border-gray-100 px-5 h-[60px] flex justify-between items-center z-40 shadow-sm">
           <div className="flex items-center gap-3">
               <img src="/icon.svg" alt="Moon" className="w-8 h-8 object-contain rounded-full bg-black" />
-              <span className="font-bold text-base text-black uppercase tracking-widest">MOON</span>
+              <span className="font-brand font-black text-base text-black uppercase tracking-widest">MOON</span>
           </div>
           <button onClick={() => setIsSidebarOpen(true)} className="w-9 h-9 bg-gray-50 text-black border border-gray-100 rounded-full flex items-center justify-center">
              <Menu size={20} />
           </button>
       </div>
 
+      {/* DRAWER MOBILE */}
       {isSidebarOpen && (
         <div className="fixed inset-0 z-[60] md:hidden">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
@@ -145,15 +148,30 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
         </div>
       )}
 
+      {/* MAIN CONTENT */}
       <main className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full mt-[60px] md:mt-0 mb-24 md:mb-0">
         {children}
       </main>
 
+      {/* NAV INFERIOR RESTAURADA: Inicio, Emisores, Equipo (Admin only), Salir */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-4 z-50 flex justify-around items-center h-[80px] shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
          <BottomNavItem to="/" icon={LayoutDashboard} label="Inicio" />
          <BottomNavItem to="/emisores" icon={Radio} label="Emisores" />
-         <BottomNavItem to="/remuneracion" icon={Banknote} label="Pagos" />
-         <BottomNavItem to="/factura" icon={FileText} label="Factura" />
+         
+         {/* Mostrar Equipo si es admin, sino mostrar Remuneración o mantener espacio */}
+         {user.rol === 'admin' ? (
+           <BottomNavItem to="/reclutadores" icon={Users} label="Equipo" />
+         ) : (
+           <BottomNavItem to="/remuneracion" icon={Banknote} label="Pagos" />
+         )}
+         
+         {/* Botón Salir en el orden solicitado */}
+         <button onClick={onLogout} className="flex flex-col items-center justify-center w-full py-1 text-gray-400">
+              <div className="p-2 rounded-xl mb-0.5 transition-all bg-transparent">
+                <LogOut size={20} />
+              </div>
+              <span className="text-[10px] font-bold tracking-tight">Salir</span>
+         </button>
       </div>
 
     </div>
