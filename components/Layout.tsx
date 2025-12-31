@@ -75,20 +75,8 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
     );
   };
 
-  const BottomNavItem = ({ to, icon: Icon, label, disabled = false }: { to: string, icon: any, label: string, disabled?: boolean }) => {
+  const BottomNavItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => {
       const active = isActive(to);
-      
-      if (disabled) {
-          return (
-              <div className="flex flex-col items-center justify-center w-full py-1 text-gray-200 opacity-40 cursor-not-allowed">
-                  <div className="p-2 rounded-xl mb-0.5 bg-transparent">
-                    <Icon size={20} />
-                  </div>
-                  <span className="text-[10px] font-bold tracking-tight">{label}</span>
-              </div>
-          );
-      }
-
       return (
           <Link to={to} className={`flex flex-col items-center justify-center w-full py-1 ${active ? 'text-black' : 'text-gray-400'}`}>
               <div className={`p-2 rounded-xl mb-0.5 transition-all ${active ? 'bg-black text-white shadow-lg' : 'bg-transparent'}`}>
@@ -114,7 +102,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
           <nav className="flex-1 px-4 py-8 space-y-2">
               <NavItem to="/" icon={LayoutDashboard} label="Inicio" />
               <NavItem to="/emisores" icon={Radio} label="Emisores" />
-              <NavItem to="/remuneracion" icon={Banknote} label="Remuneración" />
+              <NavItem to="/remuneracion" icon={Banknote} label="Pagos" />
               <NavItem to="/factura" icon={FileText} label="Mi Factura" />
               <NavItem 
                 to="/chatbot" 
@@ -185,18 +173,34 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
         {children}
       </main>
 
-      {/* NAVEGACIÓN INFERIOR */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-4 z-50 flex justify-around items-center h-[80px] shadow-[0_-5px_20px_rgba(0,0,0,0.03)] print:hidden">
-         <BottomNavItem to="/" icon={LayoutDashboard} label="Inicio" />
-         <BottomNavItem to="/emisores" icon={Radio} label="Emisores" />
-         <BottomNavItem to="/reclutadores" icon={Users} label="Equipo" disabled={user.rol !== 'admin'} />
-
-         <button onClick={onLogout} className="flex flex-col items-center justify-center w-full py-1 text-gray-400">
-            <div className="p-2 rounded-xl mb-0.5 transition-all bg-transparent">
-              <LogOut size={20} strokeWidth={2} />
-            </div>
-            <span className="text-[10px] font-bold tracking-tight">Salir</span>
-         </button>
+      {/* NAVEGACIÓN INFERIOR DINÁMICA */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-2 z-50 flex justify-around items-center h-[80px] shadow-[0_-5px_20px_rgba(0,0,0,0.03)] print:hidden">
+         {user.rol === 'admin' ? (
+           <>
+             {/* Admin: Inicio, Emisores, Equipo, Salir */}
+             <BottomNavItem to="/" icon={LayoutDashboard} label="Inicio" />
+             <BottomNavItem to="/emisores" icon={Radio} label="Emisores" />
+             <BottomNavItem to="/reclutadores" icon={Users} label="Equipo" />
+             <button onClick={onLogout} className="flex flex-col items-center justify-center w-full py-1 text-gray-400">
+                <div className="p-2 rounded-xl mb-0.5 bg-transparent">
+                  <LogOut size={20} />
+                </div>
+                <span className="text-[10px] font-bold tracking-tight">Salir</span>
+             </button>
+           </>
+         ) : (
+           <>
+             {/* Reclutador: Inicio, Emisores, Salir */}
+             <BottomNavItem to="/" icon={LayoutDashboard} label="Inicio" />
+             <BottomNavItem to="/emisores" icon={Radio} label="Emisores" />
+             <button onClick={onLogout} className="flex flex-col items-center justify-center w-full py-1 text-gray-400">
+                <div className="p-2 rounded-xl mb-0.5 bg-transparent">
+                  <LogOut size={20} />
+                </div>
+                <span className="text-[10px] font-bold tracking-tight">Salir</span>
+             </button>
+           </>
+         )}
       </div>
 
     </div>
