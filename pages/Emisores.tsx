@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
@@ -475,10 +474,9 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                       </label>
                                       <input 
                                           type="number"
-                                          className={`w-full p-3 rounded-xl text-sm font-bold outline-none focus:ring-1 focus:ring-black ${!isAdmin ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-50 text-black'}`}
+                                          className="w-full bg-gray-50 p-3 rounded-xl text-sm font-bold outline-none focus:ring-1 focus:ring-black"
                                           value={editSeeds}
                                           onChange={e => setEditSeeds(e.target.value)}
-                                          readOnly={!isAdmin}
                                       />
                                   </div>
                                   
