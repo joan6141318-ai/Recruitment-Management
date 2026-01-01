@@ -8,7 +8,6 @@ import Emisores from './pages/Emisores';
 import Reclutadores from './pages/Reclutadores';
 import Remuneracion from './pages/Remuneracion';
 import Factura from './pages/Factura';
-import ChatBot from './pages/ChatBot';
 import { User } from './types';
 import { authService } from './services/auth'; 
 import { dataService } from './services/db';
@@ -63,6 +62,7 @@ const App: React.FC = () => {
         unsubscribeProfile = dataService.subscribeToUserProfile(firebaseUser.uid, (profile) => {
           if (profile) {
             if (profile.activo === false) {
+              console.warn("Acceso revocado por el administrador.");
               setIsRevoked(true);
               setUser(profile);
             } else {
@@ -116,13 +116,6 @@ const App: React.FC = () => {
             <Route path="/emisores" element={<Emisores user={user} />} />
             <Route path="/remuneracion" element={<Remuneracion />} />
             <Route path="/factura" element={<Factura user={user} />} />
-            
-            {/* El componente ChatBot maneja internamente la restricción por rol y muestra Próximamente */}
-            <Route 
-              path="/chatbot" 
-              element={<ChatBot user={user} />} 
-            />
-
             {user.rol === 'admin' ? (
               <Route path="/reclutadores" element={<Reclutadores user={user} />} />
             ) : (
