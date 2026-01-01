@@ -14,12 +14,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [reclutadores, setReclutadores] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Estado para la fecha
+  // Estado para la fecha informativa
   const [lastUpdatedDate, setLastUpdatedDate] = useState<string>('');
   const [showDateModal, setShowDateModal] = useState(false);
   const [newDateInput, setNewDateInput] = useState('');
 
   // Estados para Gestión Mensual (Admin)
+  // Ahora managementMonth servirá como el filtro global para las estadísticas de metas
   const [managementMonth, setManagementMonth] = useState(new Date().toISOString().slice(0, 7));
   const [managementRecruiterId, setManagementRecruiterId] = useState<string>('all');
   const [showManagement, setShowManagement] = useState(false);
@@ -62,7 +63,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       }
   };
 
-  // Helper para mostrar mes bonito
   const getFormattedMonth = (isoString: string) => {
       if(!isoString) return 'Seleccionar';
       const [year, month] = isoString.split('-');
@@ -77,24 +77,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const totalHours = emisores.reduce((acc, curr) => acc + curr.horas_mes, 0);
   const avgHours = activeEmisores.length > 0 ? totalHours / activeEmisores.length : 0;
   
-  const currentMonth = new Date().toISOString().slice(0, 7);
-  
-  const newEmisoresThisMonth = emisores.filter(e => {
-    const isDateMatch = (e.mes_entrada && e.mes_entrada === currentMonth) || 
-                        (e.fecha_registro && e.fecha_registro.startsWith(currentMonth));
-    if (!isDateMatch) return false;
-    if (user.rol === 'admin') return true;
-    return e.reclutador_id === user.id;
-  });
-
-  // Filtro para la Gestión Mensual del Admin (Mes + Reclutador)
+  // LOGICA CORREGIDA: Ahora usamos managementMonth en lugar del mes real del sistema
+  // para que el Administrador vea el progreso del mes que está consultando.
   const emisoresInSelectedMonth = emisores.filter(e => {
-      const monthMatch = (e.mes_entrada === managementMonth) || (e.fecha_registro && e.fecha_registro.startsWith(managementMonth));
-      const recruiterMatch = managementRecruiterId === 'all' || e.reclutador_id === managementRecruiterId;
-      return monthMatch && recruiterMatch;
+    const monthMatch = (e.mes_entrada === managementMonth) || (e.fecha_registro && e.fecha_registro.startsWith(managementMonth));
+    const recruiterMatch = managementRecruiterId === 'all' || e.reclutador_id === managementRecruiterId;
+    return monthMatch && recruiterMatch;
   });
 
-  const monthlyProgress = Math.min((newEmisoresThisMonth.length / MONTHLY_EMISOR_GOAL) * 100, 100);
+  const monthlyProgress = Math.min((emisoresInSelectedMonth.length / MONTHLY_EMISOR_GOAL) * 100, 100);
   
   const chartData = [...emisores]
     .sort((a, b) => b.horas_mes - a.horas_mes)
@@ -146,6 +137,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             </div>
         </div>
 
+        {/* BARRA DE PROGRESO VINCULADA AL FILTRO */}
         <div className="bg-gray-100 text-gray-900 p-6 rounded-3xl shadow-xl shadow-gray-200/50 border-[6px] border-white relative overflow-hidden">
             <div className="relative z-10">
                 <div className="flex justify-between items-center mb-4">
@@ -154,12 +146,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                           <Target size={24} className="text-primary" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-black">Meta de Reclutamiento</h3>
+                            <h3 className="text-lg font-bold text-black">Meta de Reclutamiento ({getFormattedMonth(managementMonth)})</h3>
                             <p className="text-xs text-gray-500 font-medium">Objetivo: {MONTHLY_EMISOR_GOAL} Nuevos Emisores</p>
                         </div>
                     </div>
                     <div className="text-right">
-                        <span className="text-3xl font-black text-primary">{newEmisoresThisMonth.length}</span>
+                        <span className="text-3xl font-black text-primary">{emisoresInSelectedMonth.length}</span>
                         <span className="text-sm text-gray-400 font-bold"> / {MONTHLY_EMISOR_GOAL}</span>
                     </div>
                 </div>
@@ -173,7 +165,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                 </div>
                 
                 <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                    <span>Progreso Actual</span>
+                    <span>Progreso del periodo seleccionado</span>
                     <span>{Math.round(monthlyProgress)}% Completado</span>
                 </div>
             </div>
@@ -191,87 +183,85 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                         </div>
                         <div>
                             <h3 className="font-bold text-gray-900 text-sm">Gestión de Altas Mensuales</h3>
-                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wide">Mantener base de datos</p>
+                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wide">Filtro Global de Estadísticas</p>
                         </div>
                     </div>
                     {showManagement ? <ChevronUp size={20} className="text-gray-400" /> : <ChevronDown size={20} className="text-gray-400" />}
                 </div>
                 
-                {showManagement && (
-                    <div className="px-5 pb-5 pt-0 animate-slide-up">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl mb-4 border border-gray-100">
-                             <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Filtrar por Mes</label>
-                                <div className="relative">
-                                     <div className="bg-white px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-900 shadow-sm flex items-center gap-2 w-full hover:border-black transition-colors">
-                                        <Calendar size={16} className="text-primary"/>
-                                        <span className="capitalize">{getFormattedMonth(managementMonth)}</span>
-                                     </div>
-                                     <input 
-                                        type="month" 
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                        value={managementMonth}
-                                        onChange={(e) => setManagementMonth(e.target.value)}
-                                     />
-                                </div>
-                             </div>
-
-                             <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Filtrar por Reclutador</label>
-                                <div className="relative">
-                                     <div className="bg-white px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-900 shadow-sm flex items-center gap-2 w-full hover:border-black transition-colors">
-                                        <UserCheck size={16} className="text-accent"/>
-                                        <span className="truncate">{managementRecruiterId === 'all' ? 'Todos los Reclutadores' : (reclutadores.find(r => r.id === managementRecruiterId)?.nombre || 'Seleccionado')}</span>
-                                     </div>
-                                     <select 
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                        value={managementRecruiterId}
-                                        onChange={(e) => setManagementRecruiterId(e.target.value)}
-                                     >
-                                        <option value="all">Todos los Reclutadores</option>
-                                        {reclutadores.map(r => (
-                                            <option key={r.id} value={r.id}>{r.nombre}</option>
-                                        ))}
-                                     </select>
-                                </div>
-                             </div>
-                             
-                             <div className="md:col-span-2 text-center pt-2 border-t border-gray-200/50 mt-2">
-                                 <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Registros encontrados: </span>
-                                 <span className="text-sm font-black text-black">{emisoresInSelectedMonth.length}</span>
-                             </div>
-                        </div>
-
-                        {emisoresInSelectedMonth.length > 0 ? (
-                            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                                {emisoresInSelectedMonth.map(emisor => (
-                                    <div key={emisor.id} className="flex justify-between items-center p-3 bg-white rounded-xl border border-gray-100 hover:border-gray-300 transition-colors group">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">
-                                                {emisor.nombre.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-bold text-gray-900">{emisor.nombre}</p>
-                                                <p className="text-[10px] text-gray-400">ID: {emisor.bigo_id} | Reg: {emisor.fecha_registro?.split('T')[0]}</p>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            onClick={() => handleDeleteEmisor(emisor.id)}
-                                            className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                            title="Borrar Emisor"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                ))}
+                <div className={`px-5 pb-5 pt-0 transition-all duration-300 ${showManagement ? 'block' : 'hidden'}`}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl mb-4 border border-gray-100">
+                         <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Filtrar por Mes</label>
+                            <div className="relative">
+                                 <div className="bg-white px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-900 shadow-sm flex items-center gap-2 w-full hover:border-black transition-colors">
+                                    <Calendar size={16} className="text-primary"/>
+                                    <span className="capitalize">{getFormattedMonth(managementMonth)}</span>
+                                 </div>
+                                 <input 
+                                    type="month" 
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    value={managementMonth}
+                                    onChange={(e) => setManagementMonth(e.target.value)}
+                                 />
                             </div>
-                        ) : (
-                            <div className="text-center py-8 text-gray-400 text-xs font-bold uppercase tracking-widest">
-                                No hay emisores registrados para este filtro.
+                         </div>
+
+                         <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Filtrar por Reclutador</label>
+                            <div className="relative">
+                                 <div className="bg-white px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-900 shadow-sm flex items-center gap-2 w-full hover:border-black transition-colors">
+                                    <UserCheck size={16} className="text-accent"/>
+                                    <span className="truncate">{managementRecruiterId === 'all' ? 'Todos los Reclutadores' : (reclutadores.find(r => r.id === managementRecruiterId)?.nombre || 'Seleccionado')}</span>
+                                 </div>
+                                 <select 
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    value={managementRecruiterId}
+                                    onChange={(e) => setManagementRecruiterId(e.target.value)}
+                                 >
+                                    <option value="all">Todos los Reclutadores</option>
+                                    {reclutadores.map(r => (
+                                        <option key={r.id} value={r.id}>{r.nombre}</option>
+                                    ))}
+                                 </select>
                             </div>
-                        )}
+                         </div>
+                         
+                         <div className="md:col-span-2 text-center pt-2 border-t border-gray-200/50 mt-2">
+                             <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Registros encontrados: </span>
+                             <span className="text-sm font-black text-black">{emisoresInSelectedMonth.length}</span>
+                         </div>
                     </div>
-                )}
+
+                    {emisoresInSelectedMonth.length > 0 ? (
+                        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                            {emisoresInSelectedMonth.map(emisor => (
+                                <div key={emisor.id} className="flex justify-between items-center p-3 bg-white rounded-xl border border-gray-100 hover:border-gray-300 transition-colors group">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">
+                                            {emisor.nombre.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-gray-900">{emisor.nombre}</p>
+                                            <p className="text-[10px] text-gray-400">ID: {emisor.bigo_id} | Reg: {emisor.fecha_registro?.split('T')[0]}</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => handleDeleteEmisor(emisor.id)}
+                                        className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Borrar Emisor"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 text-gray-400 text-xs font-bold uppercase tracking-widest">
+                            No hay emisores registrados para este filtro.
+                        </div>
+                    )}
+                </div>
             </div>
         )}
 
