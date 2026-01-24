@@ -184,6 +184,13 @@ export const dataService = {
     });
   },
 
+  checkEmisorExists: async (bigoId: string): Promise<boolean> => {
+    const emisoresRef = collection(db, 'emisores');
+    const q = query(emisoresRef, where('bigo_id', '==', bigoId));
+    const snap = await getDocs(q);
+    return !snap.empty;
+  },
+
   addEmisor: async (emisorData: any, currentUser: User): Promise<Emisor> => {
     const newEmisor = {
       ...emisorData,

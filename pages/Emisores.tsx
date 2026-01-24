@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, Emisor } from '../types';
 import { dataService } from '../services/db';
-import { Search, Plus, MapPin, Calendar, Clock, Edit3, X, User as UserIcon, AlertTriangle, CheckCircle, Trophy, FilterX, Trash2, Globe, Shield, Lock, Activity, Coins } from 'lucide-react';
+import { Search, Plus, MapPin, Calendar, Clock, Edit3, X, User as UserIcon, AlertTriangle, CheckCircle, Trophy, FilterX, Trash2, Globe, Shield, Lock, Activity, Coins, Loader2 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 interface EmisoresProps {
@@ -22,10 +22,14 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
   // Modals States
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showWarning, setShowWarning] = useState(false); // Nuevo estado para advertencia
+  const [showWarning, setShowWarning] = useState(false); 
   const [showDetailModal, setShowDetailModal] = useState(false); 
   const [isEditingMode, setIsEditingMode] = useState(false); 
   
+  // Validation States
+  const [isChecking, setIsChecking] = useState(false);
+  const [duplicateError, setDuplicateError] = useState(false);
+
   const [selectedEmisor, setSelectedEmisor] = useState<Emisor | null>(null);
   
   // Forms Data - ADD
@@ -64,10 +68,25 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
     setLoading(false);
   };
 
-  // Función que inicia el proceso de guardado mostrando la advertencia
-  const handleAddInitiate = (e: React.FormEvent) => {
+  // Función que inicia el proceso de guardado validando duplicados
+  const handleAddInitiate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowWarning(true);
+    setDuplicateError(false);
+    setIsChecking(true);
+
+    try {
+        const exists = await dataService.checkEmisorExists(newEmisorBigo);
+        if (exists) {
+            setDuplicateError(true);
+            setIsChecking(false);
+            return;
+        }
+        setShowWarning(true);
+    } catch (err) {
+        console.error("Error validando ID:", err);
+    } finally {
+        setIsChecking(false);
+    }
   };
 
   // Función que ejecuta el guardado final tras la confirmación
@@ -246,7 +265,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
          </div>
-         <button onClick={() => setShowAddModal(true)} className="w-full md:w-auto bg-black text-white px-5 py-3 rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-lg shadow-gray-200 active:scale-95 transition-transform">
+         <button onClick={() => { setShowAddModal(true); setDuplicateError(false); }} className="w-full md:w-auto bg-black text-white px-5 py-3 rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-lg shadow-gray-200 active:scale-95 transition-transform">
             <Plus size={18} /> Nuevo Emisor
         </button>
       </div>
@@ -531,15 +550,31 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                    <input required className="w-full bg-gray-50 border-none p-3.5 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-black/5" value={newEmisorName} onChange={e => setNewEmisorName(e.target.value)} />
                </div>
                <div className="grid grid-cols-2 gap-4">
-                   <div>
+                   <div className="relative">
                        <label className="text-xs font-bold text-gray-500 block mb-1.5 ml-1">ID Bigo</label>
-                       <input required className="w-full bg-gray-50 border-none p-3.5 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-black/5" value={newEmisorBigo} onChange={e => setNewEmisorBigo(e.target.value)} />
+                       <input 
+                        required 
+                        className={`w-full border-none p-3.5 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-black/5 transition-colors ${duplicateError ? 'bg-orange-50 ring-2 ring-accent/20' : 'bg-gray-50'}`} 
+                        value={newEmisorBigo} 
+                        onChange={e => { setNewEmisorBigo(e.target.value); setDuplicateError(false); }} 
+                       />
+                       {isChecking && <Loader2 className="absolute right-3 bottom-3.5 animate-spin text-gray-300" size={16} />}
                    </div>
                    <div>
                        <label className="text-xs font-bold text-gray-500 block mb-1.5 ml-1">Mes Ingreso</label>
                        <input required type="month" className="w-full bg-gray-50 border-none p-3.5 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-black/5" value={newEmisorMonth} onChange={e => setNewEmisorMonth(e.target.value)} />
                    </div>
                </div>
+
+               {duplicateError && (
+                   <div className="bg-accent/10 p-3 rounded-xl border border-accent/20 animate-pop-in flex items-start gap-3">
+                       <AlertTriangle size={16} className="text-accent shrink-0 mt-0.5" />
+                       <p className="text-[11px] font-bold text-accent uppercase leading-relaxed tracking-wider">
+                           Este emisor ya ha sido registrado en la base de datos de la agencia.
+                       </p>
+                   </div>
+               )}
+
                <div>
                    <label className="text-xs font-bold text-gray-500 block mb-1.5 ml-1">País</label>
                    <input required className="w-full bg-gray-50 border-none p-3.5 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-black/5" value={newEmisorCountry} onChange={e => setNewEmisorCountry(e.target.value)} />
@@ -556,7 +591,13 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                    </div>
                )}
 
-               <button type="submit" className="w-full py-4 bg-black text-white rounded-xl font-bold text-sm mt-2 shadow-lg hover:bg-gray-900 transition-colors">Guardar Emisor</button>
+               <button 
+                type="submit" 
+                disabled={isChecking}
+                className={`w-full py-4 rounded-xl font-bold text-sm mt-2 shadow-lg transition-all flex items-center justify-center gap-2 ${isChecking ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-900 active:scale-95'}`}
+               >
+                {isChecking ? 'Verificando...' : 'Guardar Emisor'}
+               </button>
             </form>
           </div>
         </div>
