@@ -70,12 +70,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       return `${months[parseInt(month) - 1]} ${year}`;
   };
 
-  // Cálculos Robustos
   const activeEmisores = emisores.filter(e => 
-    (e.estado || 'activo').toLowerCase() === 'activo'
+    e.estado && e.estado.toLowerCase() === 'activo'
   );
   
-  const totalHours = emisores.reduce((acc, curr) => acc + (Number(curr.horas_mes) || 0), 0);
+  const totalHours = emisores.reduce((acc, curr) => acc + curr.horas_mes, 0);
   const avgHours = activeEmisores.length > 0 ? totalHours / activeEmisores.length : 0;
   
   const currentMonth = new Date().toISOString().slice(0, 7);
@@ -98,9 +97,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const monthlyProgress = Math.min((newEmisoresThisMonth.length / MONTHLY_EMISOR_GOAL) * 100, 100);
   
   const chartData = [...emisores]
-    .sort((a, b) => (b.horas_mes || 0) - (a.horas_mes || 0))
+    .sort((a, b) => b.horas_mes - a.horas_mes)
     .slice(0, 5)
-    .map(e => ({ name: e.nombre.split(' ')[0], hours: Number(e.horas_mes) || 0 }));
+    .map(e => ({ name: e.nombre.split(' ')[0], hours: e.horas_mes }));
 
   if (loading) return <div className="p-10 text-center text-sm text-gray-400">Sincronizando métricas...</div>;
 
@@ -303,7 +302,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             />
             <StatCard 
               title="Productivos" 
-              value={`${activeEmisores.length > 0 ? Math.round((activeEmisores.filter(e => (Number(e.horas_mes) || 0) >= PRODUCTIVITY_HOURS_GOAL).length / activeEmisores.length) * 100) : 0}%`} 
+              value={`${Math.round((activeEmisores.filter(e => e.horas_mes >= PRODUCTIVITY_HOURS_GOAL).length / (activeEmisores.length || 1)) * 100)}%`} 
               sub="Emisores > 20 Horas" 
               icon={CheckCircle2} 
               color="bg-green-50" 
@@ -350,18 +349,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                </h3>
                <div className="flex-1 overflow-y-auto pr-2 space-y-3 max-h-[250px]">
                   {activeEmisores
-                      .filter(e => (Number(e.horas_mes) || 0) < 10)
-                      .sort((a,b) => (Number(a.horas_mes) || 0) - (Number(b.horas_mes) || 0))
+                      .filter(e => e.horas_mes < 10)
+                      .sort((a,b) => a.horas_mes - b.horas_mes)
                       .map(emisor => (
                       <div key={emisor.id} className="flex items-center justify-between p-3 bg-orange-50/50 rounded-xl border border-orange-100">
                           <div>
                               <p className="font-bold text-xs text-gray-900">{emisor.nombre}</p>
                               <p className="text-[10px] text-gray-500 font-mono mt-0.5">ID: {emisor.bigo_id}</p>
                           </div>
-                          <span className="text-xs font-black text-accent">{Number(emisor.horas_mes) || 0}h</span>
+                          <span className="text-xs font-black text-accent">{emisor.horas_mes}h</span>
                       </div>
                   ))}
-                  {activeEmisores.filter(e => (Number(e.horas_mes) || 0) < 10).length === 0 && (
+                  {activeEmisores.filter(e => e.horas_mes < 10).length === 0 && (
                       <div className="flex flex-col items-center justify-center h-full py-10 text-gray-400">
                           <CheckCircle2 size={30} className="mb-2 text-green-500 opacity-50" />
                           <p className="text-xs font-bold uppercase tracking-widest">Todo bajo control.</p>
