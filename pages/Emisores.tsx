@@ -22,6 +22,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
   // Modals States
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showWarning, setShowWarning] = useState(false); // Nuevo estado para advertencia
   const [showDetailModal, setShowDetailModal] = useState(false); 
   const [isEditingMode, setIsEditingMode] = useState(false); 
   
@@ -63,8 +64,15 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
     setLoading(false);
   };
 
-  const handleAdd = async (e: React.FormEvent) => {
+  // Función que inicia el proceso de guardado mostrando la advertencia
+  const handleAddInitiate = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowWarning(true);
+  };
+
+  // Función que ejecuta el guardado final tras la confirmación
+  const handleAddFinal = async () => {
+    setShowWarning(false);
     await dataService.addEmisor({
       nombre: newEmisorName, 
       bigo_id: newEmisorBigo, 
@@ -517,7 +525,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                 <h3 className="text-lg font-bold text-gray-900">Nuevo Registro</h3>
                 <button onClick={() => setShowAddModal(false)}><X size={20} className="text-gray-400" /></button>
             </div>
-            <form onSubmit={handleAdd} className="space-y-4">
+            <form onSubmit={handleAddInitiate} className="space-y-4">
                <div>
                    <label className="text-xs font-bold text-gray-500 block mb-1.5 ml-1">Nombre Completo</label>
                    <input required className="w-full bg-gray-50 border-none p-3.5 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-black/5" value={newEmisorName} onChange={e => setNewEmisorName(e.target.value)} />
@@ -550,6 +558,36 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
 
                <button type="submit" className="w-full py-4 bg-black text-white rounded-xl font-bold text-sm mt-2 shadow-lg hover:bg-gray-900 transition-colors">Guardar Emisor</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE ADVERTENCIA PREVIA AL REGISTRO */}
+      {showWarning && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+          <div className="fixed inset-0 w-screen h-screen bg-black/60 backdrop-blur-sm" onClick={() => setShowWarning(false)}></div>
+          <div className="bg-white rounded-[2.5rem] w-full max-w-xs p-8 shadow-2xl animate-pop-in relative z-10 text-center border-[6px] border-white">
+            <div className="bg-orange-50 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-12 shadow-sm">
+              <AlertTriangle size={40} className="text-accent -rotate-12" />
+            </div>
+            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Verificación de Cuenta</h3>
+            <p className="text-xs font-bold text-gray-900 leading-relaxed uppercase mb-10">
+              "Antes de ingresar un emisor revisa que está cuenta sea nueva y no haya sido vinculada anteriormente con otra agencia"
+            </p>
+            <div className="space-y-3">
+              <button 
+                onClick={handleAddFinal}
+                className="w-full py-4 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-gray-200 hover:bg-gray-900 active:scale-95 transition-all"
+              >
+                Deseo continuar / Aceptar
+              </button>
+              <button 
+                onClick={() => setShowWarning(false)}
+                className="w-full py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-black transition-colors"
+              >
+                Cancelar y Revisar
+              </button>
+            </div>
           </div>
         </div>
       )}
