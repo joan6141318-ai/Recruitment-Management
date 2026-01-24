@@ -473,7 +473,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                   <input 
                                     className="w-full bg-gray-50 p-3 rounded-xl text-sm font-medium outline-none focus:ring-1 focus:ring-black"
                                     value={editName}
-                                    onChange={setEditName}
+                                    onChange={(e) => setEditName(e.target.value)}
                                   />
                               </div>
 
@@ -483,7 +483,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                       <input 
                                         className="w-full bg-gray-50 p-3 rounded-xl text-sm font-medium outline-none focus:ring-1 focus:ring-black"
                                         value={editBigo}
-                                        onChange={setEditBigo}
+                                        onChange={(e) => setEditBigo(e.target.value)}
                                       />
                                   </div>
                                   <div>
@@ -492,7 +492,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                         type="month"
                                         className="w-full bg-gray-50 p-3 rounded-xl text-sm font-medium outline-none focus:ring-1 focus:ring-black"
                                         value={editMonth}
-                                        onChange={setEditMonth}
+                                        onChange={(e) => setEditMonth(e.target.value)}
                                       />
                                   </div>
                               </div>
@@ -503,7 +503,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                       <input 
                                         className="w-full bg-gray-50 p-3 rounded-xl text-sm font-medium outline-none focus:ring-1 focus:ring-black"
                                         value={editCountry}
-                                        onChange={setEditCountry}
+                                        onChange={(e) => setEditCountry(e.target.value)}
                                       />
                                   </div>
                               </div>
@@ -517,7 +517,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                           type="number"
                                           className={`w-full p-3 rounded-xl text-sm font-bold outline-none focus:ring-1 focus:ring-black ${!isAdmin ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-50 text-black'}`}
                                           value={editSeeds}
-                                          onChange={setEditSeeds}
+                                          onChange={(e) => setEditSeeds(e.target.value)}
                                           readOnly={!isAdmin}
                                       />
                                   </div>
@@ -531,7 +531,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                             type="number" step="0.1"
                                             className="w-full p-3 rounded-xl text-sm font-bold outline-none text-center transition-colors bg-gray-100 text-black focus:ring-1 focus:ring-black"
                                             value={editHours}
-                                            onChange={setEditHours}
+                                            onChange={(e) => setEditHours(e.target.value)}
                                         />
                                     </div>
                                   )}
