@@ -52,11 +52,24 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
   useEffect(() => { loadData(); }, [user, filterRecruiterId]);
 
   useEffect(() => {
-    let result = emisores;
+    let result = [...emisores];
+    
+    // 1. Aplicar filtro de búsqueda
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
       result = result.filter(e => e.nombre.toLowerCase().includes(lower) || e.bigo_id.toLowerCase().includes(lower));
     }
+
+    // 2. Aplicar ordenamiento por prioridad (Activos > Pausados)
+    result.sort((a, b) => {
+      const statusA = a.estado || 'activo';
+      const statusB = b.estado || 'activo';
+      
+      if (statusA === 'activo' && statusB === 'pausado') return -1;
+      if (statusA === 'pausado' && statusB === 'activo') return 1;
+      return 0;
+    });
+
     setFiltered(result);
   }, [searchTerm, emisores]);
 
@@ -460,7 +473,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                   <input 
                                     className="w-full bg-gray-50 p-3 rounded-xl text-sm font-medium outline-none focus:ring-1 focus:ring-black"
                                     value={editName}
-                                    onChange={e => setEditName(e.target.value)}
+                                    onChange={setEditName}
                                   />
                               </div>
 
@@ -470,7 +483,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                       <input 
                                         className="w-full bg-gray-50 p-3 rounded-xl text-sm font-medium outline-none focus:ring-1 focus:ring-black"
                                         value={editBigo}
-                                        onChange={e => setEditBigo(e.target.value)}
+                                        onChange={setEditBigo}
                                       />
                                   </div>
                                   <div>
@@ -479,7 +492,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                         type="month"
                                         className="w-full bg-gray-50 p-3 rounded-xl text-sm font-medium outline-none focus:ring-1 focus:ring-black"
                                         value={editMonth}
-                                        onChange={e => setEditMonth(e.target.value)}
+                                        onChange={setEditMonth}
                                       />
                                   </div>
                               </div>
@@ -490,7 +503,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                       <input 
                                         className="w-full bg-gray-50 p-3 rounded-xl text-sm font-medium outline-none focus:ring-1 focus:ring-black"
                                         value={editCountry}
-                                        onChange={e => setEditCountry(e.target.value)}
+                                        onChange={setEditCountry}
                                       />
                                   </div>
                               </div>
@@ -504,7 +517,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                           type="number"
                                           className={`w-full p-3 rounded-xl text-sm font-bold outline-none focus:ring-1 focus:ring-black ${!isAdmin ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-50 text-black'}`}
                                           value={editSeeds}
-                                          onChange={e => setEditSeeds(e.target.value)}
+                                          onChange={setEditSeeds}
                                           readOnly={!isAdmin}
                                       />
                                   </div>
@@ -518,7 +531,7 @@ const Emisores: React.FC<EmisoresProps> = ({ user }) => {
                                             type="number" step="0.1"
                                             className="w-full p-3 rounded-xl text-sm font-bold outline-none text-center transition-colors bg-gray-100 text-black focus:ring-1 focus:ring-black"
                                             value={editHours}
-                                            onChange={e => setEditHours(e.target.value)}
+                                            onChange={setEditHours}
                                         />
                                     </div>
                                   )}
