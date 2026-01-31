@@ -1,3 +1,4 @@
+
 export type Role = 'admin' | 'reclutador';
 
 export interface User {
@@ -42,6 +43,7 @@ export interface Emisor {
   estado: EstadoEmisor;
   fecha_registro: string;
   es_compartido?: boolean; 
+  genero?: 'M' | 'F'; // M: Masculino, F: Femenino
   isManualEntry?: boolean; // Identificador para registros agregados manualmente desde factura
   pago_meta?: number;      // Monto manual por meta de semillas
   pago_horas?: number;     // Monto manual por cumplimiento de horas
